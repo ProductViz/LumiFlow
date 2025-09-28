@@ -1,0 +1,29 @@
+﻿# LumiFlow - Smart lighting tools for Blender
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024 LumiFlow Developer
+
+"""
+Template collection for LumiFlow addon
+Consolidated template library with all categories
+"""
+
+from .studio_commercial import STUDIO_COMMERCIAL_TEMPLATES
+from .dramatic_cinematic import DRAMATIC_CINEMATIC_TEMPLATES
+from .environment_realistic import ENVIRONMENT_REALISTIC_TEMPLATES
+from .utilities_single_lights import UTILITIES_SINGLE_LIGHTS_TEMPLATES
+
+# Combine all templates into single collection
+ALL_TEMPLATES = {}
+ALL_TEMPLATES.update(STUDIO_COMMERCIAL_TEMPLATES)
+ALL_TEMPLATES.update(DRAMATIC_CINEMATIC_TEMPLATES)
+ALL_TEMPLATES.update(ENVIRONMENT_REALISTIC_TEMPLATES)
+ALL_TEMPLATES.update(UTILITIES_SINGLE_LIGHTS_TEMPLATES)
+
+__all__ = [
+    'STUDIO_COMMERCIAL_TEMPLATES',
+    'DRAMATIC_CINEMATIC_TEMPLATES',
+    'ENVIRONMENT_REALISTIC_TEMPLATES',
+    'UTILITIES_SINGLE_LIGHTS_TEMPLATES',
+    'ALL_TEMPLATES'
+]
+
