@@ -1,11 +1,3 @@
-"""
-LumiFlow - Smart Lighting Tools for Blender
-Professional lighting workflow addon with smart placement, smart controls, and interactive positioning.
-
-Copyright (C) 2024 Burhanuddin. All rights reserved.
-For licensing inquiries: asqa3d@gmail.com
-"""
-
 bl_info = {
     "name": "LumiFlow",
     "author": "Burhanuddin",

@@ -1,13 +1,4 @@
-﻿# LumiFlow - Smart lighting tools for Blender
-# SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (C) 2024 LumiFlow Developer
-
-"""
-LumiFlow Light Visualization Module
-Contains all light-specific drawing and visualization functions.
-"""
-
-import bpy
+﻿import bpy
 import gpu
 import bmesh
 from gpu_extras.batch import batch_for_shader

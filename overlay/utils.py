@@ -1,23 +1,4 @@
-﻿# LumiFlow - Smart lighting tools for Blender
-# SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (C) 2024 LumiFlow Developer
-
-"""
-LumiFlow - Smart Lighting Tools for Blender
-Copyright (C) 2024 Burhanuddin. All rights reserved.
-
-This software is proprietary and confidential. Unauthorized copying,
-modification, distribution, or use of this software, via any medium,
-is strictly prohibited.
-
-For licensing inquiries: asqa3d@gmail.com
-"""
-"""
-LumiFlow Drawing Utilities
-Utility functions for overlay drawing, text rendering, and theme management.
-"""
-# # Import modul utama Blender
-import bpy
+﻿import bpy
 import blf
 import math
 from typing import List, Tuple

@@ -1,13 +1,4 @@
-﻿# LumiFlow - Smart lighting tools for Blender
-# SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (C) 2024 LumiFlow Developer
-
-"""
-LumiFlow Mesh Overlay Module
-Contains mesh stroke and object outline functions.
-"""
-
-import bpy
+﻿import bpy
 import bmesh
 import gpu
 from gpu_extras.batch import batch_for_shader

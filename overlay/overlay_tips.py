@@ -1,12 +1,4 @@
-﻿# LumiFlow - Smart lighting tools for Blender
-# SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (C) 2024 LumiFlow Developer
-
-"""
-LumiFlow Tips Overlay Module
-Contains tips display functions.
-"""
-import bpy
+﻿import bpy
 import blf
 from typing import List, Tuple
 from mathutils import Vector

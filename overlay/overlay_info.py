@@ -1,13 +1,4 @@
-﻿# LumiFlow - Smart lighting tools for Blender
-# SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (C) 2024 LumiFlow Developer
-
-"""
-LumiFlow Info Display Module
-Contains information display and text overlay functions.
-"""
-
-import bpy
+﻿import bpy
 import math
 from mathutils import Vector
 from .utils import get_text_settings, get_config_colors, get_overlay_positions, draw_text

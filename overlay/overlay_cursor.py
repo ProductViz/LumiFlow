@@ -1,12 +1,4 @@
-﻿# LumiFlow - Smart lighting tools for Blender
-# SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (C) 2024 LumiFlow Developer
-
-"""
-LumiFlow Cursor Module
-Contains cursor and mouse interaction functions and smart overlay template.
-"""
-
+﻿
 import bpy
 import math
 import blf

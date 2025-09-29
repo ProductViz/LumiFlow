@@ -1,13 +1,4 @@
-﻿# LumiFlow - Smart lighting tools for Blender
-# SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (C) 2024 LumiFlow Developer
-
-"""
-LumiFlow Handlers Module
-Contains draw handler management and scene update functions.
-"""
-
-import bpy
+﻿import bpy
 from .config import overlay_manager
 
 # Global handlers (deprecated - menggunakan overlay_manager sekarang)

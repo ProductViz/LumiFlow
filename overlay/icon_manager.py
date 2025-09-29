@@ -1,11 +1,4 @@
-﻿# LumiFlow - Smart lighting tools for Blender
-# SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (C) 2024 LumiFlow Developer
 
-"""
-LumiFlow Icon Manager Module
-Manages PNG icons for overlay keymap display.
-"""
 import bpy
 import gpu
 import os

@@ -1,17 +1,4 @@
-"""
-LumiFlow - Smart Lighting Tools for Blender
-Copyright (C) 2024 Burhanuddin. All rights reserved.
 
-This software is proprietary and confidential. Unauthorized copying,
-modification, distribution, or use of this software, via any medium,
-is strictly prohibited.
-
-For licensing inquiries: asqa3d@gmail.com
-"""
-"""
-Modul Registrasi LumiFlow Addon
-Menangani registrasi dan unregistrasi dari semua class, property, handler, dan keymap untuk LumiFlow Blender addon.
-"""
 # # Import modul utama Blender
 import bpy
 from bpy.props import CollectionProperty, IntProperty, StringProperty

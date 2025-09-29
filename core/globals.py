@@ -1,9 +1,3 @@
-"""
-LumiFlow - Smart Lighting Tools for Blender
-Copyright (C) 2024 Burhanuddin. All rights reserved.
-
-For licensing inquiries: asqa3d@gmail.com
-"""
 
 # Import state management for backward compatibility
 from .state import get_state

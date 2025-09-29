@@ -1,45 +1,4 @@
-"""
-LumiFlow - Smart Lighting Tools for Blender
-Copyright (C) 2024 Burhanuddin. All rights reserved.
 
-This software is proprietary and confidential. Unauthorized copying,
-modification, distribution, or use of this software, via any medium,
-is strictly prohibited.
-
-For licensing inquiries: asqa3d@gmail.com
-
-==============================================================================
-OPTIMIZATION NOTES (linking_ops.py):
-==============================================================================
-
-MAJOR CHANGES FOR READ-ONLY LIGHT GROUPS:
-
-1. DEPRECATED OPERATORS:
-   - LUMI_OT_add_light_group (disabled - use collections)
-   - LUMI_OT_remove_light_group (disabled - use collections)  
-   - LUMI_OT_add_light_to_group (disabled - use collections)
-   - LUMI_OT_remove_light_from_group (disabled - use collections)
-
-2. OPTIMIZED FUNCTIONS:
-   - sync_light_groups_with_collections() - only syncs display data
-   - sync_ungrouped_lights() - simplified for read-only
-   - UI Lists simplified to remove unnecessary controls
-
-3. READ-ONLY UI:
-   - _draw_light_group_readonly() - no management buttons
-   - _draw_light_in_group_readonly() - only linking controls
-   - Light groups now display "(Collection)" indicator
-
-4. PRESERVED FUNCTIONALITY:
-   - All linking operations still work
-   - Marked state synchronization maintained
-   - Object group management preserved (not read-only)
-
-This optimization reduces code complexity while maintaining full linking
-functionality. Light groups are now purely display/organizational tools
-that reflect the actual Blender collection structure.
-==============================================================================
-"""
 # # Import modul utama Blender
 import bpy
 from bpy.props import CollectionProperty, StringProperty, BoolProperty

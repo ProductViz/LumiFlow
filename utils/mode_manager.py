@@ -1,13 +1,4 @@
-﻿# LumiFlow - Smart lighting tools for Blender
-# SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (C) 2024 LumiFlow Developer
-
-"""
-LumiFlow Mode Manager
-Centralized mode management system for all overlay modules.
-Provides single source of truth for mode definitions, availability, and handling.
-"""
-
+﻿
 import bpy
 import math
 from typing import Dict, List, Tuple, Optional, Union

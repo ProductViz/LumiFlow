@@ -1,17 +1,3 @@
-"""
-LumiFlow - Smart Lighting Tools for Blender
-Copyright (C) 2024 Burhanuddin. All rights reserved.
-
-This software is proprietary and confidential. Unauthorized copying,
-modification, distribution, or use of this software, via any medium,
-is strictly prohibited.
-
-For licensing inquiries: asqa3d@gmail.com
-"""
-"""
-LumiFlow Light Utilities
-Contains specialized light-related utility functions: positioning, creation, intensity calculations, and mode management.
-"""
 
 import math
 # # Import modul utama Blender
