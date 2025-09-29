@@ -1,4 +1,7 @@
-# -*- coding: utf-8 -*-
+"""
+Light Flip Operations
+Quick system for flipping light orientation based on various references.
+"""
 
 import bpy
 import bmesh

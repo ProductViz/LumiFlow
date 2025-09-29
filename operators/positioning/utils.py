@@ -1,4 +1,9 @@
-﻿
+"""
+Positioning Utilities
+Contains specialized utilities only used within positioning operators.
+"""
+
+# # Import modul utama Blender
 import bpy
 from mathutils import Vector
 

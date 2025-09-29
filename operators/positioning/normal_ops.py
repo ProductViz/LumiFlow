@@ -1,4 +1,8 @@
-﻿
+"""
+Normal Operations
+Operators for normal-based positioning and alignment of lights.
+"""
+# Import modul utama Blender
 import bpy
 from bpy_extras import view3d_utils
 from mathutils import Vector

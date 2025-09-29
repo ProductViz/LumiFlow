@@ -1,4 +1,3 @@
-﻿
 import bpy
 from mathutils import Vector
 from ..utils.common import lumi_is_addon_enabled

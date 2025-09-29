@@ -1,3 +1,7 @@
+"""
+Scene Analysis
+Analyzes scenes for object detection, background, and lighting characteristics.
+"""
 
 import math
 import bpy

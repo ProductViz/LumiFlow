@@ -1,19 +1,9 @@
-﻿# LumiFlow - Smart lighting tools for Blender
-# SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (C) 2024 LumiFlow Developer
-
 """
-LumiFlow - Template System Error Handling
-Copyright (C) 2024 Burhanuddin. All rights reserved.
-
-This software is proprietary and confidential. Unauthorized copying,
-modification, distribution, or use of this software, via any medium,
-is strictly prohibited.
-
-For licensing inquiries: asqa3d@gmail.com
+Template Error Handling
+Error handling and recovery utilities for template operations.
 """
 
-# # Import modul utama Blender
+# Import modul utama Blender
 import bpy
 import time
 import traceback

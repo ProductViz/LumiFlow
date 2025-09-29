@@ -1,4 +1,9 @@
-﻿import bpy
+"""
+Light Overlay Module
+Contains all light-specific drawing and visualization functions.
+"""
+
+import bpy
 import gpu
 import bmesh
 from gpu_extras.batch import batch_for_shader

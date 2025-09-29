@@ -1,4 +1,9 @@
-﻿
+"""
+Mode Manager
+Centralized mode management system for all overlay modules.
+Provides single source of truth for mode definitions, availability, and handling.
+"""
+
 import bpy
 import math
 from typing import Dict, List, Tuple, Optional, Union
@@ -6,14 +11,7 @@ from .color import lumi_rgb_to_kelvin
 
 
 class ModeManager:
-    """
-    Centralized mode management system for LumiFlow overlay modules.
-    Handles mode definitions, availability checking, and property access.
-    """
     
-    # =====================================================================
-    # CENTRALIZED MODE DEFINITIONS
-    # =====================================================================
     
     # Mode definitions with unified structure
     MODES = {

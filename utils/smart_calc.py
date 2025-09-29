@@ -1,4 +1,9 @@
-﻿import math
+"""
+Smart Light Calculator
+Calculates optimal lighting parameters based on scene analysis.
+"""
+
+import math
 import bpy
 from mathutils import Vector, Matrix
 from typing import Dict, List, Tuple, Optional, Any

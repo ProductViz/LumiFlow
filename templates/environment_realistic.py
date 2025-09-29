@@ -1,10 +1,6 @@
-﻿# LumiFlow - Smart lighting tools for Blender
-# SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (C) 2024 LumiFlow Developer
-
 """
-LumiFlow Environment & Realistic Templates
-Natural lighting templates for outdoor scenes, architectural photography, and realistic environments
+Environment Realistic Templates
+Natural lighting templates for outdoor scenes, architectural photography, and realistic environments.
 """
 
 # Environment & Realistic Templates Collection

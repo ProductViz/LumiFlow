@@ -1,9 +1,10 @@
-
+"""
+Color Utilities
+Contains all color-related utility functions: HSV/RGB conversions, Kelvin temperature, etc.
+"""
 
 import math
-# # Import modul utama Blender
 import bpy
-from mathutils import Vector
 
 
 def lumi_rgb_to_hsv(r: float, g: float, b: float) -> tuple[float, float, float]:

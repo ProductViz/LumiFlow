@@ -1,4 +1,9 @@
+"""
+Property Utilities
+Contains property update callbacks and related utility functions.
+"""
 
+# # Import modul utama Blender
 import bpy
 from bpy.types import PropertyGroup
 from bpy.props import EnumProperty, StringProperty

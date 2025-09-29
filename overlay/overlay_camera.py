@@ -1,4 +1,7 @@
-﻿
+"""
+Camera Overlay Module
+Contains camera-specific light relationship visualization functions.
+"""
 
 import bpy
 import gpu

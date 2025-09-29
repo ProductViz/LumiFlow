@@ -1,10 +1,10 @@
 
+# # Import modul utama Blender
 import bpy
-
 # Import dari submodules yang sudah diorganisir
 from .positioning import *  # Semua operator positioning
-from .linking import *      # Semua operator linking
-from .smart_control import *        # Semua smart operators
+from .linking_ops import *      # Semua operator linking
+from .smart_ops import *           # Semua smart operators
 from .smart_template import *    # Smart template system
 
 # Import operators yang tetap di level utama
@@ -19,8 +19,54 @@ from .panels_ops import LUMI_OT_toggle_overlay_info, LUMI_OT_toggle_overlay_tips
 
 # Import submodule __all__ lists
 from .positioning import __all__ as positioning_all
-from .linking import __all__ as linking_all
-from .smart_control import __all__ as smart_all
+# Import linking operators directly
+linking_all = [
+    # Constants
+    'DEFAULT_GROUP_NAME',
+    
+    # Data structures
+    'LUMI_ObjectGroupLinkStatus',
+    'LUMI_ObjectItem', 
+    'LUMI_ObjectGroup', 
+    'LUMI_UL_object_groups', 
+    'LUMI_UL_objects_in_group',
+    'LUMI_LightItem', 
+    'LUMI_LightGroup', 
+    'LUMI_UL_light_groups', 
+    'LUMI_UL_lights_in_group',
+    'LUMI_UnGroupedLightItem',
+    
+    # Object group management operators (ACTIVE)
+    'LUMI_OT_add_group', 
+    'LUMI_OT_remove_group',
+    'LUMI_OT_add_object_to_group', 
+    'LUMI_OT_remove_object_from_group', 
+    'LUMI_OT_select_object_from_group',
+    'LUMI_OT_sync_object_selection',
+    'LUMI_OT_toggle_select_all_objects_in_group',
+    
+    # Light group management operators (DEPRECATED - read-only)
+    'LUMI_OT_add_light_group', 
+    'LUMI_OT_remove_light_group',
+    'LUMI_OT_add_light_to_group', 
+    'LUMI_OT_remove_light_from_group', 
+    'LUMI_OT_select_light_from_group',
+    'LUMI_OT_select_un_grouped_light',
+    'LUMI_OT_toggle_select_all_lights_in_group',
+    
+    # Linking operators (ACTIVE)
+    'LUMI_OT_update_light_linking', 
+    'LUMI_OT_clear_light_linking',
+    'LUMI_OT_quick_link_to_target',
+    
+    # Helper functions
+    'object_group_index_update',
+    'sync_marked_with_links',
+    # Handler functions (note: some removed due to optimization)
+    'lumi_light_groups_update_handler',
+    'depsgraph_update_default_group'
+]
+from .smart_ops import __all__ as smart_all
 from .smart_template import __all__ as smart_template_all
 
 # Daftar operator yang tetap di level utama
@@ -37,14 +83,15 @@ main_operators = [
 ]
 
 # Gabungkan semua exports dari submodules
-__all__ = positioning_all + linking_all + smart_all + smart_template_all + main_operators
+__all__ = list(positioning_all) + linking_all + list(smart_all) + list(smart_template_all) + main_operators
 
 # Daftar semua operator classes untuk registrasi
 operator_classes = []
 
 # Ambil classes dari submodules
 # # Import dari modul lokal addon
-from . import positioning, linking, smart_control, smart_template
+from . import positioning, smart_ops, smart_template
+from . import linking_ops
 # # Import modul utama Blender
 import bpy
 import inspect
@@ -84,8 +131,8 @@ for name in positioning_all:
 
 # Collect linking classes
 for name in linking_all:
-    if hasattr(linking, name):
-        obj = getattr(linking, name)
+    if hasattr(linking_ops, name):
+        obj = getattr(linking_ops, name)
         if inspect.isclass(obj):
             # Check registration criteria
             should_register = False
@@ -117,8 +164,8 @@ for name in linking_all:
 
 # Collect smart classes
 for name in smart_all:
-    if hasattr(smart_control, name):
-        obj = getattr(smart_control, name)
+    if hasattr(smart_ops, name):
+        obj = getattr(smart_ops, name)
         if inspect.isclass(obj):
             # Check registration criteria
             should_register = False

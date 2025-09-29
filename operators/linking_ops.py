@@ -1,9 +1,12 @@
-
+"""
+Linking Operations
+Operators for light linking and group management functionality.
+"""
 # # Import modul utama Blender
 import bpy
 from bpy.props import CollectionProperty, StringProperty, BoolProperty
 from mathutils import Vector
-from ...utils import lumi_is_addon_enabled, lumi_get_light_collection
+from ..utils import lumi_is_addon_enabled, lumi_get_light_collection
 
 LUMIFLOW_COLLECTION_NAME = "LumiFlow Lights"
 DEFAULT_GROUP_NAME = "Default"

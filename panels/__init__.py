@@ -1,5 +1,5 @@
 """
-LumiFlow Panels Module
+Panels Module
 Contains all panel classes for the LumiFlow Blender addon UI.
 """
 

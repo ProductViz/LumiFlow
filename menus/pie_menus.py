@@ -1,3 +1,7 @@
+"""
+Pie Menus Module
+Contains all pie menu classes for the LumiFlow Blender addon UI.
+"""
 # # Import modul utama Blender
 import bpy
 

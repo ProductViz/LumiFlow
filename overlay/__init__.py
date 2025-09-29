@@ -1,4 +1,7 @@
-
+"""
+Overlay Module
+Modular drawing system for the LumiFlow Blender addon.
+"""
 
 # Import semua fungsi dari modul-modul baru
 from .overlay_light import (

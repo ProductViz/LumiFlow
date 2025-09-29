@@ -1,4 +1,7 @@
-
+"""
+Addon Preferences
+Contains the addon preferences class with all UI customization options.
+"""
 # # Import modul utama Blender
 import bpy
 

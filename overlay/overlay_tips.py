@@ -1,4 +1,8 @@
-﻿import bpy
+"""
+Tips Overlay Module
+Contains tips display functions.
+"""
+import bpy
 import blf
 from typing import List, Tuple
 from mathutils import Vector

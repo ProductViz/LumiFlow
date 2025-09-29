@@ -1,9 +1,10 @@
-
+"""
+Positioning Operations Module
+Contains all operators related to light positioning: highlight, normal, target, orbit, and smart controls.
+"""
 
 # Import positioning-specific utilities
 from .utils import *
-
-# Import semua positioning operators (updated after refactoring)
 from .highlight_ops import LUMI_OT_highlight_positioning
 from .normal_ops import LUMI_OT_normal_positioning
 from .target_ops import LUMI_OT_target_positioning

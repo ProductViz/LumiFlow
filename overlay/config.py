@@ -1,3 +1,8 @@
+"""
+LumiFlow Overlay Configuration
+Centralized configuration for overlay system including colors, positions, and settings.
+"""
+
 from typing import Dict, Tuple, Any
 from mathutils import Vector
 import bpy

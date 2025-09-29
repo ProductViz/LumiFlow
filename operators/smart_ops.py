@@ -1,17 +1,21 @@
-
+"""
+Smart Control Operations
+Operators for smart control and manipulation of lights.
+"""
+# # Import modul utama Blender
 import bpy
-from ...utils import (
+from ..utils import (
     lumi_is_addon_enabled, lumi_reset_highlight,
     lumi_update_light_orientation, lumi_apply_kelvin_to_lights
 )
-from ...utils.light import lumi_get_light_pivot
-from ...utils.properties import LightControlProperties
-from ..positioning.utils import lumi_get_active_power_value
+from ..utils.light import lumi_get_light_pivot
+from ..utils.properties import LightControlProperties
+from .positioning.utils import lumi_get_active_power_value
 from mathutils import Vector
-from ...core.state import get_state
-from ...base_modal import BaseModalOperator
-from ...overlay import lumi_enable_cursor_overlay_handler, lumi_disable_cursor_overlay_handler
-from ...utils.mode_manager import ModeManager
+from ..core.state import get_state
+from ..base_modal import BaseModalOperator
+from ..overlay import lumi_enable_cursor_overlay_handler, lumi_disable_cursor_overlay_handler
+from ..utils.mode_manager import ModeManager
 
 
 # # Definisi class untuk Operator
@@ -529,6 +533,10 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
 
 # Register / unregister helpers for this module
 
+# Define exports for this module
+__all__ = (
+    'LUMI_OT_smart_control',
+)
 
 CLASSES = (
     LUMI_OT_smart_control,

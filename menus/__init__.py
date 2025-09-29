@@ -1,8 +1,10 @@
+"""
+Menus Module
+Contains all menu classes for the LumiFlow Blender addon UI.
+"""
 
-
-# # Import modul utama Blender
 import bpy
-# # Import dari modul lokal addon
+# Import dari modul lokal addon
 from . import pie_menus
 
 # Import semua menu untuk external access

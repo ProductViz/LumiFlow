@@ -1,4 +1,9 @@
-﻿import bpy
+"""
+Info Overlay Module
+Contains information display and text overlay functions.
+"""
+
+import bpy
 import math
 from mathutils import Vector
 from .utils import get_text_settings, get_config_colors, get_overlay_positions, draw_text

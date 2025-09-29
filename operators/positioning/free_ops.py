@@ -1,4 +1,7 @@
-# -*- coding: utf-8 -*-
+"""
+Free Positioning Operations
+Operators for free positioning and movement of lights.
+"""
 
 # Import modul utama Blender
 import bpy

@@ -1,4 +1,9 @@
-﻿import bpy
+"""
+Overlay Utilities
+Utility functions for overlay drawing, text rendering, and theme management.
+"""
+# # Import modul utama Blender
+import bpy
 import blf
 import math
 from typing import List, Tuple

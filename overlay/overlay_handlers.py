@@ -1,4 +1,9 @@
-﻿import bpy
+"""
+Overlay Handlers Module
+Contains draw handler management and scene update functions.
+"""
+
+import bpy
 from .config import overlay_manager
 
 # Global handlers (deprecated - menggunakan overlay_manager sekarang)

@@ -1,4 +1,9 @@
-﻿
+"""
+Target Operations
+Operators for target-based positioning and alignment of lights.
+"""
+
+# Import modul utama Blender
 import bpy
 from mathutils import Vector
 from bpy_extras import view3d_utils

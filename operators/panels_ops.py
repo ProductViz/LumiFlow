@@ -1,10 +1,8 @@
-﻿
 import bpy
 from ..utils.common import lumi_is_addon_enabled
 
 # # Definisi class untuk Operator
 class LUMI_OT_toggle_overlay_info(bpy.types.Operator):
-    """Operator untuk mengaktifkan/menonaktifkan overlay info lampu"""
     bl_idname = "lumi.toggle_overlay_info"
     bl_label = "Toggle Overlay Info"
     bl_description = "Toggle light info overlay visibility (D)"

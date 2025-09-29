@@ -1,8 +1,8 @@
-# # Import modul utama Blender
 import bpy
 
 class BaseModalOperator:
     """Base class untuk modal operator dengan fungsionalitas bersama"""
+    
     # Variabel untuk fungsionalitas modal inti
     _dragging = False
     _original_positions = {}

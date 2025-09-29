@@ -1,4 +1,9 @@
-﻿import bpy
+"""
+Move Operations
+Operators for moving and positioning lights.
+"""
+# Import modul utama Blender
+import bpy
 from mathutils import Vector
 from bpy_extras import view3d_utils
 from ...utils import lumi_is_addon_enabled

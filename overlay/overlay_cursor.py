@@ -1,4 +1,8 @@
-﻿
+"""
+Cursor Overlay Module
+Contains cursor and mouse interaction functions and smart overlay template.
+"""
+
 import bpy
 import math
 import blf

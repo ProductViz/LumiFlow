@@ -1,4 +1,9 @@
-﻿import bpy
+"""
+Mesh Overlay Module
+Contains mesh stroke and object outline functions.
+"""
+
+import bpy
 import bmesh
 import gpu
 from gpu_extras.batch import batch_for_shader

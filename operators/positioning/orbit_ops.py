@@ -1,4 +1,9 @@
-﻿
+"""
+Orbit Operations
+Operators for orbital positioning and rotation of lights around targets.
+"""
+
+# Import modul utama Blender
 import bpy
 from mathutils import Vector, Matrix
 import math

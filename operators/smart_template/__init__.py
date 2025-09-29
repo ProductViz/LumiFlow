@@ -1,5 +1,5 @@
 """
-LumiFlow Smart Template Module
+Smart Template Module
 Advanced lighting template system for intelligent light placement and configuration.
 """
 

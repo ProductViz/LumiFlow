@@ -1,4 +1,8 @@
-
+"""
+Main Panel Module
+Contains the main panel class for the LumiFlow Blender addon UI.
+"""
+# # Import modul utama Blender
 import bpy
 from ..utils import lumi_is_addon_enabled
 

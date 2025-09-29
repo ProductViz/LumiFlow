@@ -1,4 +1,3 @@
-
 # Import state management for backward compatibility
 from .state import get_state
 import warnings

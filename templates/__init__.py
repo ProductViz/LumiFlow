@@ -1,10 +1,6 @@
-﻿# LumiFlow - Smart lighting tools for Blender
-# SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (C) 2024 LumiFlow Developer
-
 """
-Template collection for LumiFlow addon
-Consolidated template library with all categories
+Templates Module
+Consolidated template library with all categories.
 """
 
 from .studio_commercial import STUDIO_COMMERCIAL_TEMPLATES

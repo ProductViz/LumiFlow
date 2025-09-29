@@ -1,3 +1,7 @@
+"""
+Light Utilities
+Contains specialized light-related utility functions: positioning, creation, intensity calculations, and mode management.
+"""
 
 import math
 # # Import modul utama Blender

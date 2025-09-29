@@ -1,10 +1,6 @@
-﻿# LumiFlow - Smart lighting tools for Blender
-# SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (C) 2024 LumiFlow Developer
-
 """
-LumiFlow Studio & Commercial Templates
-Professional lighting templates for studio photography, commercial work, and product photography
+Studio Commercial Templates
+Professional lighting templates for studio photography, commercial work, and product photography.
 """
 
 # Studio & Commercial Templates Collection

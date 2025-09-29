@@ -1,4 +1,3 @@
-
 import bpy
 from ..utils.common import lumi_is_addon_enabled, lumi_get_light_collection 
 

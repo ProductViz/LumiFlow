@@ -1,6 +1,8 @@
 # LumiFlow
 Smart lighting tools for Blender
 
+![LumiFlow Logo](assets/icons/lumiflow_logo.png)
+
 **LumiFlow** is a professional lighting workflow addon for Blender that provides smart placement, intelligent controls, and interactive positioning for lighting setups.
 
 ## 🌟 Features
@@ -87,9 +89,25 @@ Smart lighting tools for Blender
 - **`core/`**: Central state management and globals
 - **`operators/`**: All Blender operators organized by functionality
   - `positioning/`: Light placement and manipulation
+    - `flip_ops.py`: Light flipping operations
+    - `free_ops.py`: Free movement controls
+    - `highlight_ops.py`: Light highlighting and selection
+    - `move.py`: Light movement operations
+    - `normal_ops.py`: Normal-based positioning
+    - `orbit_ops.py`: Orbital movement controls
+    - `target_ops.py`: Target-based positioning
+    - `utils.py`: Positioning utilities
   - `smart_template/`: Template application and management
-  - `smart_control/`: Intelligent light controls
-  - `linking/`: Light linking and relationships
+    - `lighting_templates.py`: Template definitions
+    - `template_analyzer.py`: Template analysis tools
+    - `template_error_handling.py`: Error handling system
+    - `template_library.py`: Template management
+    - `template_ops.py`: Template operations
+  - `smart_ops.py`: Intelligent light controls
+  - `linking_ops.py`: Light linking and relationships
+  - `menus_ops.py`: Menu system operators
+  - `panels_ops.py`: Panel control operators
+  - `selection_ops.py`: Light selection operations
 - **`panels/`**: UI panels and interface elements
 - **`menus/`**: Menu system and pie menus
 - **`utils/`**: Utility functions and helpers
@@ -173,23 +191,39 @@ Access via `Edit > Preferences > Add-ons > LumiFlow`
 ### Project Structure
 ```
 LumiFlow/
-├── __init__.py              # Main addon file
-├── core/                   # Core functionality
-│   ├── state.py           # State management
-│   ├── globals.py         # Global variables
-│   └── camera_manager.py  # Camera operations
-├── operators/             # All operators
-│   ├── positioning/       # Light positioning
-│   ├── smart_template/    # Template system
-│   ├── smart_control/     # Smart controls
-│   └── linking/          # Light linking
-├── panels/               # UI panels
-├── menus/                # Menu system
-├── utils/                # Utility functions
-├── overlay/              # Visual feedback
-├── templates/            # Lighting templates
-├── assets/              # Resources
-└── docs/                # Documentation
+├── __init__.py                    # Main addon entry point and registration
+├── core/                         # Core system components
+│   ├── state.py                 # Global state management and session data
+│   ├── globals.py               # Global constants and configuration
+│   └── camera_manager.py        # Camera operations and viewport control
+├── operators/                   # All Blender operators and tools
+│   ├── positioning/             # Light positioning and manipulation tools
+│   │   ├── flip_ops.py          # Light flipping and orientation operations
+│   │   ├── free_ops.py          # Free-form movement and positioning
+│   │   ├── highlight_ops.py     # Light highlighting and visual selection
+│   │   ├── move.py              # Precise light movement operations
+│   │   ├── normal_ops.py        # Normal-based positioning and alignment
+│   │   ├── orbit_ops.py         # Orbital movement and rotation controls
+│   │   ├── target_ops.py        # Target-based positioning and aiming
+│   │   └── utils.py             # Positioning utilities and helper functions
+│   ├── smart_template/          # Template system and preset management
+│   │   ├── lighting_templates.py # Pre-defined lighting setups and configurations
+│   │   ├── template_analyzer.py # Template analysis and optimization tools
+│   │   ├── template_error_handling.py # Error handling and recovery system
+│   │   ├── template_library.py  # Template storage and management
+│   │   └── template_ops.py      # Template application and operations
+│   ├── smart_ops.py             # Intelligent light control and smart operations
+│   ├── linking_ops.py           # Light linking and relationship management
+│   ├── menus_ops.py             # Menu system and pie menu operations
+│   ├── panels_ops.py            # Panel control and UI operations
+│   └── selection_ops.py         # Light selection and group management
+├── panels/                      # User interface panels and UI elements
+├── menus/                       # Menu system and navigation components
+├── utils/                       # Utility functions and shared helpers
+├── overlay/                     # Visual feedback and drawing system
+├── templates/                   # Lighting template definitions and presets
+├── assets/                      # Icons, textures, and resource files
+└── docs/                        # Documentation and reference materials
 ```
 
 ### Building from Source

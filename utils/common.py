@@ -1,3 +1,7 @@
+"""
+Common Utilities
+Contains frequently used functions across various modules (operators, panels, menus, draw).
+"""
 
 # # Import modul utama Blender
 import bpy

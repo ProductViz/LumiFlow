@@ -1,4 +1,7 @@
-""
+"""
+Operator Utilities
+Contains specialized utility functions for operators: modal states, smart control, raycast, etc.
+"""
 
 # # Import modul utama Blender
 import bpy

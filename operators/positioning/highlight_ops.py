@@ -1,3 +1,7 @@
+"""
+Highlight Operations
+Operators for highlighting and visual feedback of lights.
+"""
 # Import modul utama Blender
 import bpy
 import bgl

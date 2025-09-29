@@ -1,4 +1,7 @@
-
+"""
+Icon Manager Module
+Manages PNG icons for overlay keymap display.
+"""
 import bpy
 import gpu
 import os
