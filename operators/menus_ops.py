@@ -88,8 +88,6 @@ class LUMI_OT_add_smart_light(bpy.types.Operator):
     setup_type : bpy.props.StringProperty(default="")
     area_shape : bpy.props.StringProperty(default="")
 
-
-
     @classmethod
     def poll(cls, context):
         return lumi_is_addon_enabled()
