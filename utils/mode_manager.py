@@ -671,3 +671,20 @@ def get_positioning_mode_status(light_obj: bpy.types.Object, positioning_type: s
     """
     return ModeManager._get_positioning_status(light_obj, positioning_type)
 
+
+# Define exported symbols for this module
+__all__ = [
+    'ModeManager',
+    'get_available_modes',
+    'is_mode_available',
+    'get_mode_label_for_light_type',
+    'get_smart_control_mode_info',
+    'get_all_available_modes_info',
+    'handle_all_smart_control_modes',
+    'get_active_positioning_mode',
+    'is_positioning_mode',
+    'get_positioning_modes',
+    'get_smart_control_modes',
+    'get_positioning_mode_status'
+]
+

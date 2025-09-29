@@ -16,7 +16,7 @@ from .operators import lumi_ray_cast_between_points
 
 @dataclass
 class SceneAnalysisResult:
-    """Hasil analisis scene."""
+    """Scene analysis result."""
     target_objects: List[bpy.types.Object]
     background_objects: List[bpy.types.Object]
     occluded_objects: List[bpy.types.Object]
@@ -28,23 +28,23 @@ class SceneAnalysisResult:
 
 def get_camera_frustum_planes(context: bpy.types.Context, camera_obj: bpy.types.Object) -> List[Dict[str, Any]]:
     """
-    Dapatkan plane-plane frustum kamera untuk deteksi objek dalam view.
+    Get camera frustum planes for object detection in view.
     
     Args:
         context: Blender context
-        camera_obj: Object kamera
+        camera_obj: Camera object
     
     Returns:
-        List of plane dictionaries dengan normal dan point
+        List of plane dictionaries with normal and point
     """
     if not camera_obj or camera_obj.type != 'CAMERA':
         return []
     
-    # Dapatkan camera data
+    # Get camera data
     camera_data = camera_obj.data
     scene = context.scene
     
-    # Hitung frustum berdasarkan camera type
+    # Calculate frustum based on camera type
     if camera_data.type == 'PERSP':
         # Perspective camera
         fov = camera_data.angle
@@ -57,7 +57,7 @@ def get_camera_frustum_planes(context: bpy.types.Context, camera_obj: bpy.types.
         cam_up = cam_matrix.col[1].normalized().to_3d()
         cam_right = cam_matrix.col[0].normalized().to_3d()
         
-        # Hitung frustum planes
+        # Calculate frustum planes
         planes = []
         
         # Near plane
@@ -152,7 +152,7 @@ def get_camera_frustum_planes(context: bpy.types.Context, camera_obj: bpy.types.
             'type': 'far'
         })
         
-        # Left, Right, Top, Bottom planes untuk orthographic
+        # Left, Right, Top, Bottom planes for orthographic
         half_scale = ortho_scale / 2
         
         # Left plane
@@ -192,51 +192,51 @@ def get_camera_frustum_planes(context: bpy.types.Context, camera_obj: bpy.types.
 
 def is_object_in_frustum(obj: bpy.types.Object, frustum_planes: List[Dict[str, Any]]) -> bool:
     """
-    Periksa apakah objek berada dalam camera frustum.
+    Check if object is within camera frustum.
     
     Args:
-        obj: Object yang diperiksa
+        obj: Object to check
         frustum_planes: List of frustum planes
     
     Returns:
-        True jika objek dalam frustum, False jika tidak
+        True if object is in frustum, False otherwise
     """
     if obj.type == 'EMPTY' or obj.hide_get():
         return False
     
-    # Dapatkan bounding box object dalam world space
+    # Get object bounding box in world space
     bbox_corners = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]
     
-    # Periksa apakah semua corner berada di luar salah satu plane
+    # Check if all corners are outside any plane
     for plane in frustum_planes:
         normal = plane['normal']
         point = plane['point']
         
-        # Periksa semua corner
+        # Check all corners
         all_outside = True
         for corner in bbox_corners:
-            # Hitung jarak dari corner ke plane
+            # Calculate distance from corner to plane
             distance = (corner - point).dot(normal)
-            if distance >= 0:  # Corner di dalam atau pada plane
+            if distance >= 0:  # Corner is inside or on plane
                 all_outside = False
                 break
         
         if all_outside:
-            return False  # Objek di luar frustum
+            return False  # Object is outside frustum
     
-    return True  # Objek dalam frustum
+    return True  # Object is in frustum
 
 
 def get_objects_in_camera_view(context: bpy.types.Context, camera_obj: bpy.types.Object = None) -> List[bpy.types.Object]:
     """
-    Dapatkan semua objek yang terlihat dalam camera view.
+    Get all objects visible in camera view.
     
     Args:
         context: Blender context
-        camera_obj: Camera object (jika None, gunakan active camera)
+        camera_obj: Camera object (if None, use active camera)
     
     Returns:
-        List of objects dalam camera view
+        List of objects in camera view
     """
     if camera_obj is None:
         camera_obj = context.scene.camera
@@ -247,7 +247,7 @@ def get_objects_in_camera_view(context: bpy.types.Context, camera_obj: bpy.types
     
     print(f"🔍 get_objects_in_camera_view: Using camera '{camera_obj.name}' (type: {camera_obj.data.type if camera_obj.data else 'NONE'})")
     
-    # Dapatkan frustum planes
+    # Get frustum planes
     frustum_planes = get_camera_frustum_planes(context, camera_obj)
     print(f"🔍 get_objects_in_camera_view: Got {len(frustum_planes)} frustum planes")
     
@@ -255,7 +255,7 @@ def get_objects_in_camera_view(context: bpy.types.Context, camera_obj: bpy.types
         print("🔍 get_objects_in_camera_view: No frustum planes generated")
         return []
     
-    # Kumpulkan semua objek dalam frustum
+    # Collect all objects in frustum
     objects_in_view = []
     total_objects_checked = 0
     
@@ -279,25 +279,25 @@ def is_object_occluded_from_camera(
     max_samples: int = 5
 ) -> Tuple[bool, List[Dict[str, Any]]]:
     """
-    Periksa apakah objek terhalang (occluded) dari view kamera.
+    Check if object is occluded from camera view.
     
     Args:
         context: Blender context
-        obj: Object yang diperiksa
+        obj: Object to check
         camera_obj: Camera object
-        max_samples: Jumlah maksimum sampling points
+        max_samples: Maximum number of sampling points
     
     Returns:
-        Tuple (is_occluded, occlusion_data)
+        Tuple (is_occluded, occlusion_results)
     """
     camera_pos = camera_obj.matrix_world.translation
     
-    # Dapatkan beberapa titik pada objek untuk pengujian
+    # Get several points on object for testing
     bbox_corners = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]
     
-    # Pilih titik-titik representatif (kurangi sampling untuk performance)
+    # Select representative points (reduce sampling for performance)
     if len(bbox_corners) > max_samples:
-        # Pilih titik-titik yang paling jauh dari center
+        # Select points farthest from center
         obj_center = obj.matrix_world.translation
         corners_with_distance = [
             (corner, (corner - obj_center).length_squared) 
@@ -312,7 +312,7 @@ def is_object_occluded_from_camera(
     occluded_count = 0
     
     for point in test_points:
-        # Lakukan raycast dari kamera ke titik objek
+        # Perform raycast from camera to object point
         has_obstruction, hit_obj, hit_location, distance = lumi_ray_cast_between_points(
             context, camera_pos, point, exclude_objects=[obj]
         )
@@ -330,7 +330,7 @@ def is_object_occluded_from_camera(
         if has_obstruction:
             occluded_count += 1
     
-    # Objek dianggap occluded jika lebih dari 50% test points terhalang
+    # Object is considered occluded if more than 50% of test points are blocked
     is_occluded = occluded_count > len(test_points) * 0.5
     
     return is_occluded, occlusion_data
@@ -342,15 +342,15 @@ def classify_objects_by_background(
     camera_obj: bpy.types.Object = None
 ) -> SceneAnalysisResult:
     """
-    Klasifikasikan objek menjadi target dan background berdasarkan view kamera.
+    Classify objects into target and background based on camera view.
     
     Args:
         context: Blender context
-        target_objects: List of target objects yang dianggap sebagai subjek utama
-        camera_obj: Camera object (jika None, gunakan active camera)
+        target_objects: List of target objects considered as main subjects
+        camera_obj: Camera object (if None, use active camera)
     
     Returns:
-        SceneAnalysisResult dengan klasifikasi objek
+        SceneAnalysisResult with object classification
     """
     try:
         if camera_obj is None:
@@ -367,11 +367,11 @@ def classify_objects_by_background(
                 analysis_metadata={'error': 'No camera found'}
             )
         
-        # Dapatkan posisi dan arah kamera
+        # Get camera position and direction
         camera_position = camera_obj.matrix_world.translation
         camera_direction = -camera_obj.matrix_world.col[2].normalized()
         
-        # Validasi Vector
+        # Validate Vector
         if not isinstance(camera_position, Vector):
             print(f"❌ Error: camera_position is not Vector: {type(camera_position)}")
             camera_position = Vector()
@@ -380,17 +380,17 @@ def classify_objects_by_background(
             print(f"❌ Error: camera_direction is not Vector: {type(camera_direction)}")
             camera_direction = Vector((0, 0, -1))
         
-        # Dapatkan semua objek dalam camera view
+        # Get all objects in camera view
         view_frustum_objects = get_objects_in_camera_view(context, camera_obj)
         
-        # Klasifikasikan objek
+        # Classify objects
         classified_targets = []
         classified_background = []
         occluded_objects = []
         
         for obj in view_frustum_objects:
             if obj in target_objects:
-                # Periksa apakah target object terhalang
+                # Check if target object is occluded
                 try:
                     is_occluded, _ = is_object_occluded_from_camera(context, obj, camera_obj)
                     
@@ -400,18 +400,18 @@ def classify_objects_by_background(
                         classified_targets.append(obj)
                 except Exception as e:
                     print(f"❌ Error checking occlusion for {obj.name}: {e}")
-                    # Anggap tidak terhalang jika ada error
+                    # Assume not occluded if there's an error
                     classified_targets.append(obj)
             else:
-                # Objek lain dianggap background
+                # Other objects are considered background
                 classified_background.append(obj)
         
-        # Tambahkan target objects yang tidak dalam view ke occluded
+        # Add target objects not in view to occluded
         for obj in target_objects:
             if obj not in view_frustum_objects and obj not in occluded_objects:
                 occluded_objects.append(obj)
         
-        # Buat metadata analisis
+        # Create analysis metadata
         analysis_metadata = {
             'total_objects_in_view': len(view_frustum_objects),
             'target_objects_count': len(classified_targets),
@@ -453,7 +453,7 @@ def get_background_distance_analysis(
     camera_obj: bpy.types.Object = None
 ) -> Dict[str, Any]:
     """
-    Analisis jarak background objects dari kamera.
+    Analyze background object distances from camera.
     
     Args:
         context: Blender context
@@ -461,7 +461,7 @@ def get_background_distance_analysis(
         camera_obj: Camera object
     
     Returns:
-        Dictionary dengan analisis jarak background
+        Dictionary with background distance analysis
     """
     if camera_obj is None:
         camera_obj = context.scene.camera
@@ -493,7 +493,7 @@ def get_background_distance_analysis(
         distance = (obj_center - camera_pos).length
         distances.append(distance)
         
-        # Klasifikasikan berdasarkan jarak
+        # Classify by distance
         if distance <= 10:
             distance_analysis['distance_groups']['near'].append(obj.name)
         elif distance <= 50:
@@ -517,25 +517,25 @@ def create_background_selection_set(
     set_name: str = "LumiFlow_Background_Objects"
 ) -> bpy.types.Collection:
     """
-    Buat collection khusus untuk background objects.
+    Create a dedicated collection for background objects.
     
     Args:
         context: Blender context
         background_objects: List of background objects
-        set_name: Nama collection yang akan dibuat
+        set_name: Name of the collection to be created
     
     Returns:
-        Collection yang berisi background objects
+        Collection containing background objects
     """
-    # Hapus collection jika sudah ada
+    # Remove collection if it already exists
     if set_name in bpy.data.collections:
         bpy.data.collections.remove(bpy.data.collections[set_name])
     
-    # Buat collection baru
+    # Create new collection
     background_collection = bpy.data.collections.new(set_name)
     context.scene.collection.children.link(background_collection)
     
-    # Tambahkan background objects ke collection
+    # Add background objects to collection
     for obj in background_objects:
         if obj not in background_collection.objects:
             background_collection.objects.link(obj)
@@ -549,7 +549,7 @@ def analyze_background_for_lighting(
     camera_obj: bpy.types.Object = None
 ) -> Dict[str, Any]:
     """
-    Analisis background untuk keperluan lighting setup.
+    Analyze background for lighting setup purposes.
     
     Args:
         context: Blender context
@@ -557,17 +557,17 @@ def analyze_background_for_lighting(
         camera_obj: Camera object
     
     Returns:
-        Dictionary lengkap dengan analisis background untuk lighting
+        Complete dictionary with background analysis for lighting
     """
-    # Klasifikasikan objek
+    # Classify objects
     analysis_result = classify_objects_by_background(context, target_objects, camera_obj)
     
-    # Analisis jarak background
+    # Analyze background distance
     distance_analysis = get_background_distance_analysis(
         context, analysis_result.background_objects, camera_obj
     )
     
-    # Buat lighting recommendations
+    # Create lighting recommendations
     lighting_recommendations = {
         'background_lighting_needed': len(analysis_result.background_objects) > 0,
         'background_separation_good': False,
@@ -576,23 +576,23 @@ def analyze_background_for_lighting(
         'key_lighting_recommendations': []
     }
     
-    # Analisis untuk lighting recommendations
+    # Analysis for lighting recommendations
     if analysis_result.background_objects:
         nearest_bg_distance = distance_analysis.get('nearest_background', float('inf'))
         
-        # Rekomendasi berdasarkan jarak background
+        # Recommendations based on background distance
         if nearest_bg_distance > 20:
             lighting_recommendations['background_separation_good'] = True
             lighting_recommendations['rim_lighting_recommended'] = True
         elif nearest_bg_distance > 5:
             lighting_recommendations['fill_lighting_recommended'] = True
         else:
-            # Background terlalu dekat, perlu careful lighting
+            # Background too close, need careful lighting
             lighting_recommendations['key_lighting_recommendations'].append(
-                "Gunakan lighting yang precise untuk memisahkan target dari background"
+                "Use precise lighting to separate target from background"
             )
     
-    # Gabungkan semua hasil analisis
+    # Combine all analysis results
     complete_analysis = {
         'background_classification': analysis_result,
         'distance_analysis': distance_analysis,
@@ -612,20 +612,20 @@ def get_object_thickness_analysis(
     context: bpy.types.Context,
     target_objects: List[bpy.types.Object],
     camera_obj: bpy.types.Object = None,
-    sample_points: int = 2  # Dikurangi lagi karena fokus pada sumbu Z saja
+    sample_points: int = 2  # Reduced again because focus on Z-axis only
 ) -> Dict[str, Any]:
     """
-    Analisis ketebalan objek target menggunakan raycast sampling di sumbu Z kamera.
-    Sampling fokus pada sumbu Z kamera karena light ditempatkan di posisi ini.
+    Analyze target object thickness using raycast sampling on camera Z-axis.
+    Sampling focuses on camera Z-axis because lights are placed at this position.
     
     Args:
         context: Blender context
-        target_objects: List of target objects yang akan dianalisis
-        camera_obj: Camera object (jika None, gunakan active camera)
-        sample_points: Jumlah sampling points per objek di sepanjang sumbu Z kamera
+        target_objects: List of target objects to be analyzed
+        camera_obj: Camera object (if None, use active camera)
+        sample_points: Number of sampling points per object along camera Z-axis
     
     Returns:
-        Dictionary dengan analisis ketebalan untuk setiap objek target
+        Dictionary with thickness analysis for each target object
     """
     thickness_analysis = {
         'objects_analyzed': 0,
@@ -638,7 +638,7 @@ def get_object_thickness_analysis(
     }
     
     try:
-        # Dapatkan kamera
+        # Get camera
         if camera_obj is None:
             camera_obj = context.scene.camera
         
@@ -659,80 +659,80 @@ def get_object_thickness_analysis(
             
             # Analyzing thickness for object
             
-            # Dapatkan bounding box objek dalam world coordinates
+            # Get object bounding box in world coordinates
             bbox_world = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]
             
-            # Hitung center objek
+            # Calculate object center
             obj_center = sum(bbox_world, Vector()) / 8.0
             
-            # Dapatkan dimensi bounding box
+            # Get bounding box dimensions
             bbox_dimensions = {
                 'x': max(corner.x for corner in bbox_world) - min(corner.x for corner in bbox_world),
                 'y': max(corner.y for corner in bbox_world) - min(corner.y for corner in bbox_world),
                 'z': max(corner.z for corner in bbox_world) - min(corner.z for corner in bbox_world)
             }
             
-            # Generate sampling points di sumbu Z kamera (karena light ditempatkan di sini)
+            # Generate sampling points on camera Z-axis (because lights are placed here)
             sampling_points = []
             directions = []
             
-            # Karena light ditempatkan di sumbu Z kamera, kita hanya perlu sampling di sepanjang sumbu ini
+            # Because lights are placed on camera Z-axis, we only need to sample along this axis
             camera_to_obj = (obj_center - camera_position).normalized()
             
-            # Generate sampling points yang lebih jauh dari objek untuk raycast yang lebih baik
+            # Generate sampling points further from object for better raycast
             max_dimension = max(bbox_dimensions.values())
-            sampling_distance = max_dimension * 0.8  # Sampling di 80% dari dimensi objek
+            sampling_distance = max_dimension * 0.8  # Sampling at 80% of object dimension
             
             # Camera to object analysis completed
             
-            # Generate sampling points di sepanjang sumbu Z kamera
+            # Generate sampling points along camera Z-axis
             for i in range(sample_points):
-                # Buat sampling points yang lebih jauh dari center objek
-                # Ini memastikan raycast benar-benar menembus objek
+                # Create sampling points further from object center
+                # This ensures raycast truly penetrates the object
                 offset_distance = (i - (sample_points - 1) / 2) * sampling_distance
                 
-                # Hitung titik sampling di sepanjang sumbu kamera-objek
+                # Calculate sampling point along camera-object axis
                 sample_point = obj_center + camera_to_obj * offset_distance
-                direction = camera_to_obj  # Gunakan arah kamera
+                direction = camera_to_obj  # Use camera direction
                 
                 sampling_points.append(sample_point)
                 directions.append(direction)
                 
                 # Sample point calculated
                 
-                # Tambahkan sampling dari arah berlawanan hanya untuk titik tengah
-                # untuk validasi ketebalan dari kedua sisi
-                if i == sample_points // 2:  # Titik tengah
+                # Add sampling from opposite direction only for midpoint
+                # for thickness validation from both sides
+                if i == sample_points // 2:  # Midpoint
                     opposite_direction = -camera_to_obj
                     sampling_points.append(sample_point)
                     directions.append(opposite_direction)
                     # Opposite sample point calculated
             
-            # Lakukan raycast sampling untuk mengukur ketebalan
+            # Perform raycast sampling to measure thickness
             thickness_measurements = []
-            front_surface_locations = []  # Kumpulkan lokasi permukaan depan
-            back_surface_locations = []   # Kumpulkan lokasi permukaan belakang
+            front_surface_locations = []  # Collect front surface locations
+            back_surface_locations = []   # Collect back surface locations
             
             for i, (start_point, direction) in enumerate(zip(sampling_points, directions)):
                 try:
-                    # Raycast dari luar objek menuju objek
-                    # Gunakan jarak yang lebih besar untuk memastikan kita mulai dari luar
-                    ray_start = start_point + direction * (max_dimension * 2 + 10.0)  # Mulai dari jauh di luar
-                    ray_end = start_point - direction * (max_dimension * 2 + 10.0)   # Akhir di jauh di sisi lain
+                    # Raycast from outside object towards object
+                    # Use larger distance to ensure we start from outside
+                    ray_start = start_point + direction * (max_dimension * 2 + 10.0)  # Start from far outside
+                    ray_end = start_point - direction * (max_dimension * 2 + 10.0)   # End at far on other side
                     
                     # Ray cast initialized
                     
-                    # Cari intersection points
+                    # Find intersection points
                     has_hit1, hit_obj1, hit_loc1, dist1 = lumi_ray_cast_between_points(
                         context, ray_start, ray_end, exclude_objects=[]
                     )
                     
                     if has_hit1 and hit_obj1 == obj:
-                        # Lanjutkan raycast dari titik pertama untuk mencari sisi lain
-                        # Gunakan arah yang berlawanan untuk mencari sisi lain objek
+                        # Continue raycast from first point to find other side
+                        # Use opposite direction to find other side of object
                         opposite_direction = -direction
-                        ray_start2 = hit_loc1 + opposite_direction * 0.01  # Offset dengan arah berlawanan
-                        ray_end2 = hit_loc1 + opposite_direction * (max_dimension * 2 + 10.0)  # Raycast ke sisi lain
+                        ray_start2 = hit_loc1 + opposite_direction * 0.01  # Offset with opposite direction
+                        ray_end2 = hit_loc1 + opposite_direction * (max_dimension * 2 + 10.0)  # Raycast to other side
                         
                         # Second ray cast initialized
                         has_hit2, hit_obj2, hit_loc2, dist2 = lumi_ray_cast_between_points(
@@ -740,24 +740,24 @@ def get_object_thickness_analysis(
                         )
                         
                         if has_hit2 and hit_obj2 == obj:
-                            # Validasi bahwa kedua titik berbeda secara signifikan
+                            # Validate that both points are significantly different
                             thickness = (hit_loc1 - hit_loc2).length
                             # Thickness measurement calculated
                             
-                            # Tambahkan validasi tambahan untuk memastikan ketebalan masuk akal
-                            if thickness > 0.001 and thickness < max_dimension * 3:  # Filter nilai terlalu kecil dan terlalu besar
+                            # Add additional validation to ensure thickness is reasonable
+                            if thickness > 0.001 and thickness < max_dimension * 3:  # Filter too small and too large values
                                 thickness_measurements.append(thickness)
                                 
-                                # Tentukan mana front surface dan back surface berdasarkan jarak ke kamera
+                                # Determine which is front surface and back surface based on distance to camera
                                 dist1_to_camera = (hit_loc1 - camera_position).length
                                 dist2_to_camera = (hit_loc2 - camera_position).length
                                 
                                 if dist1_to_camera < dist2_to_camera:
-                                    # hit_loc1 lebih dekat ke kamera = front surface
+                                    # hit_loc1 closer to camera = front surface
                                     front_surface_locations.append(hit_loc1)
                                     back_surface_locations.append(hit_loc2)
                                 else:
-                                    # hit_loc2 lebih dekat ke kamera = front surface
+                                    # hit_loc2 closer to camera = front surface
                                     front_surface_locations.append(hit_loc2)
                                     back_surface_locations.append(hit_loc1)
                                 
@@ -776,13 +776,13 @@ def get_object_thickness_analysis(
                     # Error in thickness sampling - continuing
                     continue
             
-            # Hitung statistik ketebalan untuk objek ini
+            # Calculate thickness statistics for this object
             if thickness_measurements:
                 avg_thickness = sum(thickness_measurements) / len(thickness_measurements)
                 max_obj_thickness = max(thickness_measurements)
                 min_obj_thickness = min(thickness_measurements)
                 
-                # Hitung rata-rata lokasi permukaan depan dan belakang
+                # Calculate average front and back surface locations
                 avg_front_surface = None
                 avg_back_surface = None
                 
@@ -801,18 +801,18 @@ def get_object_thickness_analysis(
                     'min_thickness': min_obj_thickness,
                     'measurements': thickness_measurements,
                     'sample_count': len(thickness_measurements),
-                    'total_samples': len(sampling_points),  # Tambahkan info total samples
-                    'success_rate': len(thickness_measurements) / len(sampling_points),  # Tambahkan success rate
+                    'total_samples': len(sampling_points),  # Add total samples info
+                    'success_rate': len(thickness_measurements) / len(sampling_points),  # Add success rate
                     'bounding_box_dimensions': bbox_dimensions,
                     'object_center': obj_center,
                     'method': 'camera_z_axis_sampling',
-                    'front_surface_location': avg_front_surface,  # Tambahkan lokasi permukaan depan
-                    'back_surface_location': avg_back_surface    # Tambahkan lokasi permukaan belakang
+                    'front_surface_location': avg_front_surface,  # Add front surface location
+                    'back_surface_location': avg_back_surface    # Add back surface location
                 }
                 
                 thickness_analysis['thickness_data'][obj.name] = thickness_data
                 
-                # Update statistik keseluruhan
+                # Update overall statistics
                 total_thickness += avg_thickness
                 thickness_analysis['max_thickness'] = max(thickness_analysis['max_thickness'], max_obj_thickness)
                 thickness_analysis['min_thickness'] = min(thickness_analysis['min_thickness'], min_obj_thickness)
@@ -822,7 +822,7 @@ def get_object_thickness_analysis(
             else:
                 # No valid thickness measurements - using fallback
                 
-                # Fallback ke bounding box dimensions - gunakan dimensi terbesar sebagai ketebalan
+                # Fallback to bounding box dimensions - use largest dimension as thickness
                 fallback_thickness = max(bbox_dimensions.values())
                 thickness_data = {
                     'object_name': obj.name,
@@ -844,7 +844,7 @@ def get_object_thickness_analysis(
                 
                 # Using bounding box fallback thickness
         
-        # Hitung final statistics
+        # Calculate final statistics
         thickness_analysis['objects_analyzed'] = valid_objects
         if valid_objects > 0:
             thickness_analysis['average_thickness'] = total_thickness / valid_objects

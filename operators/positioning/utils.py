@@ -3,7 +3,6 @@ Positioning Utilities
 Contains specialized utilities only used within positioning operators.
 """
 
-# # Import modul utama Blender
 import bpy
 from mathutils import Vector
 
@@ -66,12 +65,13 @@ def validate_positioning_target(obj: bpy.types.Object) -> bool:
         return False
     
     # Check if object has geometry
-    # # Coba eksekusi kode dengan error handling
+    # Try to execute code with error handling
     try:
         if obj.type == 'MESH' and obj.data:
             return len(obj.data.vertices) > 0
         return True
     except:
+        # Handle exception when checking object geometry
         return False
 
 

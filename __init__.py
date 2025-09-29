@@ -12,35 +12,30 @@ import bpy
 import importlib
 import sys
 
-# Import modules
+# Import addon modules
 from . import base_modal
 from . import registration
 
 # Development mode - reload modules when script reloads
 if "bpy" in locals():
     try:
-        # Get addon name for finding all related modules
         addon_name = __name__.split('.')[0]
         
-        # Reload all addon modules with error handling
         modules_to_reload = []
         for name, module in sys.modules.items():
             if name.startswith(addon_name + '.') and name != __name__:
                 modules_to_reload.append((name, module))
         
-        # Sort modules to reload dependencies first (deeper modules first)
         modules_to_reload.sort(key=lambda x: x[0].count('.'), reverse=True)
         
         for name, module in modules_to_reload:
             try:
                 importlib.reload(module)
             except ImportError:
-                # Continue with other modules
                 pass
             except Exception:
                 pass
         
-        # Reload base modules after others
         try:
             importlib.reload(base_modal)
         except Exception:
@@ -54,7 +49,7 @@ if "bpy" in locals():
     except Exception:
         pass
 
-# Import BaseModalOperator to make it available for other modules
+# Export BaseModalOperator for use by other modules
 from .base_modal import BaseModalOperator
 
 def register():
@@ -189,12 +184,7 @@ class LUMIFLOW_OT_stop_all_modals(bpy.types.Operator):
                     if area.type == 'VIEW_3D':
                         # Override context and try to send escape
                         with context.temp_override(window=window, area=area):
-                            try:
-                                # Create a fake ESC event to trigger modal cancellation
-                                # This is hacky but sometimes necessary
-                                pass  # We'll rely on the cleanup methods above
-                            except:
-                                pass
+                            pass  
         except Exception as e:
             print(f"Error sending escape events: {e}")
 

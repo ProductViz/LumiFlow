@@ -3,7 +3,7 @@ Lighting Templates Module
 Main operators for applying photographic lighting templates.
 """
 
-# # Import modul utama Blender
+# Import Blender modules
 import bpy
 import math
 import re
@@ -29,7 +29,6 @@ from .template_error_handling import (
 )
 
 
-# # Definisi class untuk Operator
 class LUMI_OT_apply_lighting_template(bpy.types.Operator):
     """Apply photographic lighting template to selected objects"""
     bl_idname = "lumi.apply_lighting_template"
@@ -133,41 +132,33 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
         return "Apply professional lighting template to selected objects"
     
     @classmethod
-    # # Method untuk menentukan kapan operator/panel aktif
     def poll(cls, context):
         """Check if operator can be executed"""
         return (lumi_is_addon_enabled() and 
                 context.mode == 'OBJECT' and
-                # # Ambil objek yang dipilih dalam scene
                 len(context.selected_objects) > 0)
 
     def validate_context(self, context):
         """Validate context for template application"""
-        # # Coba eksekusi kode dengan error handling
         try:
             if not context or not context.scene:
                 return False
             if not lumi_is_addon_enabled():
                 return False
-            # # Ambil objek yang dipilih dalam scene
             if not context.selected_objects:
                 return False
-            # # Ambil objek yang dipilih dalam scene
             if not any(obj.type == 'MESH' for obj in context.selected_objects):
                 return False
             return True
-        # # Tangani error jika terjadi
         except Exception:
             return False
 
-    # # Method utama eksekusi operator
     def execute(self, context):
         """Main execution method with comprehensive error handling"""
         return self._execute_with_error_handling(context)
     
     def _execute_with_error_handling(self, context):
         """Execution with full error handling and optimization"""
-        # # Coba eksekusi kode dengan error handling
         try:
             with safe_template_context(self, "apply template") as operation_stack:
                 # 1. Validate scene before starting
@@ -183,7 +174,6 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                 # Validate scene
                 errors, warnings = validate_scene_for_template(context, template)
                 if not report_errors(self, errors, warnings):
-                    # # Batalkan operasi
                     return {'CANCELLED'}
                 
                 # 2. Get selected objects
@@ -249,18 +239,13 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                 success_msg = f"Applied '{self.template_id}' template: {len(lights_created)} lights created"
                 
                 self.report({'INFO'}, success_msg)
-                # # Selesaikan operasi dengan sukses
                 return {'FINISHED'}
                 
-        # # Tangani error jika terjadi
         except (TemplateError, TemplateOperationError) as e:
             # Already handled by context manager
-            # # Batalkan operasi
             return {'CANCELLED'}
-        # # Tangani error jika terjadi
         except Exception as e:
             report_exception(self, e, "apply template")
-            # # Batalkan operasi
             return {'CANCELLED'}
     
     def _cleanup_failed_lights(self, lights_to_cleanup):
@@ -268,12 +253,9 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
         if not lights_to_cleanup:
             return
             
-        # # Coba eksekusi kode dengan error handling
         try:
             for light_obj in lights_to_cleanup:
-                # # Coba eksekusi kode dengan error handling
                 try:
-                    # # Akses data objek Blender
                     if light_obj and light_obj.name in bpy.data.objects:
                         # Remove from all collections
                         for collection in light_obj.users_collection:
@@ -283,14 +265,11 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                         if light_obj.data:
                             bpy.data.lights.remove(light_obj.data, do_unlink=True)
                         else:
-                            # # Akses data objek Blender
                             bpy.data.objects.remove(light_obj, do_unlink=True)
                             
-                # # Tangani error jika terjadi
                 except Exception as cleanup_error:
                     pass
                     
-        # # Tangani error jika terjadi
         except Exception as e:
             pass
     
@@ -329,16 +308,16 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
     
     def _finalize_template_application(self, lights_created, context):
         """Final setup after template application"""
-        # # Coba eksekusi kode dengan error handling
         try:
             # Select created lights
             bpy.ops.object.select_all(action='DESELECT')
+            
             for light_obj in lights_created:
                 light_obj.select_set(True)
+            
             if lights_created:
                 context.view_layer.objects.active = lights_created[0]
             
-        # # Tangani error jika terjadi
         except Exception as e:
             self.report({'ERROR'}, f"Template application failed: {str(e)}")
     
@@ -371,7 +350,6 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
 
         # Process each light in template
         for light_index, light_template in enumerate(template.get('lights', [])):
-            # # Coba eksekusi kode dengan error handling
             try:
                 position_data = light_template.get('position', {})
                 method = position_data.get('method', 'spherical')
@@ -482,7 +460,6 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                 
                 positions.append(position_data)
                 
-            # # Tangani error jika terjadi
             except Exception as e:
                 self.report({'ERROR'}, f"Error calculating position for light {light_index}: {str(e)}")
                 continue
@@ -701,12 +678,10 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
     
     def create_lights_at_positions(self, positions: List[Dict[str, Any]], context: bpy.types.Context) -> List[bpy.types.Object]:
         """Create lights at specified positions"""
-        # # Coba eksekusi kode dengan error handling
         try:
             created_lights = []
 
             for position_data in positions:
-                # # Coba eksekusi kode dengan error handling
                 try:
                     light_template = position_data['light_template']
                     world_pos = position_data['world_position']
@@ -775,7 +750,6 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                         light_data.size = 1.0 * self.size_multiplier
 
                     # Create light object
-                    # # Akses data objek Blender
                     light_obj = bpy.data.objects.new(name=light_name, object_data=light_data)
                     light_obj.location = world_pos
 
@@ -827,14 +801,12 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                     except Exception:
                         pass
 
-                # # Tangani error jika terjadi
                 except Exception as e:
                     self.report({'ERROR'}, f"Error creating light '{light_name}': {e}")
                     continue
 
             return created_lights
 
-        # # Tangani error jika terjadi
         except Exception as e:
             self.report({'ERROR'}, f"Error in create_lights_at_positions: {e}")
             return []
@@ -997,7 +969,6 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
 
     def apply_material_adjustments(self, lights: List[bpy.types.Object], analysis: SubjectAnalysis, selected_objects: List[bpy.types.Object]):
         """Apply material-based light adjustments with advanced analysis"""
-        # # Coba eksekusi kode dengan error handling
         try:
             # Use advanced material adaptation if enabled
             if self.use_material_adaptation:
@@ -1010,14 +981,12 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                     
                     # Apply advanced recommendations to each light
                     for light_obj in lights:
-                        # # Coba eksekusi kode dengan error handling
                         try:
                             apply_material_adjustments(light_obj, recommendations)
                             
                             # Apply additional template-specific adjustments
                             self.apply_template_specific_adjustments(light_obj, advanced_analysis)
                             
-                        # # Tangani error jika terjadi
                         except Exception as e:
                             pass
                             continue
@@ -1027,7 +996,6 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
             # Fallback to basic material adjustments
             self.apply_basic_material_adjustments(lights, analysis)
             
-        # # Tangani error jika terjadi
         except Exception as e:
             pass
             # Fallback to basic adjustments
@@ -1035,14 +1003,12 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
    
     def apply_basic_material_adjustments(self, lights: List[bpy.types.Object], analysis: SubjectAnalysis):
         """Apply basic material-based light adjustments (legacy method)"""
-        # # Coba eksekusi kode dengan error handling
         try:
             material_type = analysis.materials.get("dominant_type", "dielectric")
             roughness = analysis.materials.get("average_roughness", 0.5)
             has_emission = analysis.materials.get("has_emission", False)
 
             for light_obj in lights:
-                # # Coba eksekusi kode dengan error handling
                 try:
                     light_data = light_obj.data
                     
@@ -1069,18 +1035,15 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                     if has_emission:
                         light_data.energy *= 0.7
 
-                # # Tangani error jika terjadi
                 except Exception as e:
                     pass
                     continue
 
-        # # Tangani error jika terjadi
         except Exception as e:
             pass
 
     def apply_template_specific_adjustments(self, light_obj: bpy.types.Object, advanced_analysis: Dict[str, Any]):
         """Apply template-specific adjustments based on advanced material analysis"""
-        # # Coba eksekusi kode dengan error handling
         try:
             properties = advanced_analysis.get("properties", {})
             complexity = advanced_analysis.get("complexity_score", 1.0)
@@ -1137,13 +1100,11 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                     current_color[1] *= 1.01
                     light_obj.data.color = current_color
                     
-        # # Tangani error jika terjadi
         except Exception as e:
             pass
 
     def clear_existing_lights(self, context):
         """Remove existing lights from LumiFlow collection based on assignment mode"""
-        # # Coba eksekusi kode dengan error handling
         try:
             collection = lumi_get_light_collection(context.scene)
             if not collection:
@@ -1152,7 +1113,6 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
             # Get current assignment mode
             assignment_mode = getattr(context.scene, 'lumi_light_assignment_mode', 'CAMERA')
             
-            # # Periksa apakah objek adalah lampu
             all_lights = [obj for obj in collection.objects if obj.type == 'LIGHT']
             lights_to_remove = []
             
@@ -1201,57 +1161,45 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
             
             # Remove the filtered lights
             for light_obj in lights_to_remove:
-                # # Coba eksekusi kode dengan error handling
                 try:
                     # Remove from collection
                     collection.objects.unlink(light_obj)
                     
                     # Remove from scene if not in other collections
                     if len(light_obj.users_collection) == 0:
-                        # # Akses data objek Blender
                         bpy.data.objects.remove(light_obj, do_unlink=True)
                         
-                # # Tangani error jika terjadi
                 except Exception as e:
                     pass
 
-        # # Tangani error jika terjadi
         except Exception as e:
             pass
 
-    # # Method dipanggil saat operator dimulai
     def invoke(self, context, event):
         """Invoke operator with dialog"""
         return context.window_manager.invoke_props_dialog(self, width=400)
 
-    # # Method untuk menggambar UI
     def draw(self, context):
         """Draw operator properties in dialog"""
         layout = self.layout
         
         # Template selection
         layout.label(text="Template Settings:", icon='LIGHT')
-        # # Tambahkan property ke UI
         layout.prop(self, "template_id")
         
         layout.separator()
         
         # Scaling options
         layout.label(text="Scaling Options:", icon='TRANSFORM_ORIGINS')
-        # # Tambahkan property ke UI
         layout.prop(self, "auto_scale")
-        # # Tambahkan property ke UI
         layout.prop(self, "intensity_multiplier")
-        # # Tambahkan property ke UI
         layout.prop(self, "size_multiplier")
         
         layout.separator()
         
         # Positioning options
         layout.label(text="Positioning Options:", icon='OBJECT_ORIGIN')
-        # # Tambahkan property ke UI
         layout.prop(self, "use_camera_relative")
-        # # Buat baris horizontal UI
         row = layout.row()
         row.prop(self, "manual_distance")
         row.enabled = not self.auto_scale
@@ -1260,24 +1208,19 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
         
         # Advanced options
         layout.label(text="Advanced Options:", icon='PREFERENCES')
-        # # Tambahkan property ke UI
         layout.prop(self, "preserve_existing")
         
         layout.separator()
         
         # Obstruction detection options
         layout.label(text="Obstruction Detection:", icon='MODIFIER')
-        # # Tambahkan property ke UI
         layout.prop(self, "enable_obstruction_detection")
         
         if self.enable_obstruction_detection:
-            # # Tambahkan property ke UI
-            layout.prop(self, "obstruction_fallback_strategy")
-            # # Tambahkan property ke UI
-            layout.prop(self, "show_obstruction_warnings")
+                layout.prop(self, "obstruction_fallback_strategy")
+                layout.prop(self, "show_obstruction_warnings")
 
 
-# # Definisi class untuk Operator
 class LUMI_OT_preview_template(bpy.types.Operator):
     bl_idname = "lumi.preview_template"
     bl_label = "Preview Template"
@@ -1301,17 +1244,13 @@ class LUMI_OT_preview_template(bpy.types.Operator):
     _available_templates = []
     
     @classmethod
-    # # Method untuk menentukan kapan operator/panel aktif
     def poll(cls, context):
         return (lumi_is_addon_enabled() and 
                 context.mode == 'OBJECT' and
-                # # Ambil objek yang dipilih dalam scene
                 len(context.selected_objects) > 0)
     
-    # # Method dipanggil saat operator dimulai
     def invoke(self, context, event):
         """Initialize preview mode"""
-        # # Coba eksekusi kode dengan error handling
         try:
             # 1. Create temporary collection for preview lights
             if "LumiFlow_Preview" in bpy.data.collections:
@@ -1323,7 +1262,6 @@ class LUMI_OT_preview_template(bpy.types.Operator):
             # 2. Store original lights state
             self._original_lights = []
             for obj in context.scene.objects:
-                # # Periksa apakah objek adalah lampu
                 if obj.type == 'LIGHT':
                     self._original_lights.append({
                         'object': obj,
@@ -1352,49 +1290,38 @@ class LUMI_OT_preview_template(bpy.types.Operator):
             # Show instructions
             self.report({'INFO'}, "Preview Mode: Scroll=Intensity, R=Rotate, Tab=Next Template, Enter=Apply, Esc=Cancel")
             
-            # # Tetap jalankan modal operator
             return {'RUNNING_MODAL'}
             
-        # # Tangani error jika terjadi
         except Exception as e:
             self.report({'ERROR'}, f"Failed to start preview: {str(e)}")
             return self.cancel(context)
     
-    # # Method utama untuk modal operator
     def modal(self, context, event):
         """Handle modal interactions"""
-        # # Periksa jenis event (mouse, keyboard, dll)
         if event.type == 'MOUSEMOVE':
             return {'PASS_THROUGH'}
         
         # Intensity adjustment with mouse wheel
-        # # Periksa jenis event (mouse, keyboard, dll)
         if event.type == 'WHEELUPMOUSE':
             self._intensity_multiplier = min(3.0, self._intensity_multiplier * 1.1)
             self.update_preview_intensity(context)
             self.report({'INFO'}, f"Intensity: {self._intensity_multiplier:.2f}")
-            # # Tetap jalankan modal operator
             return {'RUNNING_MODAL'}
             
-        # # Periksa jenis event (mouse, keyboard, dll)
         elif event.type == 'WHEELDOWNMOUSE':
             self._intensity_multiplier = max(0.1, self._intensity_multiplier / 1.1)
             self.update_preview_intensity(context)
             self.report({'INFO'}, f"Intensity: {self._intensity_multiplier:.2f}")
-            # # Tetap jalankan modal operator
             return {'RUNNING_MODAL'}
         
         # Rotate setup with R key
-        # # Periksa jenis event (mouse, keyboard, dll)
         elif event.type == 'R' and event.value == 'PRESS':
             self._rotation_offset += math.radians(15)  # 15 degrees
             self.update_preview_rotation(context)
             self.report({'INFO'}, f"Rotation: {math.degrees(self._rotation_offset):.0f}°")
-            # # Tetap jalankan modal operator
             return {'RUNNING_MODAL'}
         
         # Cycle templates with Tab
-        # # Periksa jenis event (mouse, keyboard, dll)
         elif event.type == 'TAB' and event.value == 'PRESS':
             if self._available_templates:
                 self._current_template_index = (self._current_template_index + 1) % len(self._available_templates)
@@ -1403,16 +1330,13 @@ class LUMI_OT_preview_template(bpy.types.Operator):
                 template = get_template(self.template_id)
                 template_name = template.get('name', self.template_id) if template else self.template_id
                 self.report({'INFO'}, f"Template: {template_name}")
-            # # Tetap jalankan modal operator
             return {'RUNNING_MODAL'}
         
         # Confirm and apply template
-        # # Periksa jenis event (mouse, keyboard, dll)
         elif event.type in {'LEFTMOUSE', 'RET'} and event.value == 'PRESS':
             return self.confirm_and_apply(context)
         
         # Cancel preview
-        # # Periksa jenis event (mouse, keyboard, dll)
         elif event.type in {'RIGHTMOUSE', 'ESC'} and event.value == 'PRESS':
             return self.cancel(context)
         
@@ -1420,7 +1344,6 @@ class LUMI_OT_preview_template(bpy.types.Operator):
     
     def create_preview_lights(self, context):
         """Create semi-transparent preview lights"""
-        # # Coba eksekusi kode dengan error handling
         try:
             # Clear existing preview lights
             self.cleanup_preview_lights()
@@ -1432,7 +1355,6 @@ class LUMI_OT_preview_template(bpy.types.Operator):
                 return False
             
             # Analyze subject
-            # # Ambil objek yang dipilih dalam scene
             analysis = analyze_subject(context.selected_objects, context)
             
             # Calculate positions
@@ -1477,7 +1399,6 @@ class LUMI_OT_preview_template(bpy.types.Operator):
                     light_data.angle = math.radians(properties.get('angle', 0.5))
                 
                 # Create object
-                # # Akses data objek Blender
                 light_obj = bpy.data.objects.new(name=light_name, object_data=light_data)
                 light_obj.location = world_pos
                 
@@ -1498,7 +1419,6 @@ class LUMI_OT_preview_template(bpy.types.Operator):
             
             return True
             
-        # # Tangani error jika terjadi
         except Exception as e:
             self.report({'ERROR'}, f"Failed to create preview lights: {str(e)}")
             return False
@@ -1518,12 +1438,10 @@ class LUMI_OT_preview_template(bpy.types.Operator):
     
     def update_preview_rotation(self, context):
         """Rotate entire lighting setup around subject"""
-        # # Ambil objek yang dipilih dalam scene
         if not context.selected_objects:
             return
         
         # Get subject center
-        # # Ambil objek yang dipilih dalam scene
         subject_center = sum((obj.location for obj in context.selected_objects), Vector()) / len(context.selected_objects)
         
         # Rotate each light around subject center
@@ -1588,25 +1506,20 @@ class LUMI_OT_preview_template(bpy.types.Operator):
             )
             
             self.report({'INFO'}, f"Applied template: {self.template_id}")
-            # # Selesaikan operasi dengan sukses
             return {'FINISHED'}
             
-        # # Tangani error jika terjadi
         except Exception as e:
             self.report({'ERROR'}, f"Failed to apply template: {str(e)}")
-            # # Batalkan operasi
             return {'CANCELLED'}
     
     def cancel(self, context):
         """Cancel preview and restore original state"""
         self.cleanup_preview(context)
         self.report({'INFO'}, "Preview cancelled")
-        # # Batalkan operasi
         return {'CANCELLED'}
     
     def _get_available_templates(self):
         """Get list of all available template IDs"""
-        # # Coba eksekusi kode dengan error handling
         try:
             from .template_library import list_templates
             all_templates = list_templates()
@@ -1626,7 +1539,6 @@ class LUMI_OT_preview_template(bpy.types.Operator):
         return apply_op.calculate_initial_light_positions(analysis, template, context)
 
 
-# # Definisi class untuk Operator
 class LUMI_OT_preview_lighting_template(bpy.types.Operator):
     """Preview lighting template without creating lights"""
     bl_idname = "lumi.preview_lighting_template"
@@ -1637,22 +1549,17 @@ class LUMI_OT_preview_lighting_template(bpy.types.Operator):
     template_id: StringProperty(name="Template ID", default="portrait_rembrandt")
 
     @classmethod
-    # # Method untuk menentukan kapan operator/panel aktif
     def poll(cls, context):
         return (lumi_is_addon_enabled() and 
                 context.mode == 'OBJECT' and
-                # # Ambil objek yang dipilih dalam scene
                 len(context.selected_objects) > 0)
 
-    # # Method utama eksekusi operator
     def execute(self, context):
-        # # Coba eksekusi kode dengan error handling
         try:
             # Get template info
             template = get_template(self.template_id)
             if not template:
                 self.report({'ERROR'}, f"Template '{self.template_id}' not found")
-                # # Batalkan operasi
                 return {'CANCELLED'}
 
             light_count = len(template.get('lights', []))
@@ -1660,17 +1567,13 @@ class LUMI_OT_preview_lighting_template(bpy.types.Operator):
             category = template.get('category', 'unknown')
 
             self.report({'INFO'}, f"Template: {template_name} ({category}) - {light_count} lights")
-            # # Selesaikan operasi dengan sukses
             return {'FINISHED'}
 
-        # # Tangani error jika terjadi
         except Exception as e:
             self.report({'ERROR'}, f"Preview failed: {str(e)}")
-            # # Batalkan operasi
             return {'CANCELLED'}
 
 
-# # Definisi class untuk Operator
 class LUMI_OT_save_custom_template(bpy.types.Operator):
     """Save current scene lighting as reusable template"""
     bl_idname = "lumi.save_custom_template"
@@ -2035,28 +1938,23 @@ class LUMI_OT_save_custom_template(bpy.types.Operator):
         
         templates = []
         
-        # # Coba eksekusi kode dengan error handling
         try:
             for filename in os.listdir(directory):
                 if filename.endswith('.json'):
                     filepath = os.path.join(directory, filename)
-                    # # Coba eksekusi kode dengan error handling
                     try:
                         with open(filepath, 'r', encoding='utf-8') as f:
                             template_data = json.load(f)
                             template_data['_filepath'] = filepath  # Store file path for management
                             templates.append(template_data)
-                    # # Tangani error jika terjadi
                     except (json.JSONDecodeError, IOError) as e:
                         print(f"Failed to load template {filepath}: {e}")
-        # # Tangani error jika terjadi
         except OSError:
             pass
         
         return templates
 
 
-# # Definisi class untuk Operator
 class LUMI_OT_manage_custom_templates(bpy.types.Operator):
     """Manage custom templates (delete, export, etc.)"""
     bl_idname = "lumi.manage_custom_templates"
@@ -2123,7 +2021,6 @@ class LUMI_OT_manage_custom_templates(bpy.types.Operator):
         return False
 
 
-# # Definisi class untuk Operator
 class LUMI_OT_save_lighting_template(bpy.types.Operator):
     """Save current lighting setup as template"""
     bl_idname = "lumi.save_lighting_template"
@@ -2144,27 +2041,20 @@ class LUMI_OT_save_lighting_template(bpy.types.Operator):
     )
 
     @classmethod
-    # # Method untuk menentukan kapan operator/panel aktif
     def poll(cls, context):
         return (lumi_is_addon_enabled() and
                 context.mode == 'OBJECT' and
-                # # Periksa apakah objek adalah lampu
                 any(obj.type == 'LIGHT' for obj in context.scene.objects))
 
-    # # Method utama eksekusi operator
     def execute(self, context):
-        # # Coba eksekusi kode dengan error handling
         try:
             # TODO: Implement template saving functionality
             # This would analyze current lights and create template data
             self.report({'INFO'}, f"Template saving not yet implemented")
-            # # Selesaikan operasi dengan sukses
             return {'FINISHED'}
 
-        # # Tangani error jika terjadi
         except Exception as e:
             self.report({'ERROR'}, f"Save failed: {str(e)}")
-            # # Batalkan operasi
             return {'CANCELLED'}
 
 

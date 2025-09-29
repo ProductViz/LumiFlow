@@ -3,7 +3,6 @@ Orbit Operations
 Operators for orbital positioning and rotation of lights around targets.
 """
 
-# Import modul utama Blender
 import bpy
 from mathutils import Vector, Matrix
 import math
@@ -21,7 +20,6 @@ from .utils import (
 from ...core.state import get_state
 from ...base_modal import BaseModalOperator
 
-# Definisi class untuk Operator - Refactored for Positioning Mode
 class LUMI_OT_orbit_positioning(bpy.types.Operator, BaseModalOperator):
     bl_idname = "lumi.orbit_positioning"
     bl_label = "Orbit Positioning"
@@ -30,7 +28,7 @@ class LUMI_OT_orbit_positioning(bpy.types.Operator, BaseModalOperator):
 
     _timer = None
     _dragging = False
-    _initial_positions = {}  # Store initial positions for cancel restore
+    _initial_positions = {}
     
     azimuth: bpy.props.FloatProperty(
         name="Azimuth",
@@ -53,9 +51,8 @@ class LUMI_OT_orbit_positioning(bpy.types.Operator, BaseModalOperator):
     )
 
     @classmethod
-    # # Method untuk menentukan kapan operator/panel aktif
     def poll(cls, context):
-        # # Ambil objek yang dipilih dalam scene
+        # # Get selected objects in scene
         return lumi_is_addon_enabled() and any(obj.type == 'LIGHT' for obj in context.selected_objects)
 
     def validate_context(self, context):
@@ -74,7 +71,6 @@ class LUMI_OT_orbit_positioning(bpy.types.Operator, BaseModalOperator):
                 self.report({'ERROR'}, "Invalid context for orbit positioning")
                 return {'CANCELLED'}
             
-            # Check if this is the correct positioning mode (Alt + LMB drag)
             detected_mode = detect_positioning_mode(event)
             if detected_mode != 'ORBIT':
                 self.report({'WARNING'}, f"Use {get_modifier_keys_for_mode('ORBIT')} + LMB drag for orbit positioning")
@@ -82,23 +78,19 @@ class LUMI_OT_orbit_positioning(bpy.types.Operator, BaseModalOperator):
             
             scene = context.scene
             
-            # Disable any existing positioning operations
             lumi_disable_all_positioning_ops(scene)
             
-            # Set up modal state
             state = get_state()
             state.set_modal_state('rotate', True)
             scene.light_props.positioning_mode = 'ORBIT'
             
-            # Setup modal operator
             context.window_manager.modal_handler_add(self)
             self._timer = context.window_manager.event_timer_add(0.1, window=context.window)
             
-            # Enable overlay handler untuk positioning mode
+            # Enable overlay handler for positioning mode
             from ...overlay import lumi_enable_cursor_overlay_handler
             lumi_enable_cursor_overlay_handler()
             
-            # Initialize dragging state
             self._dragging = True
             self._start_mouse = (event.mouse_region_x, event.mouse_region_y)
             self.store_original_positions(context)
@@ -130,13 +122,11 @@ class LUMI_OT_orbit_positioning(bpy.types.Operator, BaseModalOperator):
                     else:
                         pivot = Vector((0.0, 0.0, 0.0))
 
-                    # compute current offset
                     vec = light.location - pivot
                     r = vec.length
                     if r <= 0.0001:
                         r = 1.0
 
-                    # Set to target azimuth/elevation (absolute positioning)
                     target_az = math.radians(self.azimuth)
                     target_el = math.radians(self.elevation)
 
@@ -146,7 +136,6 @@ class LUMI_OT_orbit_positioning(bpy.types.Operator, BaseModalOperator):
 
                     light.location = pivot + Vector((x, y, z))
 
-                    # update orientation
                     if "Lumi_pivot_world" in light:
                         lumi_update_light_orientation(light)
                     else:
@@ -162,7 +151,6 @@ class LUMI_OT_orbit_positioning(bpy.types.Operator, BaseModalOperator):
     def show_popup(self, context, event):
         """Show popup with current azimuth/elevation values"""
         try:
-            # Don't show popup during modal - use separate operator instead
             selected_lights = [obj for obj in context.selected_objects if obj.type == 'LIGHT']
             if selected_lights:
                 first = selected_lights[0]
@@ -176,20 +164,17 @@ class LUMI_OT_orbit_positioning(bpy.types.Operator, BaseModalOperator):
                 except Exception:
                     pivot = Vector((0.0, 0.0, 0.0))
 
-                # Calculate current azimuth and elevation from light position
                 vec = first.location - pivot
-                if vec.length > 0.001:  # Avoid division by zero
+                if vec.length > 0.001:
                     az = math.degrees(math.atan2(vec.y, vec.x))
                     el = math.degrees(math.atan2(vec.z, math.sqrt(vec.x * vec.x + vec.y * vec.y)))
                 else:
                     az = 0.0
                     el = 0.0
 
-                # Clamp values to valid ranges
                 az = max(-180.0, min(180.0, az))  # Clamp azimuth to [-180, 180]
                 el = max(-90.0, min(90.0, el))    # Clamp elevation to [-90, 90]
 
-                # Use separate operator to avoid modal conflicts
                 bpy.ops.lumi.orbit_angles('INVOKE_DEFAULT', azimuth=az, elevation=el)
                 
         except Exception as e:
@@ -198,40 +183,33 @@ class LUMI_OT_orbit_positioning(bpy.types.Operator, BaseModalOperator):
         return {'RUNNING_MODAL'}
 
 
-    # # Method utama untuk modal operator
     def modal(self, context, event):
-        # # Coba eksekusi kode dengan error handling
         try:
             # Validate inputs
             if not self.validate_modal_context(context, event):
                 self.cleanup(context)
-                # # Batalkan operasi
+                # # Cancel operation
                 return {'CANCELLED'}
 
             scene = context.scene
             if not lumi_is_addon_enabled() or scene.light_props.positioning_mode != 'ORBIT':
                 self.cleanup(context)
-                # # Batalkan operasi
+                # # Cancel operation
                 return {'CANCELLED'}
             
-            # # Periksa jenis event (mouse, keyboard, dll)
             if event.type in {'WHEELUPMOUSE', 'WHEELDOWNMOUSE'} and event.ctrl:
                 return {'PASS_THROUGH'}
             
-            # Show popup when Ctrl+Shift+C is pressed during modal
             if event.type == 'C' and event.value == 'PRESS' and event.ctrl and event.shift:
                 return self.show_popup(context, event)
             
-            # Check if Alt key is still held (required for orbit positioning)
             if not (not event.ctrl and not event.shift and event.alt):
                 self.cleanup(context)
                 return {'CANCELLED'}
            
             if self.handle_undo(context, event):
-                # # Tetap jalankan modal operator
                 return {'RUNNING_MODAL'}
 
-            # Handle mouse press for dragging (already started in invoke)
             if event.type == 'LEFTMOUSE' and event.value == 'PRESS':
                 if not self._dragging:
                     self._dragging = True
@@ -242,18 +220,14 @@ class LUMI_OT_orbit_positioning(bpy.types.Operator, BaseModalOperator):
             self.cleanup(context)
             return lumi_handle_modal_error(self, context, e, "Rotate modal")
 
-        # Handle mouse movement for orbit rotation
         if self._dragging and event.type == 'MOUSEMOVE' and event.alt:
-            # # Coba eksekusi kode dengan error handling
+            # # Try to execute code with error handling
             try:
-                # Update mouse position for overlay cursor
                 scene = context.scene
                 scene.lumi_smart_mouse_x = event.mouse_region_x
                 scene.lumi_smart_mouse_y = event.mouse_region_y
                 
-                # # Ambil objek yang dipilih dalam scene
                 selected_objects = context.selected_objects
-                # # Periksa apakah objek adalah lampu
                 selected_lights = [obj for obj in selected_objects if obj.type == 'LIGHT']
                 
                 if selected_lights:
@@ -263,7 +237,6 @@ class LUMI_OT_orbit_positioning(bpy.types.Operator, BaseModalOperator):
                     z_vector = Vector((0, 0, 1))
                     
                     for light in selected_lights:
-                        # # Coba eksekusi kode dengan error handling
                         try:
                             if "Lumi_pivot_world" in light:
                                 pivot = lumi_get_light_pivot(light)
@@ -302,7 +275,6 @@ class LUMI_OT_orbit_positioning(bpy.types.Operator, BaseModalOperator):
                                 if direction.length > 0.001:
                                     direction = direction.normalized()
                                     light.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
-                        # # Tangani error jika terjadi
                         except Exception as light_error:
                             lumi_handle_positioning_error(self, context, light_error, f"Light {light.name} rotation")
                             continue
@@ -310,15 +282,15 @@ class LUMI_OT_orbit_positioning(bpy.types.Operator, BaseModalOperator):
                 return {'RUNNING_MODAL'}
             except Exception as e:
                 return lumi_handle_modal_error(self, context, e, "Rotation")
+        
         # Handle mouse release - finish modal operation
         if self._dragging and event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
             self._dragging = False
-            # End modal operation when mouse is released
             state = get_state()
             if state:
                 state.set_modal_state('rotate', False)
             
-            # Reset positioning mode untuk konsistensi dengan cancel
+            # Reset positioning mode for consistency with cancel
             if hasattr(context.scene, 'light_props'):
                 context.scene.light_props.positioning_mode = 'DISABLE'
             
@@ -383,7 +355,7 @@ class LUMI_OT_orbit_positioning(bpy.types.Operator, BaseModalOperator):
             state = get_state()
             state.set_modal_state('rotate', False)
             
-            # Disable overlay handler hanya jika tidak ada smart control aktif
+            # Disable overlay handler only if no smart control is active
             if not state.scroll_control_enabled:
                 from ...overlay import lumi_disable_cursor_overlay_handler
                 lumi_disable_cursor_overlay_handler()

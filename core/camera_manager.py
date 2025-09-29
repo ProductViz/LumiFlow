@@ -14,28 +14,28 @@ def get_camera_light_manager():
     return _camera_light_manager_instance
 
 class CameraLightManager:
-    """Manager untuk camera-based light visibility system"""
+    """Manager for camera-based light visibility system"""
     
     def __init__(self):
         self.camera_light_assignments = defaultdict(list)  # {camera_name: [light_names]}
-        self.original_light_states = {}  # Backup state asli semua lampu
-        self.active_camera_name = None  # Track kamera aktif saat ini
+        self.original_light_states = {}  # Backup original state of all lights
+        self.active_camera_name = None  # Track currently active camera
         self.is_initialized = False
     
     def initialize_system(self, context):
-        """Initialize camera-light system saat addon di-enable"""
+        """Initialize camera-light system when addon is enabled"""
         if self.is_initialized:
             return
             
         print("\n=== CAMERA LIGHT SYSTEM INITIALIZING ===")
         
-        # VALIDASI CONTEXT: Pastikan context valid dan memiliki scene
+        # CONTEXT VALIDATION: Ensure context is valid and has scene
         if not self._is_context_valid(context):
             print("⚠️  Context not ready, scheduling delayed initialization")
             self._schedule_delayed_initialization()
             return
         
-        # Backup state asli semua lampu
+        # Backup original state of all lights
         self.backup_original_light_states(context)
         
         # Load camera-light assignments using naming system
@@ -53,7 +53,7 @@ class CameraLightManager:
         else:
             print("No active camera found")
         
-        # Update visibility untuk kamera aktif
+        # Update visibility for active camera
         if self.active_camera_name:
             self.update_light_visibility_for_camera(context, self.active_camera_name)
         
@@ -65,13 +65,13 @@ class CameraLightManager:
     
     
     def cleanup_system(self, context):
-        """Cleanup camera-light system saat addon di-disable"""
+        """Cleanup camera-light system when addon is disabled"""
         if not self.is_initialized:
             return
             
         print("\n=== CAMERA LIGHT SYSTEM CLEANING UP ===")
         
-        # Restore state asli semua lampu
+        # Restore original state of all lights
         self.restore_original_light_states(context)
         
         # Unregister scene update handler
@@ -86,7 +86,7 @@ class CameraLightManager:
         print("=== CAMERA LIGHT SYSTEM CLEANED UP ===")
     
     def backup_original_light_states(self, context):
-        """Backup state asli semua lampu di scene"""
+        """Backup original state of all lights in scene"""
         self.original_light_states.clear()
         
         for obj in context.scene.objects:
@@ -97,7 +97,7 @@ class CameraLightManager:
                 }
     
     def restore_original_light_states(self, context):
-        """Restore state asli semua lampu"""
+        """Restore original state of all lights"""
         for obj in context.scene.objects:
             if obj.type == 'LIGHT' and obj.name in self.original_light_states:
                 original_state = self.original_light_states[obj.name]
@@ -105,7 +105,7 @@ class CameraLightManager:
                 obj.hide_render = original_state['hide_render']
     
     def assign_light_to_camera(self, camera_name: str, light_name: str):
-        """Tetapkan lampu ke kamera tertentu"""
+        """Assign light to specific camera"""
         # Add to memory cache
         if light_name not in self.camera_light_assignments[camera_name]:
             self.camera_light_assignments[camera_name].append(light_name)
@@ -117,7 +117,7 @@ class CameraLightManager:
         self._save_assignments_to_properties()
     
     def remove_light_from_camera(self, camera_name: str, light_name: str):
-        """Hapus lampu dari kamera tertentu"""
+        """Remove light from specific camera"""
         if camera_name in self.camera_light_assignments:
             if light_name in self.camera_light_assignments[camera_name]:
                 self.camera_light_assignments[camera_name].remove(light_name)
@@ -126,14 +126,14 @@ class CameraLightManager:
         self._save_assignments_to_properties()
     
     def get_camera_assigned_lights(self, camera_name: str) -> List[str]:
-        """Dapatkan daftar lampu yang ditetapkan ke kamera"""
+        """Get list of lights assigned to camera"""
         # First try to load from persistent properties if memory cache is empty
         if not self.camera_light_assignments.get(camera_name):
             self._load_assignments_from_properties()
         return self.camera_light_assignments.get(camera_name, [])
     
     def update_light_visibility_for_camera(self, context, camera_name: str):
-        """Update visibility lampu untuk kamera tertentu"""
+        """Update light visibility for specific camera"""
         if not camera_name:
             return
             
@@ -164,7 +164,7 @@ class CameraLightManager:
         print("=== LIGHT VISIBILITY UPDATE COMPLETE ===")
     
     def check_camera_change(self, context):
-        """Check jika active camera berubah dan update visibility"""
+        """Check if active camera changed and update visibility"""
         if not context.scene.camera:
             return
             
@@ -181,7 +181,7 @@ class CameraLightManager:
             # NO AUTO-ASSIGNMENT - only update visibility for existing assignments
             # Auto-assignment only happens during light creation, not camera switches
             
-            # Update visibility untuk kamera baru
+            # Update visibility for new camera
             self.update_light_visibility_for_camera(context, current_camera_name)
             
             # Force viewport update
@@ -192,7 +192,7 @@ class CameraLightManager:
             print("=== CAMERA CHANGE HANDLED ===")
     
     def register_scene_update_handler(self):
-        """Register scene update handler untuk camera change detection"""
+        """Register scene update handler for camera change detection"""
         # Remove existing handler if any
         self.unregister_scene_update_handler()
         
@@ -206,26 +206,26 @@ class CameraLightManager:
             bpy.app.handlers.depsgraph_update_post.remove(on_scene_update)
     
     def _is_context_valid(self, context):
-        """Validasi context untuk memastikan bisa mengakses scene"""
+        """Validate context to ensure scene access"""
         try:
-            # Cek apakah context ada dan memiliki scene
+            # Check if context exists and has scene
             if context is None:
                 return False
             
-            # Cek apakah context memiliki attribute scene
+            # Check if context has scene attribute
             if not hasattr(context, 'scene'):
                 return False
             
-            # Cek apakah scene valid
+            # Check if scene is valid
             if context.scene is None:
                 return False
             
-            # Cek apakah ini adalah _RestrictContext (problematic)
+            # Check if this is _RestrictContext (problematic)
             context_type = type(context).__name__
             if context_type == '_RestrictContext':
                 return False
             
-            # Cek apakah bisa mengakses scene objects
+            # Check if can access scene objects
             try:
                 _ = context.scene.objects
                 return True
@@ -236,9 +236,9 @@ class CameraLightManager:
             return False
     
     def _schedule_delayed_initialization(self):
-        """Jadwalkan inisialisasi delayed menggunakan Blender timer"""
+        """Schedule delayed initialization using Blender timer"""
         try:
-            # Hapus timer yang sudah ada jika ada
+            # Remove existing timer if any
             if hasattr(bpy.app, 'timers') and hasattr(self, '_delayed_init_timer'):
                 if self._delayed_init_timer in bpy.app.timers:
                     bpy.app.timers.remove(self._delayed_init_timer)
@@ -246,7 +246,7 @@ class CameraLightManager:
             # Schedule new timer
             self._delayed_init_timer = bpy.app.timers.register(
                 self._delayed_initialize,
-                first_interval=0.5  # Tunggu 0.5 detik
+                first_interval=0.5  # Wait 0.5 seconds
             )
             print("📅 Delayed initialization scheduled in 0.5 seconds")
             
@@ -254,7 +254,7 @@ class CameraLightManager:
             print(f"❌ Failed to schedule delayed initialization: {e}")
     
     def _delayed_initialize(self):
-        """Inisialisasi delayed yang dipanggil oleh timer"""
+        """Delayed initialization called by timer"""
         try:
             context = bpy.context
             if self._is_context_valid(context):
@@ -262,18 +262,18 @@ class CameraLightManager:
         except Exception as e:
             print(f"❌ Delayed initialization failed: {e}")
         finally:
-            # Hapus timer reference jika sudah selesai
+            # Remove timer reference if completed
             if hasattr(self, '_delayed_init_timer'):
                 delattr(self, '_delayed_init_timer')
         
         return None  # Remove timer
     
     def _save_assignments_to_properties(self):
-        """Simpan camera-light assignments menggunakan sistem penamaan (tidak perlu PropertyGroup)"""
+        """Save camera-light assignments using naming system (no PropertyGroup needed)"""
         try:
-            # Dengan sistem penamaan, assignments disimpan langsung di nama objek Blender
-            # Tidak perlu menyimpan ke PropertyGroup karena assignments terdeteksi otomatis
-            # dari prefix nama lampu (C_XX_ untuk kamera spesifik, G_ untuk global)
+            # With naming system, assignments are stored directly in Blender object names
+            # No need to save to PropertyGroup because assignments are detected automatically
+            # from light name prefixes (C_XX_ for specific camera, G_ for global)
             
             print(f"💾 Assignments are stored in light names using naming convention")
             print(f"💾 Total cameras with assignments: {len(self.camera_light_assignments)}")
@@ -286,8 +286,8 @@ class CameraLightManager:
             else:
                 print("⚠️  No assignments to save")
             
-            # Tidak ada yang perlu disimpan ke PropertyGroup karena sistem sudah menggunakan
-            # naming convention yang persisten di Blender objects
+            # Nothing needs to be saved to PropertyGroup because the system already uses
+            # persistent naming convention in Blender objects
             print("✅ Naming convention system - no PropertyGroup saving needed")
             
         except Exception as e:
@@ -296,33 +296,33 @@ class CameraLightManager:
             traceback.print_exc()
     
     def _load_assignments_from_properties(self):
-        """Muat camera-light assignments dari Blender properties menggunakan sistem penamaan"""
+        """Load camera-light assignments from Blender properties using naming system"""
         try:
             scene = bpy.context.scene
             loaded_count = 0
             
             print(f"📖 Loading assignments using naming system")
             
-            # Bersihkan assignments yang ada
+            # Clear existing assignments
             self.camera_light_assignments.clear()
             
-            # Dapatkan semua kamera di scene
+            # Get all cameras in scene
             cameras = [obj for obj in scene.objects if obj.type == 'CAMERA']
             print(f"📖 Found {len(cameras)} cameras in scene")
             
-            # Dapatkan semua lampu di scene
+            # Get all lights in scene
             lights = [obj for obj in scene.objects if obj.type == 'LIGHT']
             print(f"📖 Found {len(lights)} lights in scene")
             
-            # Deteksi assignment berdasarkan sistem penamaan
+            # Detect assignments based on naming system
             for camera in cameras:
                 camera_name = camera.name
                 print(f"📖 Checking assignments for camera: {camera_name}")
                 
-                # Ekstrak nomor kamera dari nama
+                # Extract camera number from name
                 camera_num = self._extract_camera_number(camera_name)
                 if camera_num:
-                    # Cari lampu dengan prefix C_{camera_num}_
+                    # Find lights with prefix C_{camera_num}_
                     assigned_lights = []
                     for light in lights:
                         if light.name.startswith(f"C_{camera_num}_"):
@@ -337,14 +337,14 @@ class CameraLightManager:
                 else:
                     print(f"  📖 Could not extract camera number from: {camera_name}")
             
-            # Juga cek lampu global (prefix G_)
+            # Also check global lights (prefix G_)
             global_lights = []
             for light in lights:
                 if light.name.startswith("G_"):
                     global_lights.append(light.name)
             
             if global_lights:
-                # Tambahkan lampu global ke semua kamera
+                # Add global lights to all cameras
                 for camera_name in self.camera_light_assignments:
                     self.camera_light_assignments[camera_name].extend(global_lights)
                 
@@ -369,7 +369,7 @@ class CameraLightManager:
             return False
     
     def _extract_camera_number(self, camera_name):
-        """Ekstrak nomor kamera dari nama kamera"""
+        """Extract camera number from camera name"""
         try:
             # Handle format Camera.001, Camera.002, etc.
             if camera_name.endswith('.001'):
@@ -403,7 +403,7 @@ class CameraLightManager:
 
 # Global handler function
 def on_scene_update(depsgraph):
-    """Handler untuk depsgraph update events"""
+    """Handler for depsgraph update events"""
     try:
         # Get manager instance
         manager = get_camera_light_manager()
@@ -415,7 +415,7 @@ def on_scene_update(depsgraph):
         # Silently fail to avoid breaking Blender
         pass
 
-# Helper function untuk automatic light assignment
+# Helper function for automatic light assignment
 def generate_organized_light_name(base_name: str, assignment_mode: str, camera_name: str = None) -> str:
     """Generate organized light name with prefix based on assignment mode"""
     try:
@@ -467,11 +467,11 @@ def generate_organized_light_name(base_name: str, assignment_mode: str, camera_n
         return base_name  # Fallback to original name
 
 def assign_light_to_active_camera(light_obj):
-    """Tetapkan lampu baru ke kamera aktif atau semua kamera tergantung mode"""
+    """Assign new light to active camera or all cameras depending on mode"""
     try:
         context = bpy.context
         
-        # Validasi context sebelum mengakses scene
+        # Validate context before accessing scene
         if context is None or not hasattr(context, 'scene') or context.scene is None:
             print("⚠️  Cannot assign light to camera: Context not available")
             return
@@ -533,7 +533,7 @@ def assign_light_to_active_camera(light_obj):
                 
                 manager.assign_light_to_camera(active_camera.name, light_obj.name)
                 
-                # Update visibility immediately (system selalu aktif)
+                # Update visibility immediately (system always active)
                 manager.update_light_visibility_for_camera(context, active_camera.name)
                 
                 print(f"Light '{light_obj.name}' assigned to camera '{active_camera.name}' (camera-specific)")

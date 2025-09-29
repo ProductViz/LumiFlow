@@ -17,7 +17,7 @@ class LUMI_OT_toggle_template_favorite(bpy.types.Operator):
         name="Template ID",
         description="Template to toggle favorite",
         default="",
-        options={'SKIP_SAVE'}  # Don't save this property
+        options={'SKIP_SAVE'}
     )
     
     def execute(self, context):
@@ -28,25 +28,20 @@ class LUMI_OT_toggle_template_favorite(bpy.types.Operator):
         scene = context.scene
         favorites = getattr(scene, 'lumi_template_favorites', '')
         
-        # Convert to list, handle empty string
         if favorites.strip():
             fav_list = [f.strip() for f in favorites.split(',') if f.strip()]
         else:
             fav_list = []
         
         if self.template_id in fav_list:
-            # Remove from favorites
             fav_list.remove(self.template_id)
             self.report({'INFO'}, f"Removed '{self.template_id}' from favorites")
         else:
-            # Add to favorites
             fav_list.append(self.template_id)
             self.report({'INFO'}, f"Added '{self.template_id}' to favorites")
         
-        # Update scene property
         scene.lumi_template_favorites = ','.join(fav_list)
         
-        # Force UI refresh
         for area in context.screen.areas:
             if area.type == 'VIEW_3D':
                 for region in area.regions:
@@ -82,7 +77,6 @@ class LUMI_OT_save_lighting_template(bpy.types.Operator):
     bl_options = {'REGISTER'}
     
     def execute(self, context):
-        # Placeholder - would implement template saving logic
         self.report({'INFO'}, "Template saving not yet implemented")
         return {'FINISHED'}
 
@@ -94,7 +88,6 @@ class LUMI_OT_apply_template_direct(bpy.types.Operator):
     bl_description = "Apply lighting template directly without dialog"
     bl_options = {'REGISTER', 'UNDO'}
     
-    # All properties from main operator
     template_id: StringProperty(
         name="Template ID",
         description="Template to apply",
@@ -151,7 +144,6 @@ class LUMI_OT_apply_template_direct(bpy.types.Operator):
     
     def execute(self, context):
         """Execute template application directly"""
-        # Call the main template operator with EXEC_DEFAULT context to bypass invoke
         result = bpy.ops.lumi.apply_lighting_template(
             'EXEC_DEFAULT',
             template_id=self.template_id,
@@ -181,8 +173,6 @@ class LUMI_OT_apply_template_default(bpy.types.Operator):
     )
 
     def execute(self, context):
-        # Call main template operator using EXEC_DEFAULT and explicit addon defaults
-        # This ensures no dialog is shown and the requested defaults are applied
         result = bpy.ops.lumi.apply_lighting_template(
             'EXEC_DEFAULT',
             template_id=self.template_id,
@@ -209,9 +199,11 @@ class LUMI_OT_apply_template(bpy.types.Operator):
     )
     
     def execute(self, context):
-        # Call the main template operator
-        bpy.ops.lumi.apply_lighting_template(template_id=self.template_id)
-        return {'FINISHED'}
+        result = bpy.ops.lumi.apply_lighting_template(
+            'EXEC_DEFAULT',
+            template_id=self.template_id
+        )
+        return result
 
 
 class LUMI_OT_show_all_templates(bpy.types.Operator):
@@ -222,12 +214,9 @@ class LUMI_OT_show_all_templates(bpy.types.Operator):
     bl_options = {'REGISTER'}
     
     def execute(self, context):
-        # This method is called when OK button is clicked
-        # Popup will close automatically after this returns
         return {'FINISHED'}
     
     def invoke(self, context, event):
-        # Open full template browser popup with OK/Cancel buttons
         return context.window_manager.invoke_props_dialog(self, width=300)
         
     def draw(self, context):
@@ -235,20 +224,15 @@ class LUMI_OT_show_all_templates(bpy.types.Operator):
         layout = self.layout
         scene = context.scene
         
-        # Header
         header = layout.row()
         header.label(text=" All Lighting Templates", icon='LIGHT')
         
-       
-        # Get templates
         try:
             from .smart_template.template_library import BUILTIN_TEMPLATES
             
             category_filter = getattr(scene, 'lumi_template_category', 'ALL')
             
-            # Filter templates by category
             if category_filter == 'ALL':
-                # Use sorted template IDs for consistent ordering
                 template_ids = sorted(BUILTIN_TEMPLATES.keys())
                 templates = [BUILTIN_TEMPLATES[tid] for tid in template_ids]
             else:
@@ -258,7 +242,6 @@ class LUMI_OT_show_all_templates(bpy.types.Operator):
                         templates.append(template)
                     
             if templates:
-                # Display templates based on view mode
                 self._draw_list_view(layout, templates, context)
             else:
                 layout.label(text="No templates found", icon='INFO')
@@ -274,7 +257,6 @@ class LUMI_OT_show_all_templates(bpy.types.Operator):
         favorites_str = getattr(scene, 'lumi_template_favorites', '')
         favorites = [f.strip() for f in favorites_str.split(',') if f.strip()]
         
-        # Group templates by category
         categories = {}
         for i, template in enumerate(templates):
             template_id = template.get('id', f'template_{i}')
@@ -286,49 +268,39 @@ class LUMI_OT_show_all_templates(bpy.types.Operator):
                 categories[category] = []
             categories[category].append((template_id, template))
         
-        # Display templates grouped by category
         for category_name in sorted(categories.keys()):
             category_templates = categories[category_name]
             
-            # Category header
             header_row = layout.row()
             header_row.label(text=category_name)
-            # Template list for this category
             col = layout.column(align=True)
             
             for template_id, template in category_templates:
                 template_name = template.get('name', template_id.replace('_', ' ').title())
                 light_count = len(template.get('lights', []))
                 
-                # Template row
                 row = col.row(align=True)
                 
-                # Light icon
                 row.label(text="ðŸ’¡", icon='NONE')
                 
-                # Template name
                 name_col = row.column()
                 name_col.scale_x = 2.0
                 name_col.label(text=template_name)
                 
-                # Light count
                 count_col = row.column()
                 count_col.scale_x = 0.5
                 count_col.label(text=f"{light_count}L")
                 
-                # Favorite star
                 is_favorite = template_id in favorites
                 star_icon = 'SOLO_ON' if is_favorite else 'SOLO_OFF'
                 star_op = row.operator("lumi.toggle_template_favorite", text="", icon=star_icon)
                 star_op.template_id = template_id
                 
-                # Apply button
                 if context.selected_objects:
                     apply_op = row.operator("lumi.apply_lighting_template", text="Apply")
                     apply_op.template_id = template_id
     
 
-# Export all template operators
 __all__ = [
     'LUMI_OT_toggle_template_favorite',
     'LUMI_OT_set_template_category', 

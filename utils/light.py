@@ -4,7 +4,6 @@ Contains specialized light-related utility functions: positioning, creation, int
 """
 
 import math
-# # Import modul utama Blender
 import bpy
 from mathutils import Vector
 from bpy_extras import view3d_utils
@@ -21,11 +20,11 @@ def lumi_get_light_pivot(light_obj) -> Vector:
     try:
         if "Lumi_pivot_world" in light_obj:
             pivot = light_obj["Lumi_pivot_world"]
-            # Validasi bahwa pivot adalah list/tuple dengan 3 elemen atau bpy id property array
+            # Validate that pivot is a list/tuple with 3 elements or bpy id property array
             if isinstance(pivot, (list, tuple)) and len(pivot) >= 3:
                 return Vector((pivot[0], pivot[1], pivot[2]))
             elif hasattr(pivot, '__len__') and hasattr(pivot, '__getitem__') and len(pivot) >= 3:
-                # Handle bpy id property array dan objek sejenis lainnya
+                # Handle bpy id property array and similar objects
                 try:
                     return Vector((pivot[0], pivot[1], pivot[2]))
                 except (IndexError, TypeError):
@@ -44,7 +43,7 @@ def lumi_get_light_pivot(light_obj) -> Vector:
 def lumi_set_light_pivot(light_obj: bpy.types.Object, pivot_location: Vector):
     """Set the pivot point for a light object."""
     try:
-        # Validasi input
+        # Validate input
         if not isinstance(pivot_location, Vector):
             print(f"❌ Error: pivot_location is not Vector: {type(pivot_location)}")
             return
@@ -63,11 +62,11 @@ def lumi_update_light_orientation(light_obj: bpy.types.Object):
     try:
         if "Lumi_pivot_world" in light_obj:
             pivot_data = light_obj["Lumi_pivot_world"]
-            # Handle berbagai format pivot data
+            # Handle various pivot data formats
             if isinstance(pivot_data, (list, tuple)) and len(pivot_data) >= 3:
                 pivot_world = Vector((pivot_data[0], pivot_data[1], pivot_data[2]))
             elif hasattr(pivot_data, '__len__') and hasattr(pivot_data, '__getitem__') and len(pivot_data) >= 3:
-                # Handle bpy id property array dan objek sejenis lainnya
+                # Handle bpy id property array and similar objects
                 try:
                     pivot_world = Vector((pivot_data[0], pivot_data[1], pivot_data[2]))
                 except (IndexError, TypeError):
@@ -104,7 +103,6 @@ def lumi_calculate_light_size(light_type: str, distance: float) -> float:
 def lumi_get_viewport_camera_position(rv3d: bpy.types.RegionView3D) -> Vector:
     """Get current viewport camera position."""
     if rv3d.view_perspective == 'CAMERA':
-        # # Akses scene yang sedang aktif
         camera = bpy.context.scene.camera
         if camera:
             return camera.location.copy()
@@ -189,11 +187,11 @@ def lumi_calculate_light_target_position(light_obj: bpy.types.Object, scene: bpy
         # If light has a pivot, use that as target
         if "Lumi_pivot_world" in light_obj:
             pivot_data = light_obj["Lumi_pivot_world"]
-            # Handle berbagai format pivot data
+            # Handle various pivot data formats
             if isinstance(pivot_data, (list, tuple)) and len(pivot_data) >= 3:
                 return Vector((pivot_data[0], pivot_data[1], pivot_data[2]))
             elif hasattr(pivot_data, '__len__') and hasattr(pivot_data, '__getitem__') and len(pivot_data) >= 3:
-                # Handle bpy id property array dan objek sejenis lainnya
+                # Handle bpy id property array and similar objects
                 try:
                     return Vector((pivot_data[0], pivot_data[1], pivot_data[2]))
                 except (IndexError, TypeError):

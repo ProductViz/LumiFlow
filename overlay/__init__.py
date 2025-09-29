@@ -3,7 +3,6 @@ Overlay Module
 Modular drawing system for the LumiFlow Blender addon.
 """
 
-# Import semua fungsi dari modul-modul baru
 from .overlay_light import (
     lumi_draw_light_lines,
     render_batches
@@ -46,7 +45,6 @@ from .overlay_handlers import (
     debug_overlay_status
 )
 
-# Export semua fungsi yang diperlukan
 __all__ = [
     # Light visualization functions
     'lumi_draw_light_lines',

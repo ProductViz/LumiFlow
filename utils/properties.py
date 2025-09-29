@@ -3,7 +3,6 @@ Property Utilities
 Contains property update callbacks and related utility functions.
 """
 
-# # Import modul utama Blender
 import bpy
 from bpy.types import PropertyGroup
 from bpy.props import EnumProperty, StringProperty
@@ -24,7 +23,7 @@ from .common import (
 )
 
 
-# # Definisi class untuk Property Group
+# Property Group class definition
 class LightPositioningProperties(PropertyGroup):
     """Properties for light positioning modes."""
     positioning_mode: EnumProperty(
@@ -224,13 +223,13 @@ def lumi_enabled_update(self, context: bpy.types.Context):
                 from ..core.camera_manager import get_camera_light_manager
                 camera_manager = get_camera_light_manager()
                 
-                # Coba inisialisasi dengan context yang tersedia
-                # CameraLightManager sudah memiliki internal context validation
+                # Try to initialize with available context
+                # CameraLightManager already has internal context validation
                 camera_manager.initialize_system(context)
                 print("🔧 Camera Light System initialization triggered")
                 
             except Exception as e:
-                # Jika gagal, coba delayed initialization melalui manager
+                # If failed, try delayed initialization through manager
                 try:
                     from ..core.camera_manager import get_camera_light_manager
                     camera_manager = get_camera_light_manager()
@@ -278,38 +277,32 @@ def lumi_enabled_update(self, context: bpy.types.Context):
 def lumi_overlay_update(self, context: bpy.types.Context):
     """Update callback when overlay info property changes."""
     # Force redraw of all 3D viewports
-    # # Coba eksekusi kode dengan error handling
     try:
         for window in context.window_manager.windows:
             for area in window.screen.areas:
                 if area.type == 'VIEW_3D':
                     area.tag_redraw()
         status = "enabled" if self.lumi_overlay_info_enabled else "disabled"
-    # # Tangani error jika terjadi
     except Exception:
         pass
 
 
 def lumi_color_enabled_update(self, context: bpy.types.Context):
     """Update callback for Color Controls - mutual exclusion with Light Linking Manager."""
-    # # Coba eksekusi kode dengan error handling
     try:
         # If Color Controls expanded, Light Linking Manager must collapse
         if self.lumi_color_enabled:
             self.lumi_light_linking_expanded = False
-    # # Tangani error jika terjadi
     except Exception as e:
         pass
 
 
 def lumi_light_linking_expanded_update(self, context: bpy.types.Context):
     """Update callback for Light Linking Manager - mutual exclusion with Color Controls."""
-    # # Coba eksekusi kode dengan error handling
     try:
         # If Light Linking Manager expanded, Color Controls must collapse
         if self.lumi_light_linking_expanded:
             self.lumi_color_enabled = False
-    # # Tangani error jika terjadi
     except Exception as e:
         pass
 

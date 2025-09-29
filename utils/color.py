@@ -144,7 +144,6 @@ def lumi_rgb_to_kelvin(r: float, g: float, b: float) -> float:
 
 def lumi_apply_kelvin_to_lights(context: bpy.types.Context, kelvin: float):
     """Apply Kelvin temperature color to selected lights."""
-    # # Ambil objek yang dipilih dalam scene
     selected_lights = [obj for obj in context.selected_objects if obj.type == 'LIGHT']
     if selected_lights:
         rgb = lumi_kelvin_to_rgb(kelvin)

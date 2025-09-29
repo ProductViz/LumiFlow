@@ -3,30 +3,26 @@ Common Utilities
 Contains frequently used functions across various modules (operators, panels, menus, draw).
 """
 
-# # Import modul utama Blender
 import bpy
 from mathutils import Vector
 
 def lumi_is_addon_enabled() -> bool:
-    """Cek apakah addon LumiFlow aktif - digunakan di semua modul."""
-    # # Coba eksekusi kode dengan error handling
+    """Check if LumiFlow addon is enabled - used in all modules."""
     try:
-        # # Akses scene yang sedang aktif
         return bpy.context.scene.get("lumi_enabled", False)
-    # # Tangani error jika terjadi
     except Exception:
         return False
 
 
 def lumi_get_light_collection(scene=None) -> bpy.types.Collection:
     """
-    Ambil atau buat koleksi lampu LumiFlow per scene.
+    Get or create LumiFlow light collection per scene.
     
     Args:
-        scene: Scene target, default ke current scene
+        scene: Target scene, defaults to current scene
     
     Returns:
-        Collection yang spesifik untuk scene tersebut
+        Collection specific to that scene
     """
     if scene is None:
         scene = bpy.context.scene
@@ -34,18 +30,18 @@ def lumi_get_light_collection(scene=None) -> bpy.types.Collection:
     if not scene:
         return None
     
-    # Gunakan naming convention: LumiFlow_Lights_[SceneName]
+    # Use naming convention: LumiFlow_Lights_[SceneName]
     col_name = f"LumiFlow_Lights_{scene.name}"
     
-    # Cek apakah collection sudah ada
+    # Check if collection already exists
     if col_name in bpy.data.collections:
         collection = bpy.data.collections[col_name]
-        # Pastikan collection terhubung ke scene ini
+        # Ensure collection is linked to this scene
         if collection.name not in scene.collection.children:
             scene.collection.children.link(collection)
         return collection
     
-    # Buat collection baru untuk scene ini
+    # Create new collection for this scene
     try:
         collection = bpy.data.collections.new(col_name)
         scene.collection.children.link(collection)
@@ -56,9 +52,9 @@ def lumi_get_light_collection(scene=None) -> bpy.types.Collection:
 
 def cleanup_lumiflow_collections():
     """
-    Hapus collections untuk scene yang sudah tidak ada.
-    Dipanggil saat addon register/unregister.
-    Menggunakan timer untuk menunda eksekusi jika data tidak tersedia saat registration.
+    Remove collections for scenes that no longer exist.
+    Called during addon register/unregister.
+    Uses timer to delay execution if data is not available during registration.
     """
     try:
         # Check if bpy.data is accessible and has scenes
@@ -75,7 +71,7 @@ def cleanup_lumiflow_collections():
 def _perform_cleanup_lumiflow_collections():
     """
     Internal function to perform the actual cleanup.
-    Dipanggil ketika bpy.data sudah accessible.
+    Called when bpy.data is accessible.
     """
     try:
         existing_scenes = {scene.name for scene in bpy.data.scenes}
@@ -87,7 +83,7 @@ def _perform_cleanup_lumiflow_collections():
                     try:
                         bpy.data.collections.remove(collection)
                     except Exception:
-                        pass  # Ignore errors saat cleanup
+                        pass  # Ignore errors during cleanup
     except Exception:
         pass  # Ignore all errors during cleanup
 
@@ -118,7 +114,7 @@ def _cleanup_timer_callback():
 
 
 def lumi_reset_highlight(scene: bpy.types.Scene):
-    """Reset semua flag status highlight dan paksa redraw viewport - digunakan oleh beberapa positioning operator."""
+    """Reset all highlight status flags and force viewport redraw - used by several positioning operators."""
     scene.lumi_status_hue_active = False
     scene.lumi_status_saturation_active = False
     scene.lumi_status_distance_active = False
@@ -143,7 +139,6 @@ def lumi_move_to_collection(obj: bpy.types.Object, collection: bpy.types.Collect
 
 def lumi_safe_context_override(context: bpy.types.Context, operation_func) -> bool:
     """Safely override context for operations - used by multiple operators."""
-    # # Coba eksekusi kode dengan error handling
     try:
         # Blender 4.x: use temp_override if available
         if hasattr(context, 'temp_override'):
@@ -157,19 +152,15 @@ def lumi_safe_context_override(context: bpy.types.Context, operation_func) -> bo
                     return operation_func()
         # Blender 3.6: run directly
         return operation_func()
-    # # Tangani error jika terjadi
     except Exception:
-        # # Coba eksekusi kode dengan error handling
         try:
             return operation_func()
-        # # Tangani error jika terjadi
         except Exception:
             return False
 
 
 def lumi_get_object_bounds(obj: bpy.types.Object) -> dict:
     """Get single object bounds - used by template analyzer."""
-    # # Coba eksekusi kode dengan error handling
     try:
         if not obj or obj.type != 'MESH':
             return {
@@ -206,7 +197,6 @@ def lumi_get_object_bounds(obj: bpy.types.Object) -> dict:
             "radius": radius
         }
         
-    # # Tangani error jika terjadi
     except Exception:
         return {
             "min": Vector(),
@@ -220,7 +210,6 @@ def lumi_get_object_bounds(obj: bpy.types.Object) -> dict:
 
 def lumi_sample_object_material(obj: bpy.types.Object) -> dict:
     """Sample dominant material from object - used by template analyzer."""
-    # # Coba eksekusi kode dengan error handling
     try:
         if not obj or not obj.data or not hasattr(obj.data, 'materials'):
             return {
@@ -248,7 +237,6 @@ def lumi_sample_object_material(obj: bpy.types.Object) -> dict:
             "transparency": 0.0
         }
         
-    # # Tangani error jika terjadi
     except Exception:
         return {
             "dominant_type": "dielectric", 

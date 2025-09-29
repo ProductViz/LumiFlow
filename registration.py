@@ -20,7 +20,7 @@ class LumiCameraLightAssignment(bpy.types.PropertyGroup):
         default=""
     )
 
-# PropertyGroup untuk scrollable light list
+# PropertyGroup for scrollable light list
 class LumiLightItem(bpy.types.PropertyGroup):
     name = bpy.props.StringProperty()
 
@@ -39,16 +39,16 @@ from .operators.smart_template.template_ops import (
     LUMI_OT_show_all_templates
 )
 
-# Import class panel utama dengan import spesifik untuk menghindari masalah
+# Import main panel class with specific import to avoid issues
 from .panels.main_panel import (
     LUMI_PT_light_control,
 )
 
-# Import template settings panel classes sudah dihapus
+# Template settings panel classes have been deleted
 
-# Import class template browser sudah dihapus
+# Template browser classes have been deleted
 
-# Import menu classes dari pie_menus
+# Import menu classes from pie_menus
 from .menus.pie_menus import (
     LUMI_MT_add_light_pie,
     LUMI_MT_smart_template_light_pie,
@@ -56,7 +56,7 @@ from .menus.pie_menus import (
     LUMI_MT_template_favorites,
 )
 
-# Import modul menu, draw, dan utils
+# Import menu, draw, and utils modules
 from .menus import *
 from .utils import *
 from .overlay import lumi_scene_update_handler
@@ -66,7 +66,7 @@ from .operators.positioning.free_ops import (
     LUMI_OT_free_positioning
 )
 
-# Import eksplisit untuk PropertyGroup classes dan optimized operators
+# Explicit import for PropertyGroup classes and optimized operators
 from .operators.linking_ops import (
     LUMI_ObjectGroupLinkStatus,
     LUMI_ObjectGroup,
@@ -121,7 +121,7 @@ from .operators.smart_template import (
 
 
 # Import accordion update functions from utils.properties
-# Fungsi update untuk panel yang sudah dihapus dihapus
+# Update functions for deleted panels removed
 from .utils.properties import (
     lumi_enabled_update,
     lumi_light_linking_expanded_update,
@@ -130,33 +130,33 @@ from .utils.properties import (
     lumi_scroll_settings_expanded_update
 )
 
-# Import kelas Light Mixer yang baru
-# File light_mixer sudah dihapus
+# Import new Light Mixer classes
+# light_mixer file has been deleted
 
-# Kumpulkan semua class dari modul yang diimpor secara otomatis
+# Collect all classes from automatically imported modules
 import inspect
-# # Import dari modul lokal addon
+# Import from local addon modules
 from . import operators, panels, menus, utils
 
 def get_classes():
-    """Kumpulkan semua class dari modul secara dinamis"""
+    """Collect all classes from modules dynamically"""
     classes_list = []
     
-    # Ambil class dari modul operators
+    # Get classes from operators module
     if hasattr(operators, '__all__'):
         for name in operators.__all__:
             obj = getattr(operators, name)
             if inspect.isclass(obj):
                 classes_list.append(obj)
     
-    # Ambil class dari modul menus
+    # Get classes from menus module
     if hasattr(menus, '__all__'):
         for name in menus.__all__:
             obj = getattr(menus, name)
             if inspect.isclass(obj):
                 classes_list.append(obj)
     
-    # Ambil class dari modul utils
+    # Get classes from utils module
     if hasattr(utils, '__all__'):
         for name in utils.__all__:
             obj = getattr(utils, name)
@@ -165,10 +165,10 @@ def get_classes():
     
     return tuple(classes_list)
 
-# Light mixer classes sudah dihapus
+# Light mixer classes have been deleted
 light_mixer_classes = []
 
-# Tambahkan UIList classes dari linking module
+# Add UIList classes from linking module
 # Light Linking UI classes (optimized for read-only light groups)
 linking_ui_classes = [
     # PropertyGroups
@@ -205,13 +205,13 @@ linking_ui_classes = [
     LUMI_OT_toggle_select_all_lights_in_group,
 ]
 
-# Panel classes dari import eksplisit
+# Panel classes from explicit import
 panel_classes = [
     LUMI_PT_light_control,
 ]
 
-# Template Settings classes sudah dihapus
-# Template browser classes sudah dihapus
+# Template Settings classes have been deleted
+# Template browser classes have been deleted
 
 
 # AI-Powered Template Recommendation classes  
@@ -467,10 +467,8 @@ def unregister_properties() -> None:
     ]
     for prop in prop_names:
         if hasattr(bpy.types.Scene, prop):
-            # Try to execute code with error handling
             try:
                 delattr(bpy.types.Scene, prop)
-            # Handle error if it occurs
             except Exception:
                 pass
 
@@ -524,12 +522,12 @@ def register_keymaps() -> None:
         kmi = km.keymap_items.new('lumi.move_positioning', 'LEFTMOUSE', 'PRESS', ctrl=False, shift=True, alt=True)
         addon_keymaps.append((km, kmi))
 
-        # Smart control shortcuts - menggunakan consolidated operator
+        # Smart control shortcuts - using consolidated operator
         # Main toggle: Ctrl+Shift+Alt+MIDDLEMOUSE
         kmi = km.keymap_items.new('lumi.smart_control', 'MIDDLEMOUSE', 'PRESS', ctrl=True, shift=True, alt=True)
         addon_keymaps.append((km, kmi))
         
-        # Mode-specific smart control dengan preset mode
+        # Mode-specific smart control with preset mode
         # Distance mode: Ctrl+MIDDLEMOUSE
         kmi = km.keymap_items.new('lumi.smart_control', 'MIDDLEMOUSE', 'PRESS', ctrl=True)
         kmi.properties.mode = 'DISTANCE'
@@ -560,7 +558,6 @@ def register_keymaps() -> None:
         kmi.properties.mode = 'BLEND'
         addon_keymaps.append((km, kmi))
 
-    # Handle error if it occurs
     except (AttributeError, RuntimeError):
         pass
 
@@ -618,7 +615,7 @@ detection_count = 0
 
 @persistent
 def lumiflow_pre_load_handler(dummy):
-    """Dipanggil SEBELUM Blender mulai membuka file"""
+    """Called BEFORE Blender starts opening file"""
     global detection_count
     detection_count += 1
     
@@ -664,7 +661,7 @@ def reinitialize_overlay_system():
 
 @persistent  
 def lumiflow_save_pre_handler(dummy):
-    """Dipanggil SEBELUM Blender menyimpan file"""
+    """Called BEFORE Blender saves file"""
     
     try:
         # Save camera-light assignments to persistent properties before saving
@@ -682,7 +679,7 @@ def lumiflow_save_pre_handler(dummy):
 
 @persistent  
 def lumiflow_post_load_handler(dummy):
-    """Dipanggil SETELAH Blender selesai membaca file"""
+    """Called AFTER Blender finishes reading file"""
     
     try:
         # Only disable addon if it was previously enabled (prevent aggressive disable)
@@ -754,14 +751,12 @@ def register() -> None:
     except Exception:
         pass
     
-    # Register all classes
     for cls in classes:
         try:
             bpy.utils.register_class(cls)
         except Exception:
             pass
     
-    # Register properties
     register_properties()
     bpy.types.Scene.light_props = bpy.props.PointerProperty(type=LightPositioningProperties)
     bpy.types.Scene.lumi_professional_props = bpy.props.PointerProperty(type=ProfessionalLightingProperties)
@@ -823,7 +818,6 @@ def register() -> None:
                 if cur not in valid_cats:
                     sc.lumi_template_category = 'ALL'
             except Exception:
-                # Ignore scenes we cannot modify
                 pass
     except Exception:
         pass
@@ -1034,7 +1028,6 @@ def unregister() -> None:
     
     # Unregister AddonPreferences
     try:
-        # Unregister class
         bpy.utils.unregister_class(LumiFlowAddonPreferences)
     except Exception:
         pass
@@ -1051,7 +1044,6 @@ def unregister() -> None:
         except Exception:
             pass
     
-    # Unregister properties
     unregister_properties()
     
     # Cleanup orphaned collections

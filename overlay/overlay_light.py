@@ -151,7 +151,6 @@ def draw_circle(center: Vector, normal: Vector, radius: float, segments: int = 3
     if batch_shapes is None:
         return
         
-    # Get segments from config if not specified
     if segments == 32:
         segments = OverlayConfig.get_drawing_setting('circle_segments', 32)
     
@@ -159,16 +158,13 @@ def draw_circle(center: Vector, normal: Vector, radius: float, segments: int = 3
     if color == (1, 1, 0, 1):
         color = OverlayConfig.get_color('circle_default', (1, 1, 0, 1))
     
-    # Create basis vectors if not provided
     if basis_x is None or basis_y is None:
-        # Create arbitrary perpendicular vectors
         if abs(normal.z) < 0.9:
             basis_x = normal.cross(Vector((0, 0, 1))).normalized()
         else:
             basis_x = normal.cross(Vector((1, 0, 0))).normalized()
         basis_y = normal.cross(basis_x).normalized()
     
-    # Create circle vertices
     vertices = []
     for i in range(segments):
         angle = 2 * math.pi * i / segments
@@ -177,16 +173,15 @@ def draw_circle(center: Vector, normal: Vector, radius: float, segments: int = 3
         pos = center + basis_x * x + basis_y * y
         vertices.append(pos)
     
-    # Add to batch if provided
     if batch_shapes is not None:
         for i in range(segments):
             batch_shapes.extend([vertices[i], vertices[(i + 1) % segments]])
 
 def draw_area_overlay(light, target_pos: Vector, batch_shapes=None):
     light_matrix = light.matrix_world
-    local_x = light_matrix.col[0].to_3d().normalized()  # X axis lampu (size)
-    local_y = light_matrix.col[1].to_3d().normalized()  # Y axis lampu (size_y)
-    local_z = light_matrix.col[2].to_3d().normalized()  # Z axis lampu (arah sinar = -Z)
+    local_x = light_matrix.col[0].to_3d().normalized()  # X axis light (size)
+    local_y = light_matrix.col[1].to_3d().normalized()  # Y axis light (size_y)
+    local_z = light_matrix.col[2].to_3d().normalized()  # Z axis light (ray direction = -Z)
     
     x_axis = local_x
     y_axis = local_y
@@ -197,7 +192,7 @@ def draw_area_overlay(light, target_pos: Vector, batch_shapes=None):
     hx = size_x / 2
     
     if shape in {'SQUARE', 'DISK'}:
-        hy = hx  # Force square/circular shape
+        hy = hx
     else:
         hy = size_y / 2
     
@@ -221,8 +216,8 @@ def draw_area_overlay(light, target_pos: Vector, batch_shapes=None):
             for i in range(4):
                 batch_shapes.extend([corners[i], corners[(i + 1) % 4]])
     elif shape == 'DISK':
-        # Untuk DISK, gunakan normal dari -Z axis lampu  
-        # Draw circle directly into batch_shapes untuk konsistensi
+        # For DISK, use normal from -Z axis light
+        # Draw circle directly into batch_shapes for consistency
         segments = 32
         angle_step = 2 * math.pi / segments
         points = []
@@ -235,7 +230,6 @@ def draw_area_overlay(light, target_pos: Vector, batch_shapes=None):
             p2 = points[(i + 1) % segments]
             batch_shapes.extend([p1, p2])
     else:
-        # Fallback: draw as square for unknown shapes
         corners = [
             light.location + x_axis * hx + y_axis * hy,
             light.location - x_axis * hx + y_axis * hy,
@@ -253,11 +247,9 @@ def draw_spot_light_circle(center_world: Vector, radius: float, region=None, rv3
     x_axis = view_rot @ Vector((1, 0, 0))
     y_axis = view_rot @ Vector((0, 1, 0))
     
-    # Draw main circle based on shadow_soft_size (world space)
     world_radius = max(0.05, radius)  # minimum radius for visibility
     segments = 32
     
-    # Main circle points (world space - changes with zoom)
     main_points = []
     for i in range(segments):
         angle = 2 * math.pi * i / segments
@@ -291,7 +283,6 @@ def draw_spot_light_circle(center_world: Vector, radius: float, region=None, rv3
         for i in range(len(center_points)):
             batch_shapes.extend([center_points[i], center_points[(i + 1) % len(center_points)]])
     else:
-        # Fallback: draw very small world-space circle if screen conversion fails
         center_radius = 0.01
         center_points = []
         for i in range(12):
@@ -317,39 +308,38 @@ def draw_spot_cone(light, target_pos: Vector, cam_pos: Vector, region=None, rv3d
     draw_spot_light_circle(light.location, light.data.shadow_soft_size, region=region, rv3d=rv3d, batch_shapes=batch_shapes)
     draw_circle(cone_base, direction, cone_radius, batch_shapes=batch_shapes)
     
-    # Get blend color from config
     blend_color = OverlayConfig.get_color('spot_blend', (0.5, 0.8, 1, 1))
     draw_circle(cone_base, direction, blend_radius, color=blend_color, batch_shapes=batch_shapes)
 
     batch_lines.extend([light.location, cone_base])
 
-    # Arah kamera dalam world space (negatif Z)
+    # Camera direction in world space (negative Z)
     view_dir = rv3d.view_rotation @ Vector((0, 0, -1))
     
-   # Proyeksikan arah kamera ke bidang tegak lurus arah lampu
+   # Project camera direction to plane perpendicular to light direction
     proj = view_dir - direction * view_dir.dot(direction)
     if proj.length < 1e-6:
         proj = direction.orthogonal()
     else:
         proj.normalize()
 
-    # Dot product: seberapa sejajar arah lampu dengan kamera
+    # Dot product: how parallel light direction is with camera
     dot_dir = direction.dot(view_dir)
     abs_dot = abs(dot_dir)
 
-    # Cek apakah light berhadapan langsung dengan kamera (dot product mendekati -1)
-    facing_threshold = 0.75  # threshold untuk light berhadapan dengan kamera
+    # Check if light is facing directly towards camera (dot product approaches -1)
+    facing_threshold = 0.75  # threshold for light facing camera
     if dot_dir < -facing_threshold:
-        return  # tidak menggambar garis cone jika light berhadapan dengan kamera
+        return  # don't draw cone lines if light is facing camera
 
-    # Ambang sejajar: jika kamera hampir sejajar dengan arah lampu, sudut cone menyempit
+    # Parallel threshold: if camera is almost parallel with light direction, cone angle narrows
     threshold = 0.7
-    max_angle = math.pi / 2  # sudut maksimal (36 derajat)
-    min_angle = 0  # sudut minimal agar tidak benar-benar menutup
+    max_angle = math.pi / 2  # maximum angle (36 degrees)
+    min_angle = 0  # minimum angle to not completely close
 
-    # Interpolasi sudut offset berdasarkan seberapa sejajar
+    # Interpolate offset angle based on how parallel
     if abs_dot > threshold:
-        # Semakin sejajar, sudut makin kecil
+        # The more parallel, the smaller the angle
         t = (abs_dot - threshold) / (1 - threshold)
         t = min(max(t, 0.0), 1.0)
         angle_offset = (1 - t) * max_angle + t * min_angle
@@ -367,10 +357,10 @@ def draw_spot_cone(light, target_pos: Vector, cam_pos: Vector, region=None, rv3d
     edge2 = cone_base + (q2 @ proj) * cone_radius
 
     edge_distance = (edge1 - edge2).length
-    if edge_distance < 2.0:  # tidak digambar jika terlalu sempit
+    if edge_distance < 2.0:  # not drawn if too narrow
         return
 
-    # Tambahkan garis cone
+    # Add cone lines
     batch_shapes.extend([light.location, edge1])
     batch_shapes.extend([light.location, edge2])
 
@@ -379,7 +369,6 @@ def draw_sign(location: Vector, size: float = 0.1, color: tuple = (1, 1, 1, 1), 
     if batch_lines is None:
         return
     
-    # Get default size from config if not specified
     if size == 0.1:
         size = OverlayConfig.get_light_setting('plus_sign_size', 0.1)
     
@@ -387,21 +376,18 @@ def draw_sign(location: Vector, size: float = 0.1, color: tuple = (1, 1, 1, 1), 
     if color == (1, 1, 1, 1):
         color = OverlayConfig.get_color('plus_sign', (1, 1, 1, 1))
     
-    # Create screen-aligned plus sign
     screen_pos = view3d_utils.location_3d_to_region_2d(region, rv3d, location)
     if not screen_pos:
         return
     
-    # Create plus sign in screen space
     half_size = size * 150  # Scale for screen visibility
     screen_points = [
-        screen_pos + Vector((-half_size, 0)),      # Left
-        screen_pos + Vector((half_size, 0)),       # Right
-        screen_pos + Vector((0, -half_size)),      # Bottom
-        screen_pos + Vector((0, half_size))        # Top
+        screen_pos + Vector((-half_size, 0)),
+        screen_pos + Vector((half_size, 0)),
+        screen_pos + Vector((0, -half_size)),
+        screen_pos + Vector((0, half_size))
     ]
     
-    # Convert screen points back to world space at the depth of original location
     world_points = []
     for screen_point in screen_points:
         ray_origin = view3d_utils.region_2d_to_origin_3d(region, rv3d, screen_point)
@@ -410,16 +396,13 @@ def draw_sign(location: Vector, size: float = 0.1, color: tuple = (1, 1, 1, 1), 
         world_point = ray_origin + ray_dir * depth
         world_points.append(world_point)
     
-    # Add horizontal line (left to right)
     batch_lines.extend([world_points[0], world_points[1]])
-    # Add vertical line (bottom to top)
     batch_lines.extend([world_points[2], world_points[3]])
 
 # calculate_target_position moved to utils/light.py as lumi_calculate_light_target_position
 
 def draw_light_visualization(light, target_pos: Vector, cam_pos: Vector, region=None, rv3d=None, batch_lines=None, batch_shapes=None):
     """Draw visualization for a single light based on its type using OverlayConfig."""
-    # Get target size from config
     target_size = OverlayConfig.get_light_setting('target_size', 0.05)
     draw_sign(target_pos, size=target_size, region=region, rv3d=rv3d, batch_lines=batch_lines)
     batch_lines.extend([light.location, target_pos])
@@ -465,9 +448,7 @@ def initialize_drawing_context():
     
     context = bpy.context
     scene = context.scene
-    # # Ambil objek yang dipilih dalam scene
     selected_objects = context.selected_objects
-    # # Periksa apakah objek adalah lampu
     lights = [obj for obj in selected_objects if obj.type == 'LIGHT']
     if not lights:
         return None, None, None, None, None, None
@@ -494,7 +475,6 @@ def lumi_draw_light_lines():
     
     scene = context.scene
     
-    # Get selected lights - don't return early if none selected
     selected_objects = context.selected_objects
     lights = [obj for obj in selected_objects if obj.type == 'LIGHT']
     

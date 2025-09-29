@@ -2,7 +2,7 @@
 Move Operations
 Operators for moving and positioning lights.
 """
-# Import modul utama Blender
+# Import main Blender modules
 import bpy
 from mathutils import Vector
 from bpy_extras import view3d_utils
@@ -20,7 +20,7 @@ from .utils import (
 from ...core.state import get_state
 from ...base_modal import BaseModalOperator
 
-# Definisi class untuk Operator - Refactored for Positioning Mode
+# Class definition for Operator - Refactored for Positioning Mode
 class LUMI_OT_move_positioning(bpy.types.Operator, BaseModalOperator):
     bl_idname = "lumi.move_positioning"
     bl_label = "Move Positioning"
@@ -33,9 +33,9 @@ class LUMI_OT_move_positioning(bpy.types.Operator, BaseModalOperator):
     _timer = None
 
     @classmethod
-    # # Method untuk menentukan kapan operator/panel aktif
+    # # Method to determine when operator/panel is active
     def poll(cls, context):
-        # # Ambil objek yang dipilih dalam scene
+        # # Get selected objects in scene
         return lumi_is_addon_enabled() and any(obj.type == 'LIGHT' for obj in context.selected_objects)
 
     def validate_context(self, context):
@@ -49,7 +49,6 @@ class LUMI_OT_move_positioning(bpy.types.Operator, BaseModalOperator):
     def invoke(self, context, event):
         """Invoke method - starts modal operator for move positioning"""
         try:
-            # Validate inputs
             if not self.validate_context(context):
                 self.report({'ERROR'}, "Invalid context for move positioning")
                 return {'CANCELLED'}
@@ -74,7 +73,7 @@ class LUMI_OT_move_positioning(bpy.types.Operator, BaseModalOperator):
             context.window_manager.modal_handler_add(self)
             self._timer = context.window_manager.event_timer_add(0.1, window=context.window)
             
-            # Enable overlay handler untuk positioning mode
+            # Enable overlay handler for positioning mode
             from ...overlay import lumi_enable_cursor_overlay_handler
             lumi_enable_cursor_overlay_handler()
             
@@ -107,7 +106,7 @@ class LUMI_OT_move_positioning(bpy.types.Operator, BaseModalOperator):
             pass
             return {'CANCELLED'}
 
-    # # Method utama untuk modal operator
+    # # Main method for modal operator
     def modal(self, context, event):
         """Modal implementation for move positioning"""
         # Validate context first
@@ -168,7 +167,7 @@ class LUMI_OT_move_positioning(bpy.types.Operator, BaseModalOperator):
                     state.set_modal_state('move_pressing', False)
                     state.set_modal_state('move', False)
                 
-                # Reset positioning mode untuk konsistensi dengan cancel
+                # Reset positioning mode for consistency with cancel
                 if hasattr(context.scene, 'light_props'):
                     context.scene.light_props.positioning_mode = 'DISABLE'
                 
@@ -326,7 +325,7 @@ class LUMI_OT_move_positioning(bpy.types.Operator, BaseModalOperator):
             if state:
                 state.set_modal_state('move_pressing', False)
             
-            # Disable overlay handler hanya jika tidak ada smart control aktif
+            # Disable overlay handler only if no smart control is active
             if not state.scroll_control_enabled:
                 from ...overlay import lumi_disable_cursor_overlay_handler
                 lumi_disable_cursor_overlay_handler()

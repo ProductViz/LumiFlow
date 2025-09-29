@@ -7,27 +7,24 @@ import bpy
 
 
 class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
-    """Pengaturan addon untuk LumiFlow, memungkinkan user customize keymap dan opsi UI."""
+    """Addon preferences for LumiFlow, allowing users to customize keymaps and UI options."""
     bl_idname = __package__ or "LumiFlow"
 
-    # Pengaturan shortcut kustom
-    # # Definisi property Blender
+    # Custom shortcut settings
     enable_custom_shortcuts: bpy.props.BoolProperty(
         name="Enable Custom Shortcuts",
         default=True,
         description="Allow custom keymap overrides for LumiFlow operators."
     )
     
-    # Pengaturan tips startup
-    # # Definisi property Blender
+    # Startup tips settings
     show_tips_on_start: bpy.props.BoolProperty(
         name="Show Tips on Startup",
         default=True,
         description="Show helpful tips when Blender starts."
     )
     
-    # Pengaturan panel development
-    # # Definisi property Blender
+    # Development panel settings
     show_dev_panel: bpy.props.BoolProperty(
         name="Show Development Panel",
         default=False,
@@ -35,10 +32,9 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
     )
     
     # =====================================================================
-    # KUSTOMISASI TEKS OVERLAY
+    # OVERLAY TEXT CUSTOMIZATION
     # =====================================================================
     
-    # # Definisi property Blender
     overlay_font_scale: bpy.props.FloatProperty(
         name="Font Scale",
         default=1.0,
@@ -48,7 +44,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         precision=1,
         description="Scale factor for overlay text font size (0.3x to 3.0x). Perfect for HD, 2K, 4K displays."
     )
-    # # Definisi property Blender
     overlay_line_spacing: bpy.props.FloatProperty(
         name="Line Spacing",
         default=1.0,
@@ -63,7 +58,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
     # THEME AND COLOR CUSTOMIZATION
     # =====================================================================
     
-    # # Definisi property Blender
     theme_preset: bpy.props.EnumProperty(
         name="Color Theme",
         items=[
@@ -80,7 +74,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         description="Quick color theme presets. Select 'Custom' to use your own colors."
     )
     
-    # # Definisi property Blender
     use_custom_colors: bpy.props.BoolProperty(
         name="Use Custom Colors",
         default=False,
@@ -88,7 +81,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
     )
     
     # Primary colors
-    # # Definisi property Blender
     header_color: bpy.props.FloatVectorProperty(
         name="Header Color",
         subtype='COLOR',
@@ -98,7 +90,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         max=1.0,
         description="Color for section headers and main titles."
     )
-    # # Definisi property Blender
     highlight_color: bpy.props.FloatVectorProperty(
         name="Highlight Color",
         subtype='COLOR',
@@ -108,7 +99,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         max=1.0,
         description="Color for active/highlighted values and important information."
     )
-    # # Definisi property Blender
     normal_text_color: bpy.props.FloatVectorProperty(
         name="Normal Text",
         subtype='COLOR',
@@ -118,7 +108,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         max=1.0,
         description="Color for standard text and labels."
     )
-    # # Definisi property Blender
     secondary_text_color: bpy.props.FloatVectorProperty(
         name="Secondary Text",
         subtype='COLOR',
@@ -128,7 +117,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         max=1.0,
         description="Color for secondary information and descriptions."
     )
-    # # Definisi property Blender
     dim_text_color: bpy.props.FloatVectorProperty(
         name="Dim Text",
         subtype='COLOR',
@@ -139,7 +127,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
     )
     
     # Smart overlay colors
-    # # Definisi property Blender
     smart_text_color: bpy.props.FloatVectorProperty(
         name="Smart Text",
         subtype='COLOR',
@@ -149,7 +136,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         max=1.0,
         description="Color for smart overlay text."
     )
-    # # Definisi property Blender
     smart_value_color: bpy.props.FloatVectorProperty(
         name="Smart Value",
         subtype='COLOR',
@@ -164,7 +150,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
     # OVERLAY POSITIONING & LAYOUT
     # =====================================================================
     
-    # # Definisi property Blender
     info_panel_position: bpy.props.EnumProperty(
         name="Info Panel Position",
         items=[
@@ -176,7 +161,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         default='BOTTOM_RIGHT',
         description="Position of the light information panel."
     )
-    # # Definisi property Blender
     tips_panel_position: bpy.props.EnumProperty(
         name="Tips Panel Position",
         items=[
@@ -189,7 +173,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         description="Position of the tips/help panel."
     )
     
-    # # Definisi property Blender
     overlay_opacity: bpy.props.FloatProperty(
         name="Overlay Opacity",
         default=1.0,
@@ -200,7 +183,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         description="Overall opacity/transparency of all overlay elements."
     )
     
-    # # Definisi property Blender
     info_panel_margin_x: bpy.props.IntProperty(
         name="Info Panel Margin X",
         default=20,
@@ -208,7 +190,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         max=200,
         description="Horizontal margin/offset for info panel from edge of viewport."
     )
-    # # Definisi property Blender
     info_panel_margin_y: bpy.props.IntProperty(
         name="Info Panel Margin Y",
         default=20,
@@ -216,7 +197,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         max=200,
         description="Vertical margin/offset for info panel from edge of viewport."
     )
-    # # Definisi property Blender
     tips_panel_margin_x: bpy.props.IntProperty(
         name="Tips Panel Margin X",
         default=20,
@@ -224,7 +204,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         max=200,
         description="Horizontal margin/offset for tips panel from edge of viewport."
     )
-    # # Definisi property Blender
     tips_panel_margin_y: bpy.props.IntProperty(
         name="Tips Panel Margin Y",
         default=20,
@@ -235,7 +214,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
     
     def force_viewport_redraw(self):
         """Force redraw of all 3D viewports to show theme changes."""
-        # # Coba eksekusi kode dengan error handling
         try:
             for window in bpy.context.window_manager.windows:
                 for area in window.screen.areas:
@@ -248,7 +226,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         layout = self.layout
         
         # Header
-        # # Buat baris horizontal UI
         header = layout.row()
         header.label(text="🎨 LumiFlow Overlay Customization", icon='PREFERENCES')
         
@@ -256,7 +233,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         # GENERAL SETTINGS
         # =====================================================================
         
-        # # Buat kotak container UI
         box = layout.box()
         box.label(text="General Settings", icon='SETTINGS')
         
@@ -277,7 +253,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         # DISPLAY & FONT SETTINGS
         # =====================================================================
         
-        # # Buat kotak container UI
         box = layout.box()
         box.label(text="📱 Display & Font Settings", icon='FONTPREVIEW')
         
@@ -293,7 +268,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         # THEME & COLOR SETTINGS
         # =====================================================================
         
-        # # Buat kotak container UI
         box = layout.box()
         box.label(text="🎨 Theme & Colors", icon='COLOR')
         
@@ -325,7 +299,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         # LAYOUT & POSITIONING
         # =====================================================================
         
-        # # Buat kotak container UI
         box = layout.box()
         box.label(text="📐 Layout & Positioning", icon='OBJECT_ORIGIN')
         
@@ -344,7 +317,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         margins_row2 = pos_col2.row(align=True)
         margins_row2.prop(self, "tips_panel_margin_x", text="Tips X")
         margins_row2.prop(self, "tips_panel_margin_y", text="Y")
-        
         # Opacity
         box.separator()
         box.prop(self, "overlay_opacity", slider=True)
@@ -353,16 +325,14 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         # PREVIEW & HELP
         # =====================================================================
         
-        # # Buat kotak container UI
         info_box = layout.box()
         info_col = info_box.column()
         info_col.label(text="💡 Tips:", icon='QUESTION')
         info_col.label(text="• Font Scale: Adjust for your screen resolution (0.5x for large screens, 2.0x+ for small/high-DPI)")
         info_col.label(text="• Themes: Auto-adapt will adjust colors based on Blender's light/dark theme")
-        info_col.label(text="• Positioning: Move panels to avoid conflicts with your workflow")
         info_col.label(text="• Changes take effect immediately in the 3D viewport")
 
 
-# Export untuk registration
+# Export for registration
 __all__ = ['LumiFlowAddonPreferences']
 

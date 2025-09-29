@@ -22,59 +22,53 @@ def get_smart_light_parameters(
     light_type: str
 ) -> Dict[str, Any]:
     """
-    Hitung parameter lighting yang optimal menggunakan intelligent analysis.
+    Calculate optimal lighting parameters using intelligent analysis.
     
     Args:
         context: Blender context
-        hit_obj: Object yang dihit oleh raycast
-        hit_location: Lokasi hit point
-        hit_normal: Normal vector di hit point
-        light_type: Tipe light ('POINT', 'SPOT', 'AREA', 'SUN')
+        hit_obj: Object hit by raycast
+        hit_location: Hit point location
+        hit_normal: Normal vector at hit point
+        light_type: Light type ('POINT', 'SPOT', 'AREA', 'SUN')
     
     Returns:
-        Dictionary dengan parameter lighting yang optimal
+        Dictionary with optimal lighting parameters
     """
-    # Calculate smart light parameters
-    
     # Default parameters
     smart_params = {
-        'position': hit_location + Vector((0, 0, 5)),  # Default 5 unit di atas
+        'position': hit_location + Vector((0, 0, 5)),  # Default 5 units above
         'distance': 5.0,
         'power': 1000.0,
         'scale': {}
     }
     
     try:
-        # Analisis scene untuk parameter optimal
+        # Analyze scene for optimal parameters
         scene_analysis = analyze_scene_for_lighting(context, hit_obj, hit_location)
         
-        # Hitung posisi berdasarkan hit_normal
+        # Calculate position based on hit_normal
         position = calculate_optimal_light_position(context, hit_obj, hit_location, hit_normal, light_type)
         smart_params['position'] = position
         
-        # Hitung jarak
+        # Calculate distance
         distance = (position - hit_location).length
         smart_params['distance'] = distance
         
-        # Hitung power/intensity
+        # Calculate power/intensity
         power = calculate_optimal_power(light_type, distance, scene_analysis)
         smart_params['power'] = power
         
-        # Hitung scale parameters
+        # Calculate scale parameters
         scale_params = calculate_optimal_scale(light_type, distance, scene_analysis)
         smart_params['scale'] = scale_params
         
-        # Smart parameters calculated successfully
         
     except Exception as e:
         # Error in smart light calculation - using defaults
-        # Return default parameters if calculation fails
         return smart_params
     
     return smart_params
 
-
-# Removed setup type detection - no longer needed
 
 
 def analyze_scene_for_lighting(
@@ -83,15 +77,15 @@ def analyze_scene_for_lighting(
     hit_location: Vector
 ) -> Dict[str, Any]:
     """
-    Analisis scene untuk parameter lighting optimal.
+    Analyze scene for optimal lighting parameters.
     
     Args:
         context: Blender context
-        hit_obj: Object yang dihit
-        hit_location: Lokasi hit point
+        hit_obj: Hit object
+        hit_location: Hit point location
     
     Returns:
-        Dictionary dengan analisis scene
+        Dictionary with scene analysis
     """
     scene_analysis = {
         'object_count': 0,
@@ -102,11 +96,11 @@ def analyze_scene_for_lighting(
     }
     
     try:
-        # Hitung jumlah objek di scene
+        # Calculate number of objects in scene
         all_objects = [obj for obj in context.scene.objects if obj.type == 'MESH']
         scene_analysis['object_count'] = len(all_objects)
         
-        # Hitung ukuran scene
+        # Calculate scene size
         if all_objects:
             bbox_min = Vector((float('inf'), float('inf'), float('inf')))
             bbox_max = Vector((float('-inf'), float('-inf'), float('-inf')))
@@ -124,7 +118,7 @@ def analyze_scene_for_lighting(
             scene_size = (bbox_max - bbox_min).length
             scene_analysis['scene_size'] = scene_size
         
-        # Analisis ketebalan objek target
+        # Analyze target object thickness
         if hit_obj and hit_obj.type == 'MESH':
             thickness_result = get_object_thickness_analysis(
                 context, [hit_obj], context.scene.camera, sample_points=3
@@ -133,11 +127,10 @@ def analyze_scene_for_lighting(
                 obj_thickness = thickness_result['thickness_data'][hit_obj.name]['average_thickness']
                 scene_analysis['object_thickness'] = obj_thickness
         
-        # Dapatkan objek terdekat
+        # Get nearby objects
         nearby_objects = get_nearby_objects(context, hit_location, radius=5.0)
         scene_analysis['nearby_objects'] = nearby_objects
         
-        # Scene analysis completed
         
     except Exception as e:
         # Error in scene analysis - using defaults
@@ -154,28 +147,28 @@ def calculate_optimal_light_position(
     light_type: str
 ) -> Vector:
     """
-    Hitung posisi optimal untuk light berdasarkan hit_normal.
+    Calculate optimal light position based on hit_normal.
     
     Args:
         context: Blender context
-        hit_obj: Object yang dihit
-        hit_location: Lokasi hit point
-        hit_normal: Normal vector di hit point
-        light_type: Tipe light
+        hit_obj: Hit object
+        hit_location: Hit point location
+        hit_normal: Normal vector at hit point
+        light_type: Light type
     
     Returns:
-        Vector dengan posisi optimal
+        Vector with optimal position
     """
     try:
-        # Validasi hit_normal
+        # Validate hit_normal
         if not isinstance(hit_normal, Vector) or hit_normal.length == 0:
             # Invalid hit_normal - using fallback
             return hit_location + Vector((0, 0, 5))  # Default fallback
         
-        # Normalisasi hit_normal
+        # Normalize hit_normal
         normal = hit_normal.normalized()
         
-        # Hitung jarak default berdasarkan light type
+        # Calculate default distance based on light type
         default_distances = {
             'SUN': 20.0,
             'POINT': 5.0,
@@ -184,14 +177,11 @@ def calculate_optimal_light_position(
         }
         distance = default_distances.get(light_type, 5.0)
         
-        # Posisi light lurus mengikuti face normal
-        # Light ditempatkan tepat di depan permukaan mengikuti arah normal
+        # Calculate light offset based on normal and distance
         light_offset = normal * distance
         
-        # Final position - lurus mengikuti normal tanpa offset tambahan
+        # Calculate final position
         final_position = hit_location + light_offset
-        
-        # Light position calculated
         
         return final_position
             
@@ -206,18 +196,18 @@ def calculate_optimal_power(
     scene_analysis: Dict[str, Any]
 ) -> float:
     """
-    Hitung power optimal untuk light.
+    Calculate optimal power for light.
     
     Args:
-        light_type: Tipe light
-        distance: Jarak ke target
-        scene_analysis: Hasil analisis scene
+        light_type: Light type
+        distance: Distance to target
+        scene_analysis: Scene analysis result
     
     Returns:
-        Float dengan power optimal
+        Float with optimal power
     """
     try:
-        # Base power berdasarkan light type
+        # Base power based on light type
         base_power = {
             'POINT': 1000.0,
             'SPOT': 1500.0,
@@ -225,19 +215,15 @@ def calculate_optimal_power(
             'SUN': 5000.0
         }.get(light_type, 1000.0)
         
-        # Tidak ada setup type adjustment - menggunakan base power
-        
-        # Adjust berdasarkan jarak (inverse square law)
+        # Adjust power based on distance (inverse square law)
         distance_multiplier = max(0.1, (distance / 5.0) ** 2)
         
-        # Adjust berdasarkan scene size
+        # Adjust power based on scene size
         scene_size = scene_analysis.get('scene_size', 10.0)
         scene_multiplier = max(0.5, scene_size / 20.0)
         
         # Calculate final power
         optimal_power = base_power * distance_multiplier * scene_multiplier
-        
-        # Power calculation completed
         
         return optimal_power
         
@@ -252,21 +238,21 @@ def calculate_optimal_scale(
     scene_analysis: Dict[str, Any]
 ) -> Dict[str, float]:
     """
-    Hitung scale parameters optimal untuk light.
+    Calculate optimal scale parameters for light.
     
     Args:
-        light_type: Tipe light
-        distance: Jarak ke target
-        scene_analysis: Hasil analisis scene
+        light_type: Light type
+        distance: Distance to target
+        scene_analysis: Scene analysis result
     
     Returns:
-        Dictionary dengan scale parameters
+        Dictionary with scale parameters
     """
     scale_params = {}
     
     try:
         if light_type == 'AREA':
-            # Area light size berdasarkan jarak dan object thickness
+            # Area light size based on distance and object thickness
             object_thickness = scene_analysis.get('object_thickness', 1.0)
             base_size = max(0.5, object_thickness * 0.8)
             
@@ -295,11 +281,9 @@ def calculate_optimal_scale(
                 'angle': math.radians(0.5)  # 0.5 degrees
             }
         
-        # Scale parameters calculated
         
     except Exception as e:
         # Error in scale calculation - using defaults
-        # Default fallback
         if light_type == 'AREA':
             scale_params = {'size': 1.0, 'size_y': 1.2}
         elif light_type == 'SPOT':
@@ -316,12 +300,12 @@ def get_nearby_objects(
     radius: float = 5.0
 ) -> List[bpy.types.Object]:
     """
-    Dapatkan objek-objek yang berada dalam radius tertentu dari lokasi.
+    Get objects within a certain radius from location.
     
     Args:
         context: Blender context
-        location: Lokasi pusat
-        radius: Radius pencarian
+        location: Center location
+        radius: Search radius
     
     Returns:
         List of nearby objects
@@ -341,7 +325,7 @@ def get_nearby_objects(
     return nearby_objects
 
 
-# Export list untuk import control
+# Export list for import control
 __all__ = [
     'get_smart_light_parameters',
     'analyze_scene_for_lighting',

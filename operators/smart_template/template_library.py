@@ -6,7 +6,6 @@ Comprehensive lighting template definitions with mathematically precise position
 import math
 from typing import Dict, List, Optional, Tuple, Any
 
-# Import templates from individual template files
 try:
     from ...templates.studio_commercial import STUDIO_COMMERCIAL_TEMPLATES
     from ...templates.dramatic_cinematic import DRAMATIC_CINEMATIC_TEMPLATES
@@ -19,7 +18,6 @@ except ImportError as e:
     # Fallback for direct execution or development
     TEMPLATES_IMPORTED = False
 
-# Template Schema Definition
 TEMPLATE_SCHEMA = {
     "id": str,
     "name": str,
@@ -54,12 +52,9 @@ TEMPLATE_SCHEMA = {
     }
 }
 
-# BUILTIN_TEMPLATES - Master Collection
 BUILTIN_TEMPLATES = {}
 
-# Use imported templates if available, otherwise use inline definitions
 if TEMPLATES_IMPORTED:
-    # Load all templates from the master template library
     BUILTIN_TEMPLATES.update(STUDIO_COMMERCIAL_TEMPLATES)
     BUILTIN_TEMPLATES.update(DRAMATIC_CINEMATIC_TEMPLATES) 
     BUILTIN_TEMPLATES.update(ENVIRONMENT_REALISTIC_TEMPLATES)
@@ -67,7 +62,6 @@ if TEMPLATES_IMPORTED:
     
     total_templates = len(STUDIO_COMMERCIAL_TEMPLATES) + len(DRAMATIC_CINEMATIC_TEMPLATES) + len(ENVIRONMENT_REALISTIC_TEMPLATES) + len(UTILITIES_SINGLE_LIGHTS_TEMPLATES)
 else:
-    # Fallback to minimal inline definitions for development
     BUILTIN_TEMPLATES = {
         "default_portrait": {
             "id": "default_portrait",
@@ -100,194 +94,110 @@ else:
             }
         }
     }
-    pass
 
-# Template Management Functions
 def get_template(template_id: str) -> Optional[Dict[str, Any]]:
-    """
-    Get template by ID.
-    
-    Args:
-        template_id: Unique template identifier
-        
-    Returns:
-        Template dictionary or None if not found
-    """
-    # # Coba eksekusi kode dengan error handling
+    """Get template by ID."""
     try:
         return BUILTIN_TEMPLATES.get(template_id)
-    # # Tangani error jika terjadi
     except Exception as e:
         pass
         return None
 
 
 def list_templates(category: Optional[str] = None) -> List[Dict[str, Any]]:
-    """
-    List available templates, optionally filtered by category.
-    
-    Args:
-        category: Filter by category (portrait, product, fashion, automotive)
-        
-    Returns:
-        List of template dictionaries
-    """
-    # # Coba eksekusi kode dengan error handling
+    """List available templates, optionally filtered by category."""
     try:
         templates = []
         
         for template_id, template in BUILTIN_TEMPLATES.items():
-            # Filter by category if specified
             if category and template.get('category') != category:
                 continue
             
-            # Add template ID for reference
             template_copy = template.copy()
             template_copy['template_id'] = template_id
             templates.append(template_copy)
         
         return templates
         
-    # # Tangani error jika terjadi
     except Exception as e:
         pass
         return []
 
 
 def validate_template(template: Dict[str, Any]) -> bool:
-    """
-    Validate template structure against schema.
-    
-    Args:
-        template: Template dictionary to validate
-        
-    Returns:
-        True if valid, False otherwise
-    """
-    # # Coba eksekusi kode dengan error handling
+    """Validate template structure against schema."""
     try:
-        # Check required top-level keys
         required_keys = ['id', 'name', 'category', 'description', 'lights', 'settings']
         for key in required_keys:
             if key not in template:
-                pass
                 return False
         
-        # Validate category
-        valid_categories = [
-            'Studio & Commercial', 'Dramatic & Cinematic', 'Environment & Realistic', 
-            'Utilities & Single Lights', 'portrait', 'product', 'fashion', 'automotive', 
-            'architecture', 'food', 'nature', 'jewelry', 'cinematic'
-        ]
-        if template.get('category') not in valid_categories:
-            pass
-            return False
-        
-        # Validate lights structure
         lights = template.get('lights', [])
         if not isinstance(lights, list) or len(lights) == 0:
-            pass
             return False
         
         for light in lights:
             if not isinstance(light, dict):
-                pass
                 return False
             
             light_required = ['name', 'type', 'position', 'rotation', 'properties']
             for light_key in light_required:
                 if light_key not in light:
-                    pass
                     return False
             
-            # Validate light type
             valid_types = ['AREA', 'SPOT', 'POINT', 'SUN']
             if light.get('type') not in valid_types:
-                pass
                 return False
             
-            # Validate position method
             position = light.get('position', {})
             valid_methods = ['spherical', 'cartesian', 'relative']
             if position.get('method') not in valid_methods:
-                pass
                 return False
         
-        # Validate settings
         settings = template.get('settings', {})
         if not isinstance(settings, dict):
-            pass
             return False
         
         settings_required = ['base_distance', 'auto_scale', 'preserve_existing']
         for setting_key in settings_required:
             if setting_key not in settings:
-                pass
                 return False
         
         return True
         
-    # # Tangani error jika terjadi
     except Exception as e:
         pass
         return False
 
 
 def get_template_categories() -> List[str]:
-    """
-    Get all available template categories.
-    
-    Returns:
-        List of category names
-    """
-    # # Coba eksekusi kode dengan error handling
+    """Get all available template categories."""
     try:
         categories = set()
         for template in BUILTIN_TEMPLATES.values():
             categories.add(template.get('category', 'unknown'))
         return sorted(list(categories))
-    # # Tangani error jika terjadi
     except Exception as e:
         pass
         return []
 
 
 def get_templates_by_category(category: str) -> List[Dict[str, Any]]:
-    """
-    Get all templates in a specific category.
-    
-    Args:
-        category: Category name
-        
-    Returns:
-        List of templates in category
-    """
+    """Get all templates in a specific category."""
     return list_templates(category=category)
 
 
 def get_template_names() -> List[str]:
-    """
-    Get list of all template IDs.
-    
-    Returns:
-        List of template IDs
-    """
-    # # Coba eksekusi kode dengan error handling
+    """Get list of all template IDs."""
     try:
         return list(BUILTIN_TEMPLATES.keys())
-    # # Tangani error jika terjadi
     except Exception as e:
         pass
         return []
 
 
 def get_template_count() -> int:
-    """
-    Get total number of templates.
-    
-    Returns:
-        Number of templates
-    """
+    """Get total number of templates."""
     return len(BUILTIN_TEMPLATES)
 
 
@@ -337,32 +247,12 @@ def get_cinematic_moods_templates() -> Dict[str, Dict[str, Any]]:
 
 
 def get_templates_by_category(category: str) -> Dict[str, Dict[str, Any]]:
-    """
-    Get templates filtered by category.
-    
-    Args:
-        category: Template category ('Studio & Commercial', 'Dramatic & Cinematic', 
-                 'Environment & Realistic', 'Utilities & Single Lights', 'portrait', 
-                 'product', 'fashion', 'automotive', 'architecture', 'food', 'nature', 
-                 'jewelry', 'cinematic')
-        
-    Returns:
-        Dictionary of matching templates
-    """
+    """Get templates filtered by category."""
     return {k: v for k, v in BUILTIN_TEMPLATES.items() if v.get('category') == category}
 
 
 def search_templates(query: str) -> List[Dict[str, Any]]:
-    """
-    Search templates by name or description.
-    
-    Args:
-        query: Search query string
-        
-    Returns:
-        List of matching templates
-    """
-    # # Coba eksekusi kode dengan error handling
+    """Search templates by name or description."""
     try:
         results = []
         query_lower = query.lower()
@@ -379,7 +269,6 @@ def search_templates(query: str) -> List[Dict[str, Any]]:
         
         return results
         
-    # # Tangani error jika terjadi
     except Exception as e:
         pass
         return []

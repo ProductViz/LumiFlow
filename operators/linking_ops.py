@@ -2,7 +2,6 @@
 Linking Operations
 Operators for light linking and group management functionality.
 """
-# # Import modul utama Blender
 import bpy
 from bpy.props import CollectionProperty, StringProperty, BoolProperty
 from mathutils import Vector
@@ -39,7 +38,7 @@ def light_item_marked_update(self, context):
         if not lamp or lamp.type != 'LIGHT':
             return
 
-        # Tentukan penerima: gunakan current object group jika ada, else semua MESH
+        # Determine receivers: use current object group if available, else all MESH
         receivers = []
         idx = getattr(scene, "lumi_object_groups_index", -1)
         
@@ -84,6 +83,7 @@ def light_item_marked_update(self, context):
             entry = links.add()
             entry.object_group_name = grp_name
             entry.light_name = light_name
+            # Set link status
             entry.is_linked = bool(do_include)
 
         except Exception as e:
@@ -103,19 +103,18 @@ def light_item_marked_update(self, context):
         scene[_FLAG_UPDATING] = False
         scene[_FLAG_GROUP_UPDATE] = False
 
-# # Definisi class untuk Property Group
 class LUMI_ObjectGroupLinkStatus(bpy.types.PropertyGroup):    
     object_group_name: StringProperty()
     light_name: StringProperty()
+    # Link status property
     is_linked: BoolProperty(default=False)
 
-# # Definisi class untuk Property Group
 class LUMI_ObjectItem(bpy.types.PropertyGroup):
     name: StringProperty()
     
     def update_object_selected(self, context):
         """Update object selection in viewport when checkbox changes"""
-        # # Akses data objek Blender
+        # # Access Blender object data
         obj = bpy.data.objects.get(self.name)
         if obj:
             try:
@@ -134,7 +133,6 @@ class LUMI_ObjectItem(bpy.types.PropertyGroup):
         update=update_object_selected
     )
 
-# # Definisi class untuk Property Group
 class LUMI_ObjectGroup(bpy.types.PropertyGroup):
     name: StringProperty()
     objects: CollectionProperty(type=LUMI_ObjectItem)
@@ -144,7 +142,6 @@ class LUMI_ObjectGroup(bpy.types.PropertyGroup):
         default=False
     )
 
-# # Simplified property groups for read-only light groups
 class LUMI_LightItem(bpy.types.PropertyGroup):
     name: StringProperty()
     marked: BoolProperty(default=False, update=light_item_marked_update)
@@ -187,13 +184,12 @@ class LUMI_LightGroup(bpy.types.PropertyGroup):
         set=set_is_marked
     )
 
-# # Definisi class untuk Property Group
 class LUMI_UnGroupedLightItem(bpy.types.PropertyGroup):
     name: StringProperty()
+    # Marked status for light linking
     marked: BoolProperty(default=False, update=light_item_marked_update)
 
 def get_valid_mesh_objects():
-    # # Akses data objek Blender
     return [obj for obj in bpy.data.objects if obj.type == 'MESH']
 
 def get_valid_light_objects(context):
@@ -203,14 +199,14 @@ def get_valid_light_objects(context):
     
     # Get lights directly in root collection
     for obj in root_collection.objects:
-        # # Periksa apakah objek adalah lampu
+        # Check if object is a light
         if obj.type == 'LIGHT':
             lights.append(obj)
     
     # Get lights in sub-collections
     for sub_col in root_collection.children:
         for obj in sub_col.objects:
-            # # Periksa apakah objek adalah lampu
+            # Check if object is a light
             if obj.type == 'LIGHT':
                 lights.append(obj)
     
@@ -220,6 +216,7 @@ def redraw_3d_areas():
     for area in bpy.context.window.screen.areas:
         if area.type == 'VIEW_3D':
             area.tag_redraw()
+
 
 def get_light_groups_from_collections(context):
     root_collection = lumi_get_light_collection(context.scene)
@@ -234,7 +231,7 @@ def get_default_lights(context):
         sub_collection_objects.update(obj.name for obj in sub_collection.objects)
     
     for obj in root_collection.objects:
-        # # Periksa apakah objek adalah lampu
+        # Check if object is a light
         if obj.type == 'LIGHT' and obj.name not in sub_collection_objects:
             default_lights.append(obj)
     
@@ -242,7 +239,6 @@ def get_default_lights(context):
 
 def get_grouped_object_names(exclude_default=True):
     grouped_names = set()
-    # # Akses scene yang sedang aktif
     for group in bpy.context.scene.lumi_object_groups:
         if exclude_default and group.name == DEFAULT_GROUP_NAME:
             continue
@@ -317,7 +313,7 @@ def ensure_default_object_group(scene):
             obj_item.name = obj.name
 
 def get_object_current_group(scene, object_name):
-    """Dapatkan group dimana objek saat ini berada, return None jika tidak ada"""
+    """Get group where object currently belongs, return None if not found"""
     for group in scene.lumi_object_groups:
         for item in group.objects:
             if item.name == object_name:
@@ -325,7 +321,7 @@ def get_object_current_group(scene, object_name):
     return None
 
 def check_objects_in_groups(scene, object_names):
-    """Periksa objek mana saja yang sudah ada di group dan return mapping object_name -> group_name"""
+    """Check which objects are already in groups and return mapping object_name -> group_name"""
     object_to_group = {}
     for group in scene.lumi_object_groups:
         for item in group.objects:
@@ -334,7 +330,7 @@ def check_objects_in_groups(scene, object_names):
     return object_to_group
 
 def remove_objects_from_all_groups(scene, object_names, exclude_group=None):
-    """Hapus objek dari semua group kecuali exclude_group"""
+    """Remove objects from all groups except exclude_group"""
     removed_count = 0
     for group in scene.lumi_object_groups:
         if exclude_group and group == exclude_group:
@@ -346,7 +342,7 @@ def remove_objects_from_all_groups(scene, object_names, exclude_group=None):
                 items_to_remove.append(i)
                 removed_count += 1
         
-        # Hapus dari belakang untuk menghindari masalah index
+        # Remove from back to avoid index issues
         for i in reversed(items_to_remove):
             group.objects.remove(i)
     
@@ -447,7 +443,7 @@ def ensure_default_light_group(scene):
 
 class LUMI_UL_object_groups(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        # # Tambahkan property ke UI
+        # Add property to UI
         layout.prop(item, "name", text="", emboss=False, icon='GROUP')
 
     def filter_items(self, context, data, propname):
@@ -460,10 +456,9 @@ class LUMI_UL_object_groups(bpy.types.UIList):
 
 class LUMI_UL_objects_in_group(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        # # Akses data objek Blender
         obj = bpy.data.objects.get(item.name)
         if obj and obj.type == 'MESH':
-            # # Buat baris horizontal UI
+            # Create horizontal UI row
             row = layout.row(align=True)
             row.prop(item, "selected", text="")
             op = row.operator("lumi.select_object_from_group", 
@@ -478,7 +473,6 @@ class LUMI_UL_objects_in_group(bpy.types.UIList):
         indices = list(range(len(items)))
         
         for item in items:
-            # # Akses data objek Blender
             obj = bpy.data.objects.get(item.name)
             if obj and obj.type == 'MESH':
                 filtered.append(self.bitflag_filter_item)
@@ -504,47 +498,45 @@ class LUMI_UL_lights_in_group(bpy.types.UIList):
         else:
             layout.label(text=f"{item.name} (missing)", icon='ERROR')
 
-# # Definisi class untuk Operator
 class LUMI_OT_add_group(bpy.types.Operator):
     bl_idname = "lumi.add_group"
     bl_label = "Add Object Group"
     bl_options = {'REGISTER', 'UNDO'}
-
-    # Property untuk nama group
+    # Property for group name
     group_name: StringProperty(
         name="Group Name",
         description="Name for the new object group",
         default="New Group"
     )
     
-    # Property untuk menampilkan peringatan jika ada objek yang sudah di group lain
+    # Property to show warning if objects are already in other groups
     show_warning: BoolProperty(default=False)
     warning_message: StringProperty(default="")
     conflicted_objects: StringProperty(default="")
 
     def invoke(self, context, event):
-        # Set default name berdasarkan jumlah group yang ada
+        # Set default name based on existing group count
         scene = context.scene
         self.group_name = f"Group {len(scene.lumi_object_groups) + 1}"
         
-        # Periksa objek yang terseleksi dan cek konflik
+        # Check selected objects and detect conflicts
         self._check_object_conflicts(context)
         
         return context.window_manager.invoke_props_dialog(self, width=300)
 
     def _check_object_conflicts(self, context):
-        """Periksa apakah ada objek terseleksi yang sudah ada di group lain"""
+        """Check if selected objects are already in other groups"""
         selected_meshes = [obj for obj in context.selected_objects if obj.type == 'MESH']
         
         if not selected_meshes:
             self.show_warning = False
             return
             
-        # Gunakan fungsi utilitas untuk mengecek konflik
+        # Use utility function to check conflicts
         selected_names = [obj.name for obj in selected_meshes]
         object_to_group_map = check_objects_in_groups(context.scene, selected_names)
         
-        # Filter out Default group - tidak perlu warning untuk objek di Default group
+        # Filter out Default group - no warning needed for objects in Default group
         filtered_conflicts = {}
         for obj_name, group_name in object_to_group_map.items():
             if group_name != DEFAULT_GROUP_NAME:
@@ -566,93 +558,93 @@ class LUMI_OT_add_group(bpy.types.Operator):
     def draw(self, context):
         layout = self.layout
         
-        # Input nama group
+        # Input group name
         layout.prop(self, "group_name")
         
-        # Tampilkan peringatan jika ada konflik
+        # Show warning if there are conflicts
         if self.show_warning:
             layout.separator()
             
-            # Warning message tanpa alert
+            # Warning message without alert
             warning_row = layout.row()
             warning_row.label(text=self.warning_message, icon='ERROR')
             
-            # Daftar objek dalam box terpisah dengan indent
+            # List objects in separate box with indent
             objects_box = layout.box()
             objects_col = objects_box.column()
             for line in self.conflicted_objects.split('\n'):
                 if line.strip():
                     indent_row = objects_col.row()
-                    indent_row.separator(factor=2)  # Indent ke kanan
+                    indent_row.separator(factor=2)  # Indent to the right
                     indent_row.label(text=line)
             
-            # Info singkat
+            # Brief info
             layout.label(text="Objects will be moved to new group.")
             
             layout.separator()
 
-    # # Method utama eksekusi operator
+    # # Main method for operator execution
     def execute(self, context):
         scene = context.scene
         
-        # Validasi nama group tidak kosong
+        # Validate group name is not empty
         if not self.group_name.strip():
             self.report({'ERROR'}, "Group name cannot be empty")
             return {'CANCELLED'}
         
-        # Periksa apakah nama sudah ada (kecuali Default)
+        # Check if name already exists (except Default)
         existing_names = [group.name for group in scene.lumi_object_groups]
         if self.group_name in existing_names:
             self.report({'ERROR'}, f"Group name '{self.group_name}' already exists")
             return {'CANCELLED'}
         
-        # Periksa dan tambahkan objek mesh yang terseleksi ke group baru
+        # Check and add selected mesh objects to new group
         selected_meshes = [obj for obj in context.selected_objects if obj.type == 'MESH']
         
         if not selected_meshes:
-            # Buat group kosong
+            # Create empty group
             group = scene.lumi_object_groups.add()
             group.name = self.group_name.strip()
             scene.lumi_object_groups_index = len(scene.lumi_object_groups) - 1
             self.report({'INFO'}, f"Created empty group '{group.name}'")
             return {'FINISHED'}
         
-        # Hapus objek dari group lain jika ada (implementasi one object = one group)
+        # Remove objects from other groups if any (one object = one group implementation)
         selected_names = [obj.name for obj in selected_meshes]
         removed_count = remove_objects_from_all_groups(scene, selected_names)
         
-        # Buat group baru
+        # Create new group
         group = scene.lumi_object_groups.add()
         group.name = self.group_name.strip()
         scene.lumi_object_groups_index = len(scene.lumi_object_groups) - 1
         
-        # Tambahkan objek ke group baru
+        # Add objects to new group
         added_count = 0
         for obj in selected_meshes:
             obj_item = group.objects.add()
             obj_item.name = obj.name
             added_count += 1
         
-        # Update default group untuk mengecualikan objek yang sudah dimasukkan ke group baru
+        # Update default group to exclude objects already added to new group
         ensure_default_object_group(scene)
         redraw_3d_areas()
         
-        # Buat laporan hasil
+        # Generate result report
         if removed_count > 0:
             self.report({'INFO'}, f"Created group '{group.name}' with {added_count} object(s). Moved {removed_count} object(s) from other groups.")
         else:
             self.report({'INFO'}, f"Created group '{group.name}' with {added_count} selected object(s)")
         
-        # # Selesaikan operasi dengan sukses
+        # Complete operation successfully
         return {'FINISHED'}
 
-# # Definisi class untuk Operator
+# Class definition for Operator
 class LUMI_OT_remove_group(bpy.types.Operator):
     bl_idname = "lumi.remove_group"
     bl_label = "Remove Object Group"
     bl_options = {'INTERNAL'}
 
-    # # Method utama eksekusi operator
+    # # Main method for operator execution
     def execute(self, context):
         scene = context.scene
         index = scene.lumi_object_groups_index
@@ -661,27 +653,27 @@ class LUMI_OT_remove_group(bpy.types.Operator):
             group = scene.lumi_object_groups[index]
             if group.name == DEFAULT_GROUP_NAME:
                 self.report({'WARNING'}, "Default group cannot be deleted.")
-                # # Batalkan operasi
+                # Cancel operation
                 return {'CANCELLED'}
             
-            # Ambil objek dalam group yang akan dihapus
+            # Get objects in group to be deleted
             objects_in_group = []
             for item in group.objects:
                 obj = bpy.data.objects.get(item.name)
                 if obj and obj.type == 'MESH':
                     objects_in_group.append(obj)
             
-            # Simpan state selection asli
+            # Save original selection state
             original_active = context.view_layer.objects.active
             original_selected = list(context.selected_objects)
             
-            # Hapus linking dari semua lampu yang tercentang
+            # Remove linking from all marked lights
             unlinked_count = 0
             
-            # Kumpulkan semua lampu yang tercentang terlebih dahulu
+            # Collect all marked lights first
             marked_lights = []
             
-            # Cari di light groups
+            # Search in light groups
             for light_group in scene.lumi_light_groups:
                 for light_item in light_group.lights:
                     if light_item.marked:
@@ -689,37 +681,37 @@ class LUMI_OT_remove_group(bpy.types.Operator):
                         if light_obj and light_obj.type == 'LIGHT':
                             marked_lights.append(light_obj)
             
-            # Cari di ungrouped lights
+            # Search in ungrouped lights
             for ungrouped_light in scene.lumi_un_grouped_lights:
                 if ungrouped_light.marked:
                     light_obj = bpy.data.objects.get(ungrouped_light.name)
                     if light_obj and light_obj.type == 'LIGHT':
                         marked_lights.append(light_obj)
             
-            # Proses unlink untuk setiap lampu yang tercentang
+            # Process unlink for each marked light
             try:
                 for light_obj in marked_lights:
-                    if objects_in_group:  # Pastikan ada objek dalam group
+                    if objects_in_group:  # Ensure there are objects in group
                         try:
-                            # Gunakan pendekatan direct collection manipulation seperti fungsi referensi
-                            # Nama koleksi Light Linking
+                            # Use direct collection manipulation approach like reference function
+                            # Light Linking collection name
                             link_coll_name = f"Light Linking for {light_obj.name}"
                             link_collection = bpy.data.collections.get(link_coll_name)
                             
                             if not link_collection:
-                                print(f"❌ Koleksi Light Linking '{link_coll_name}' tidak ditemukan.")
+                                print(f"❌ Light Linking collection '{link_coll_name}' not found. Skipping.")
                                 continue
                             
-                            # Hapus setiap objek dalam group dari Light Linking Collection
+                           # # Check if object is a light from Light Linking Collection
                             objects_removed = 0
                             for obj in objects_in_group:
-                                # Gunakan nama objek untuk pengecekan dan unlinking
+                                # Use object name for checking and unlinking
                                 if obj.name in [o.name for o in link_collection.objects]:
                                     link_collection.objects.unlink(obj)
                                     objects_removed += 1
-                                    print(f"✅ Objek '{obj.name}' dihapus dari '{link_coll_name}'.")
+                                    print(f"✅ Object '{obj.name}' removed from '{link_coll_name}'.")
                                 else:
-                                    print(f"ℹ Objek '{obj.name}' tidak ada di '{link_coll_name}'.")
+                                    print(f"ℹ Object '{obj.name}' not in '{link_coll_name}'.")
                             
                             if objects_removed > 0:
                                 unlinked_count += 1
@@ -730,7 +722,7 @@ class LUMI_OT_remove_group(bpy.types.Operator):
                             print(f"Error unlinking {light_obj.name}: {e}")
                                 
             finally:
-                # Restore selection asli
+                # Restore original selection
                 bpy.ops.object.select_all(action='DESELECT')
                 for obj in original_selected:
                     if obj and obj.name in bpy.data.objects:
@@ -738,13 +730,13 @@ class LUMI_OT_remove_group(bpy.types.Operator):
                 if original_active and original_active.name in bpy.data.objects:
                     context.view_layer.objects.active = original_active
             
-            # Hapus link status internal untuk group ini
+            # Remove internal link status for this group
             links = scene.lumi_object_group_link_status
             old_links = [i for i, l in enumerate(links) if l.object_group_name == group.name]
             for i in reversed(old_links):
                 links.remove(i)
             
-            # Hapus group
+            # Remove group
             scene.lumi_object_groups.remove(index)
             scene.lumi_object_groups_index = max(0, index - 1)
             
@@ -757,16 +749,13 @@ class LUMI_OT_remove_group(bpy.types.Operator):
             else:
                 self.report({'INFO'}, f"Removed group '{group.name}'")
 
-        # # Selesaikan operasi dengan sukses
         return {'FINISHED'}
 
-# # Definisi class untuk Operator
 class LUMI_OT_add_object_to_group(bpy.types.Operator):
     bl_idname = "lumi.add_object_to_group"
     bl_label = "Add Selected Objects to Group"
     bl_options = {'INTERNAL'}
-    
-    # # Method utama eksekusi operator
+    # # Main method for operator execution
     def execute(self, context):
         scene = context.scene
         obj_groups = scene.lumi_object_groups
@@ -774,23 +763,23 @@ class LUMI_OT_add_object_to_group(bpy.types.Operator):
         
         if obj_index < 0 or obj_index >= len(obj_groups):
             self.report({'WARNING'}, "No object group selected.")
-            # # Batalkan operasi
+            # Cancel operation
             return {'CANCELLED'}
             
         obj_group = obj_groups[obj_index]
-        # # Ambil objek yang dipilih dalam scene
+        # Get selected objects in scene
         selected_meshes = [obj for obj in context.selected_objects if obj.type == 'MESH']
         
         if not selected_meshes:
             self.report({'WARNING'}, "No mesh objects selected.")
-            # # Batalkan operasi
+            # Cancel operation
             return {'CANCELLED'}
         
-        # Implementasi one object = one group: hapus dari group lain terlebih dahulu
+        # Implementation of one object = one group: remove from other groups first
         selected_names = [obj.name for obj in selected_meshes]
         removed_count = remove_objects_from_all_groups(scene, selected_names, exclude_group=obj_group)
         
-        # Tambahkan objek ke target group
+        # Add objects to target group
         existing_names = {item.name for item in obj_group.objects}
         added_count = 0
         
@@ -803,7 +792,7 @@ class LUMI_OT_add_object_to_group(bpy.types.Operator):
         ensure_default_object_group(scene)
         redraw_3d_areas()
         
-        # Buat laporan hasil
+        # Generate result report
         if removed_count > 0:
             self.report({'INFO'}, f"Added {added_count} object(s) to {obj_group.name}. Moved {removed_count} object(s) from other groups.")
         else:
@@ -811,22 +800,22 @@ class LUMI_OT_add_object_to_group(bpy.types.Operator):
                       "No new objects added (already in group)"
             self.report({'INFO'}, message)
         
-        # # Selesaikan operasi dengan sukses
+        # Complete operation successfully
         return {'FINISHED'}
 
-# # Definisi class untuk Operator
+# Class definition for Operator
 class LUMI_OT_remove_object_from_group(bpy.types.Operator):
     bl_idname = "lumi.remove_object_from_group"
     bl_label = "Remove Object from Group"
     bl_options = {'INTERNAL'}
     
-    # # Method utama eksekusi operator
+    # # Main method for operator execution
     def execute(self, context):
         scene = context.scene
         obj_index = scene.lumi_object_groups_index
         
         if obj_index < 0 or obj_index >= len(scene.lumi_object_groups):
-            # # Batalkan operasi
+            # Cancel operation
             return {'CANCELLED'}
             
         obj_group = scene.lumi_object_groups[obj_index]
@@ -836,17 +825,17 @@ class LUMI_OT_remove_object_from_group(bpy.types.Operator):
             obj_group.objects.remove(i)
             
         self.report({'INFO'}, f"Removed {len(to_remove)} checked object(s)")
-        # # Selesaikan operasi dengan sukses
+        # Complete operation successfully
         return {'FINISHED'}
 
-# # Definisi class untuk Operator
+# Class definition for Operator
 class LUMI_OT_sync_object_selection(bpy.types.Operator):
     """Synchronize checkbox states with viewport selection"""
     bl_idname = "lumi.sync_object_selection"
     bl_label = "Sync Selection"
     bl_options = {'INTERNAL'}
 
-    # # Method utama eksekusi operator
+    # # Main method for operator execution
     def execute(self, context):
         scene = context.scene
         selected_objects = set(obj.name for obj in context.selected_objects if obj.type == 'MESH')
@@ -863,10 +852,10 @@ class LUMI_OT_sync_object_selection(bpy.types.Operator):
                     continue
                 
         self.report({'INFO'}, "Selection synchronized")
-        # # Selesaikan operasi dengan sukses
+        # Complete operation successfully
         return {'FINISHED'}
 
-# # Definisi class untuk Operator
+# Class definition for Operator
 class LUMI_OT_select_object_from_group(bpy.types.Operator):
     bl_idname = "lumi.select_object_from_group"
     bl_label = "Select Object"
@@ -874,31 +863,31 @@ class LUMI_OT_select_object_from_group(bpy.types.Operator):
     
     object_name: StringProperty()
     
-    # # Method utama eksekusi operator
+    # # Main method for operator execution
     def execute(self, context):
-        # # Akses data objek Blender
+        # # Access Blender object data
         obj = bpy.data.objects.get(self.object_name)
         if obj:
             bpy.ops.object.select_all(action='DESELECT')
             obj.select_set(True)
             context.view_layer.objects.active = obj
             self.report({'INFO'}, f"Selected {self.object_name}")
-        # # Selesaikan operasi dengan sukses
+        # Complete operation successfully
         return {'FINISHED'}
 
-# # Definisi class untuk Operator
+# Class definition for Operator
 class LUMI_OT_toggle_select_all_objects_in_group(bpy.types.Operator):
     bl_idname = "lumi.toggle_select_all_objects_in_group"
     bl_label = "Toggle Select All Objects"
     bl_options = {'INTERNAL'}
 
-    # # Method utama eksekusi operator
+    # # Main method for operator execution
     def execute(self, context):
         scene = context.scene
         obj_index = scene.lumi_object_groups_index
         
         if obj_index < 0 or obj_index >= len(scene.lumi_object_groups):
-            # # Batalkan operasi
+            # Cancel operation
             return {'CANCELLED'}
             
         obj_group = scene.lumi_object_groups[obj_index]
@@ -907,7 +896,7 @@ class LUMI_OT_toggle_select_all_objects_in_group(bpy.types.Operator):
         for item in obj_group.objects:
             item.selected = not all_selected
             
-        # # Selesaikan operasi dengan sukses
+        # Complete operation successfully
         return {'FINISHED'}
 
 # ============================================================================
@@ -962,7 +951,7 @@ class LUMI_OT_remove_light_from_group(bpy.types.Operator):
         self.report({'INFO'}, "Light groups are now read-only. Manage lights through collections.")
         return {'CANCELLED'}
 
-# # Definisi class untuk Operator
+# Class definition for Operator
 class LUMI_OT_select_un_grouped_light(bpy.types.Operator):
     bl_idname = "lumi.select_un_grouped_light"
     bl_label = "Select/Deselect Light"
@@ -970,20 +959,22 @@ class LUMI_OT_select_un_grouped_light(bpy.types.Operator):
 
     light_name: StringProperty()
 
-    # # Method utama eksekusi operator
+    # # Main method for operator execution
     def execute(self, context):
-        # # Akses data objek Blender
+        # # Access Blender object data
         obj = bpy.data.objects.get(self.light_name)
-        # # Periksa apakah objek adalah lampu
+        # # Check if object is a light
         if obj and obj.type == 'LIGHT':
             new_state = not obj.select_get()
             obj.select_set(new_state)
             if new_state:
                 context.view_layer.objects.active = obj
-        # # Selesaikan operasi dengan sukses
+        # Report the result
+        self.report({'INFO'}, f"{'Selected' if new_state else 'Unselected'} {self.light_name}")
+        # Complete operation successfully
         return {'FINISHED'}
 
-# # Definisi class untuk Operator
+# Class definition for Operator
 class LUMI_OT_select_light_from_group(bpy.types.Operator):
     bl_idname = "lumi.select_light_from_group"
     bl_label = "Select Light"
@@ -991,33 +982,33 @@ class LUMI_OT_select_light_from_group(bpy.types.Operator):
 
     light_name: StringProperty()
 
-    # # Method utama eksekusi operator
+    # # Main method for operator execution
     def execute(self, context):
-        # # Akses data objek Blender
+        # # Access Blender object data
         light_obj = bpy.data.objects.get(self.light_name)
-        # # Periksa apakah objek adalah lampu
+        # # Check if object is a light
         if light_obj and light_obj.type == 'LIGHT':
             new_state = not light_obj.select_get()
             light_obj.select_set(new_state)
             if new_state:
                 context.view_layer.objects.active = light_obj
             self.report({'INFO'}, f"{'Selected' if new_state else 'Unselected'} {self.light_name}")
-        # # Selesaikan operasi dengan sukses
+        # Complete operation successfully
         return {'FINISHED'}
 
-# # Definisi class untuk Operator
+# Class definition for Operator
 class LUMI_OT_toggle_select_all_lights_in_group(bpy.types.Operator):
     bl_idname = "lumi.toggle_select_all_lights_in_group"
     bl_label = "Toggle Select All Lights"
     bl_options = {'INTERNAL'}
 
-    # # Method utama eksekusi operator
+    # # Main method for operator execution
     def execute(self, context):
         scene = context.scene
         light_index = scene.lumi_light_groups_index
         
         if light_index < 0 or light_index >= len(scene.lumi_light_groups):
-            # # Batalkan operasi
+            # Cancel operation
             return {'CANCELLED'}
             
         light_group = scene.lumi_light_groups[light_index]
@@ -1026,7 +1017,7 @@ class LUMI_OT_toggle_select_all_lights_in_group(bpy.types.Operator):
         for item in light_group.lights:
             item.selected = not all_selected
             
-        # # Selesaikan operasi dengan sukses
+        # Complete operation successfully
         return {'FINISHED'}
 
 # ============================================================================
@@ -1051,7 +1042,7 @@ class LUMI_MT_group_actions(bpy.types.Menu):
         op_exc.group_name = group_name
         op_exc.force_state = 'EXCLUDE'
 
-# # Definisi class untuk Operator
+# Class definition for Operator
 class LUMI_OT_update_light_linking(bpy.types.Operator):
     bl_idname = "lumi.update_light_linking"
     bl_label = "Update Object Group Linking"
@@ -1075,16 +1066,16 @@ class LUMI_OT_update_light_linking(bpy.types.Operator):
         scene = context.scene
         obj_groups = scene.lumi_object_groups
 
-        # Tentukan current_obj_group:
+        # Determine current_obj_group:
         current_obj_group = None
-        # Prioritas: jika operator dipanggil dari menu dengan group_name, pakai itu
+        # Priority: if operator is called from menu with group_name, use that
         if getattr(self, "group_name", ""):
             current_obj_group = next((g for g in obj_groups if g.name == self.group_name), None)
             if not current_obj_group:
                 self.report({'WARNING'}, f"Object group '{self.group_name}' not found")
                 return {'CANCELLED'}
         else:
-            # fallback ke index yang dipilih pada scene
+            # fallback to index selected on scene
             idx = getattr(scene, "lumi_object_groups_index", -1)
             if idx >= 0 and idx < len(obj_groups):
                 current_obj_group = obj_groups[idx]
@@ -1194,7 +1185,7 @@ class LUMI_OT_update_light_linking(bpy.types.Operator):
         self.report({'INFO'}, f"Toggled {updated_count} selected lights with ALL {len(receiver_objects)} objects in group '{current_obj_group.name}'")
         return {'FINISHED'}
 
-# # Definisi class untuk Operator
+# Class definition for Operator
 class LUMI_OT_quick_link_to_target(bpy.types.Operator): 
     """Quick Link: Select light/mesh, press keymap - if light: toggle linking mode, if mesh: show group menu"""
     bl_idname = "lumi.quick_link_to_target"
@@ -1209,51 +1200,50 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
         return lumi_is_addon_enabled()
 
     def invoke(self, context, event):
-        """Start operation berdasarkan tipe objek yang terseleksi"""
+        """Start operation based on selected object type"""
         
-        # 1. Periksa apakah addon LumiFlow sudah enable
+        # 1. Check if LumiFlow addon is enabled
         if not lumi_is_addon_enabled():
             self.report({'ERROR'}, "LumiFlow addon is not enabled")
             return {'CANCELLED'}
         
-        # 2. Periksa apa yang terseleksi
+        # 2. Check what is selected
         selected_lights = [obj for obj in context.selected_objects if obj.type == 'LIGHT']
         selected_meshes = [obj for obj in context.selected_objects if obj.type == 'MESH']
         
-        # 3. Pastikan hanya satu jenis objek yang dipilih (tidak keduanya)
+        # 3. Ensure only one type of object is selected (not both)
         if selected_lights and selected_meshes:
             self.report({'WARNING'}, "Please select only lights OR mesh objects, not both")
             return {'CANCELLED'}
         
-        # 4. Jika light terseleksi, langsung masuk ke modal mode
+        # 4. If lights are selected, enter modal mode directly
         if selected_lights:
-            # Store selected lights untuk modal mode
+            # Store selected lights for modal mode
             self.selected_lights.clear()
             for light in selected_lights:
                 item = self.selected_lights.add()
                 item.name = light.name
             
-            # Langsung start modal untuk target selection
+            # Start modal for target selection
             context.window_manager.modal_handler_add(self)
             self.report({'INFO'}, f"Quick Link Mode Active: Click mesh objects to toggle linking for {len(selected_lights)} light(s). Press X to exit, ESC to cancel.")
             return {'RUNNING_MODAL'}
         
-        # 5. Jika mesh terseleksi, tampilkan menu group untuk mesh
+        # 5. If meshes are selected, show group menu for meshes
         elif selected_meshes:
             return self.show_object_group_menu(context)
-        
         else:
             self.report({'WARNING'}, "Select lights for linking mode or mesh objects for group assignment")
             return {'CANCELLED'}
     
     def show_object_group_menu(self, context):
-        """Tampilkan menu untuk memilih group objek"""
+        """Show menu to select object group"""
         def draw_menu(self, context):
             layout = self.layout
             scene = context.scene
             
             # Option 1: Create new group
-            # Gunakan INVOKE_DEFAULT untuk memaksa dialog muncul
+            # Use INVOKE_DEFAULT to force dialog to appear
             layout.operator_context = 'INVOKE_DEFAULT'
             layout.operator("lumi.add_group", text="Create New Group", icon='ADD')
             
@@ -1272,12 +1262,12 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
             else:
                 layout.label(text="No existing groups available", icon='INFO')
         
-        # Tampilkan popup menu
+        # Show popup menu
         context.window_manager.popup_menu(draw_menu, title="Add Objects to Group", icon='GROUP')
         return {'FINISHED'}
     
     def show_object_light_menu(self, context):
-        """Tampilkan menu untuk memilih group objek"""
+        """Show menu to select object group"""
         def draw_menu(menu_self, context):
             layout = menu_self.layout
             scene = context.scene
@@ -1340,7 +1330,7 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
 
 
     def modal(self, context, event):
-        """Handle mouse click untuk target selection"""
+        """Handle mouse click for target selection"""
         if event.type == 'LEFTMOUSE' and event.value == 'PRESS':
             # Get object under mouse
             target_obj = self.get_object_under_mouse(context, event)
@@ -1356,7 +1346,7 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
                 return {'RUNNING_MODAL'}
             
         elif event.type == 'RIGHTMOUSE' and event.value == 'PRESS':
-            # Klik kanan berfungsi tanpa harus pada mesh object
+            # Right click works without needing to be on mesh object
             return self.show_object_light_menu(context)
         
         elif event.type == 'ESC' and event.value == 'PRESS':
@@ -1483,7 +1473,7 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
             self.report({'WARNING'}, "No lights found in light groups")
             return {'CANCELLED'}
         
-        # 3. Update light linking hanya untuk selected lights
+        # 3. Update light linking only for selected lights
         receiver_objects = []
         for item in target_group.objects:
             obj = bpy.data.objects.get(item.name)
@@ -1494,7 +1484,7 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
             self.report({'WARNING'}, "No valid mesh objects found in the group.")
             return {'CANCELLED'}
 
-        # Clear old links untuk group ini, tapi hanya untuk selected lights
+        # Clear old links for this group, but only for selected lights
         links = scene.lumi_object_group_link_status
         selected_light_names = {light_info.name for light_info in self.selected_lights}
         old_links = [i for i, l in enumerate(links) 
@@ -1509,7 +1499,7 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
         updated_count = 0
 
         try:
-            # Proses hanya light yang ada dalam selected_lights
+            # Process only lights that are in selected_lights
             for light_info in self.selected_lights:
                 light_name = light_info.name
                 light_obj = bpy.data.objects.get(light_name)
@@ -1517,7 +1507,7 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
                 if not light_obj or light_obj.type != 'LIGHT':
                     continue
 
-                # Find marked status dari light groups
+                # Find marked status from light groups
                 light_marked = False
                 for light_group in scene.lumi_light_groups:
                     for light_item in light_group.lights:
@@ -1529,14 +1519,14 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
 
                 link_state = 'INCLUDE' if light_marked else 'EXCLUDE'
 
-                # Add to internal links jika marked
+                # Add to internal links if marked
                 if light_marked:
                     link = links.add()
                     link.object_group_name = target_group.name
                     link.light_name = light_name
                     link.is_linked = True
 
-                # Perform linking/unlinking untuk light ini
+                # Perform linking/unlinking for this light
                 bpy.ops.object.select_all(action='DESELECT')
 
                 for obj in receiver_objects:
@@ -1577,19 +1567,19 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
             return {'CANCELLED'}
         return self.execute_quick_link(context)   
 
-# # Definisi class untuk Operator
+# Class definition for Operator
 class LUMI_OT_clear_light_linking(bpy.types.Operator):
     bl_idname = "lumi.clear_light_linking"
     bl_label = "Clear All Light Linking"
     bl_options = {'INTERNAL'}
 
-    # # Method utama eksekusi operator
+    # # Main method for operator execution
     def execute(self, context):
         scene = context.scene
         links = scene.lumi_object_group_link_status
         links.clear()
         self.report({'INFO'}, "All light linking cleared.")
-        # # Selesaikan operasi dengan sukses
+        # Complete operation successfully
         return {'FINISHED'}
 
 # ============================================================================

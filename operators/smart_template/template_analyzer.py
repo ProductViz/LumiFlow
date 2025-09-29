@@ -3,7 +3,6 @@ Template Analyzer Module
 Analyze selected objects for intelligent template adaptation.
 """
 
-# Import modul utama Blender
 import bpy
 import bmesh
 from typing import Dict, List, Tuple, Optional, Any
@@ -29,18 +28,17 @@ class SubjectAnalysis:
             "matrix": Matrix()
         }
         self.materials = {
-            "dominant_type": "dielectric",  # "metallic", "dielectric", "glass"
+            "dominant_type": "dielectric",
             "has_emission": False,
             "average_roughness": 0.5,
             "transparency": 0.0
         }
-        # Enhanced type detection
-        self.type = "product"  # Legacy compatibility
+        self.type = "product"
         self.subject_classification = {
             "primary_type": "product",
             "subtype": "generic",
             "confidence": 0.5,
-            "secondary_types": [],  # For hybrid subjects
+            "secondary_types": [],
             "characteristics": {}
         }
         self.topology_analysis = {
@@ -59,19 +57,14 @@ class SubjectAnalysis:
         self.object_count = 0
         self.complexity_score = 0.0
 
-
-# ===== ADVANCED SUBJECT CLASSIFICATION SYSTEM =====
-
 class AdvancedSubjectClassifier:
     """AI-inspired subject classification with 20+ types and subtypes"""
     
-    # Subject type definitions with characteristics
     SUBJECT_TYPES = {
-        # HUMAN SUBJECTS
         "human_portrait": {
             "subtypes": ["adult", "child", "elderly", "group", "couple", "family"],
             "topology_patterns": {
-                "aspect_ratio_range": (0.4, 0.8),  # Height/Width typical for heads
+                "aspect_ratio_range": (0.4, 0.8),
                 "vertex_density": (500, 5000),
                 "face_smoothness": 0.8,
                 "symmetry_score": 0.7
@@ -82,7 +75,7 @@ class AdvancedSubjectClassifier:
         "human_full_body": {
             "subtypes": ["standing", "sitting", "action", "dance", "sport"],
             "topology_patterns": {
-                "aspect_ratio_range": (0.2, 0.5),  # Full body proportions
+                "aspect_ratio_range": (0.2, 0.5),
                 "vertex_density": (1000, 15000),
                 "elongation_factor": 2.0,
                 "joint_detection": True
@@ -91,7 +84,6 @@ class AdvancedSubjectClassifier:
             "proportion_keys": ["golden_ratio", "anatomical_proportions"]
         },
         
-        # PRODUCT SUBJECTS
         "jewelry": {
             "subtypes": ["ring", "necklace", "bracelet", "earrings", "watch"],
             "topology_patterns": {
@@ -137,7 +129,6 @@ class AdvancedSubjectClassifier:
             "proportion_keys": ["premium_feel", "ergonomic_design"]
         },
         
-        # ARCHITECTURAL SUBJECTS
         "interior": {
             "subtypes": ["living_room", "kitchen", "bedroom", "office", "bathroom"],
             "topology_patterns": {
@@ -172,7 +163,6 @@ class AdvancedSubjectClassifier:
             "proportion_keys": ["natural_scale", "horizon_line"]
         },
         
-        # NATURE SUBJECTS
         "plant": {
             "subtypes": ["tree", "flower", "bush", "grass", "indoor_plant"],
             "topology_patterns": {
@@ -199,7 +189,6 @@ class AdvancedSubjectClassifier:
             "subtypes": ["mountain", "hill", "valley", "cliff", "canyon"],
             "topology_patterns": {
                 "aspect_ratio_range": (0.2, 8.0),
-                "vertex_density": (1000, 100000),
                 "geological_features": 0.8,
                 "elevation_changes": True
             },
@@ -207,7 +196,6 @@ class AdvancedSubjectClassifier:
             "proportion_keys": ["geological_scale", "erosion_patterns"]
         },
         
-        # VEHICLE SUBJECTS
         "automotive": {
             "subtypes": ["car", "motorcycle", "truck", "bus", "racing"],
             "topology_patterns": {
@@ -220,7 +208,6 @@ class AdvancedSubjectClassifier:
             "proportion_keys": ["vehicle_proportions", "automotive_design"]
         },
         
-        # ABSTRACT/ARTISTIC
         "abstract": {
             "subtypes": ["geometric", "organic", "conceptual", "sculpture", "art"],
             "topology_patterns": {
@@ -247,21 +234,16 @@ class AdvancedSubjectClassifier:
             Classification result with confidence scores
         """
         try:
-            # Initialize classification scores
             type_scores = {}
             
-            # Analyze each subject type
             for subject_type, type_config in cls.SUBJECT_TYPES.items():
                 score = cls._calculate_type_score(objects, analysis, subject_type, type_config)
                 type_scores[subject_type] = score
             
-            # Apply fuzzy logic for hybrid detection
             primary_type, confidence = cls._apply_fuzzy_logic(type_scores)
             
-            # Determine subtype
             subtype = cls._detect_subtype(objects, analysis, primary_type)
             
-            # Find secondary types (for hybrid subjects)
             secondary_types = cls._find_secondary_types(type_scores, primary_type, threshold=0.3)
             
             return {
@@ -291,22 +273,18 @@ class AdvancedSubjectClassifier:
             score = 0.0
             weight_total = 0.0
             
-            # Topology analysis (40% weight)
             topology_score = cls._analyze_topology_patterns(objects, analysis, type_config)
             score += topology_score * 0.4
             weight_total += 0.4
             
-            # Material analysis (30% weight)
             material_score = cls._analyze_material_indicators(objects, analysis, type_config)
             score += material_score * 0.3
             weight_total += 0.3
             
-            # Proportion analysis (20% weight)
             proportion_score = cls._analyze_proportions(objects, analysis, type_config)
             score += proportion_score * 0.2
             weight_total += 0.2
             
-            # Context analysis (10% weight)
             context_score = cls._analyze_context(objects, analysis, type_config)
             score += context_score * 0.1
             weight_total += 0.1
@@ -325,7 +303,6 @@ class AdvancedSubjectClassifier:
             score = 0.0
             checks = 0
             
-            # Aspect ratio check
             if "aspect_ratio_range" in topology_patterns:
                 min_ratio, max_ratio = topology_patterns["aspect_ratio_range"]
                 dims = analysis.bounds["dimensions"]
@@ -334,26 +311,22 @@ class AdvancedSubjectClassifier:
                     if min_ratio <= actual_ratio <= max_ratio:
                         score += 1.0
                     else:
-                        # Gradual falloff
                         distance = min(abs(actual_ratio - min_ratio), abs(actual_ratio - max_ratio))
                         score += max(0, 1.0 - distance)
                 checks += 1
             
-            # Vertex density check
             if "vertex_density" in topology_patterns:
                 min_density, max_density = topology_patterns["vertex_density"]
                 total_verts = sum(len(obj.data.vertices) for obj in objects if obj.type == 'MESH' and obj.data)
                 if min_density <= total_verts <= max_density:
                     score += 1.0
                 elif total_verts > 0:
-                    # Gradual scoring
                     if total_verts < min_density:
                         score += total_verts / min_density
                     else:
                         score += min(1.0, max_density / total_verts)
                 checks += 1
             
-            # Surface complexity
             if "surface_complexity" in topology_patterns:
                 expected_complexity = topology_patterns["surface_complexity"]
                 actual_complexity = analysis.complexity_score
@@ -361,7 +334,6 @@ class AdvancedSubjectClassifier:
                 score += max(0, similarity)
                 checks += 1
             
-            # Geometric regularity
             if "geometric_regularity" in topology_patterns:
                 expected_regularity = topology_patterns["geometric_regularity"]
                 actual_regularity = cls._calculate_geometric_regularity(objects)
@@ -386,20 +358,17 @@ class AdvancedSubjectClassifier:
             score = 0.0
             found_materials = []
             
-            # Collect material names and properties
             for obj in objects:
                 if obj.type == 'MESH' and obj.data and obj.data.materials:
                     for mat in obj.data.materials:
                         if mat and mat.name:
                             found_materials.append(mat.name.lower())
                             
-                            # Check material nodes for indicators
                             if mat.use_nodes and mat.node_tree:
                                 for node in mat.node_tree.nodes:
                                     if hasattr(node, 'name'):
                                         found_materials.append(node.name.lower())
             
-            # Score based on material indicator matches
             matches = 0
             for indicator in material_indicators:
                 for material in found_materials:
@@ -409,11 +378,9 @@ class AdvancedSubjectClassifier:
             
             score = matches / len(material_indicators) if material_indicators else 0.5
             
-            # Bonus for material type alignment
-            dominant_type = analysis.materials.get("dominant_type", "dielectric")
-            if dominant_type == "metallic" and any(m in material_indicators for m in ["metal", "gold", "silver"]):
+            if analysis.materials.get("dominant_type") == "metallic" and any(m in material_indicators for m in ["metal", "gold", "silver"]):
                 score += 0.2
-            elif dominant_type == "glass" and "glass" in material_indicators:
+            elif analysis.materials.get("dominant_type") == "glass" and "glass" in material_indicators:
                 score += 0.2
             
             return min(1.0, score)
@@ -436,7 +403,6 @@ class AdvancedSubjectClassifier:
             
             for key in proportion_keys:
                 if key == "golden_ratio":
-                    # Check for golden ratio in dimensions
                     ratios = [
                         max(dims.x, dims.y) / min(dims.x, dims.y) if min(dims.x, dims.y) > 0 else 0,
                         max(dims.y, dims.z) / min(dims.y, dims.z) if min(dims.y, dims.z) > 0 else 0,
@@ -448,7 +414,6 @@ class AdvancedSubjectClassifier:
                     checks += 1
                 
                 elif key == "anatomical_proportions":
-                    # Human body proportions (head = 1/8 of body height)
                     if dims.z > dims.x and dims.z > dims.y:  # Vertical object
                         head_ratio = dims.x / dims.z if dims.z > 0 else 0
                         ideal_ratio = 1/8
@@ -457,7 +422,6 @@ class AdvancedSubjectClassifier:
                     checks += 1
                 
                 elif key == "miniature_scale":
-                    # Small objects (jewelry, etc.)
                     max_dim = max(dims.x, dims.y, dims.z)
                     if max_dim < 0.1:  # Very small
                         score += 1.0
@@ -468,7 +432,6 @@ class AdvancedSubjectClassifier:
                     checks += 1
                 
                 elif key == "architectural_scale":
-                    # Large scale objects
                     max_dim = max(dims.x, dims.y, dims.z)
                     if max_dim > 10.0:  # Very large
                         score += 1.0
@@ -490,14 +453,12 @@ class AdvancedSubjectClassifier:
         try:
             score = 0.5  # Base neutral score
             
-            # Object count context
             obj_count = len(objects)
             if "group" in type_config.get("subtypes", []) and obj_count > 3:
                 score += 0.3
             elif "single" in type_config.get("subtypes", []) and obj_count == 1:
                 score += 0.3
             
-            # Complexity context
             complexity = analysis.complexity_score
             if "high_detail" in type_config.get("subtypes", []) and complexity > 0.7:
                 score += 0.2
@@ -517,7 +478,6 @@ class AdvancedSubjectClassifier:
             if not type_scores:
                 return "product", 0.1
             
-            # Sort by score
             sorted_scores = sorted(type_scores.items(), key=lambda x: x[1], reverse=True)
             
             if len(sorted_scores) < 2:
@@ -526,7 +486,6 @@ class AdvancedSubjectClassifier:
             best_type, best_score = sorted_scores[0]
             second_type, second_score = sorted_scores[1]
             
-            # Calculate confidence based on score separation
             score_gap = best_score - second_score
             confidence_bonus = min(0.3, score_gap * 0.5)
             final_confidence = min(1.0, best_score + confidence_bonus)
@@ -547,11 +506,9 @@ class AdvancedSubjectClassifier:
             if len(subtypes) <= 1:
                 return subtypes[0] if subtypes else "generic"
             
-            # Simple subtype detection based on characteristics
             dims = analysis.bounds["dimensions"]
             obj_count = len(objects)
             
-            # Human subtypes
             if primary_type in ["human_portrait", "human_full_body"]:
                 if obj_count > 2:
                     return "group"
@@ -560,7 +517,6 @@ class AdvancedSubjectClassifier:
                 else:
                     return "sitting" if primary_type == "human_full_body" else "adult"
             
-            # Product subtypes
             elif primary_type == "jewelry":
                 max_dim = max(dims.x, dims.y, dims.z)
                 if max_dim < 0.02:
@@ -570,7 +526,6 @@ class AdvancedSubjectClassifier:
                 else:
                     return "bracelet"
             
-            # Default to first subtype
             return subtypes[0]
             
         except Exception as e:
@@ -586,7 +541,6 @@ class AdvancedSubjectClassifier:
                 if type_name != primary_type and score >= threshold:
                     secondary.append(type_name)
             
-            # Sort by score and limit to top 2
             secondary.sort(key=lambda x: type_scores[x], reverse=True)
             return secondary[:2]
             
@@ -600,7 +554,6 @@ class AdvancedSubjectClassifier:
         try:
             characteristics = {}
             
-            # Basic measurements
             dims = analysis.bounds["dimensions"]
             characteristics["dimensions"] = {
                 "width": dims.x,
@@ -614,10 +567,8 @@ class AdvancedSubjectClassifier:
                 }
             }
             
-            # Material characteristics
             characteristics["materials"] = analysis.materials
             
-            # Complexity characteristics
             total_verts = sum(len(obj.data.vertices) for obj in objects if obj.type == 'MESH' and obj.data)
             total_faces = sum(len(obj.data.polygons) for obj in objects if obj.type == 'MESH' and obj.data)
             
@@ -651,7 +602,6 @@ class AdvancedSubjectClassifier:
                 if len(mesh.polygons) == 0:
                     continue
                 
-                # Check face regularity (quads vs triangles vs ngons)
                 quad_count = sum(1 for poly in mesh.polygons if len(poly.vertices) == 4)
                 tri_count = sum(1 for poly in mesh.polygons if len(poly.vertices) == 3)
                 ngon_count = len(mesh.polygons) - quad_count - tri_count
@@ -659,7 +609,6 @@ class AdvancedSubjectClassifier:
                 total_faces = len(mesh.polygons)
                 quad_ratio = quad_count / total_faces
                 
-                # Higher quad ratio = more regular/geometric
                 regularity = quad_ratio * 0.8 + (1 - ngon_count / max(1, total_faces)) * 0.2
                 regularity_scores.append(regularity)
             
@@ -693,25 +642,20 @@ def analyze_topology_enhanced(objects: List[bpy.types.Object], analysis: Subject
                 total_faces += len(mesh.polygons)
                 total_edges += len(mesh.edges)
         
-        # Calculate basic counts
         topology_data["vertex_count"] = total_vertices
         topology_data["face_count"] = total_faces
         topology_data["edge_count"] = total_edges
         
-        # Calculate mesh density (vertices per unit volume)
         volume = analysis.bounds["dimensions"].x * analysis.bounds["dimensions"].y * analysis.bounds["dimensions"].z
         if volume > 0:
             topology_data["mesh_density"] = total_vertices / volume
         
-        # Calculate surface complexity based on face-to-vertex ratio
         if total_vertices > 0:
             complexity_ratio = total_faces / total_vertices
             topology_data["surface_complexity"] = min(1.0, complexity_ratio * 2.0)
         
-        # Calculate topology score (overall mesh quality indicator)
         if total_faces > 0 and total_vertices > 0:
             vertex_face_ratio = total_vertices / total_faces
-            # Ideal ratio is around 0.5-0.8 for good topology
             ideal_ratio = 0.65
             score = 1.0 - abs(vertex_face_ratio - ideal_ratio) / ideal_ratio
             topology_data["topology_score"] = max(0.0, min(1.0, score))
@@ -741,14 +685,12 @@ def analyze_subject(objects: List[bpy.types.Object], context: bpy.types.Context)
     Returns:
         SubjectAnalysis object with complete analysis
     """
-    # # Coba eksekusi kode dengan error handling
     try:
         analysis = SubjectAnalysis()
         
         if not objects:
             return analysis
         
-        # Filter valid mesh objects
         valid_objects = [obj for obj in objects 
                         if obj and obj.type == 'MESH' and obj.data]
         
@@ -757,38 +699,29 @@ def analyze_subject(objects: List[bpy.types.Object], context: bpy.types.Context)
         
         analysis.object_count = len(valid_objects)
         
-        # Calculate bounds
         bounds_data = calculate_bounds(valid_objects)
         analysis.bounds.update(bounds_data)
         
-        # Detect orientation
         orientation_data = detect_orientation(valid_objects)
         analysis.orientation.update(orientation_data)
         
-        # Analyze materials
         material_data = analyze_materials(valid_objects)
         analysis.materials.update(material_data)
         
-        # Calculate camera relationship
         camera_data = calculate_camera_relation(valid_objects, context)
         analysis.camera_relation.update(camera_data)
         
-        # Calculate complexity score
         analysis.complexity_score = calculate_complexity_score(valid_objects)
         
-        # Enhanced topology analysis
         analysis.topology_analysis = analyze_topology_enhanced(valid_objects, analysis)
         
-        # Advanced subject classification
         classification = AdvancedSubjectClassifier.classify_subject(valid_objects, analysis)
         analysis.subject_classification.update(classification)
         
-        # Legacy compatibility
         analysis.type = classification["primary_type"]
         
         return analysis
         
-    # # Tangani error jika terjadi
     except Exception as e:
         analysis = SubjectAnalysis()
         analysis.type = "product"  # Safe fallback
@@ -1392,10 +1325,8 @@ def lumi_sample_object_material(obj: bpy.types.Object) -> Dict[str, Any]:
     Returns:
         Dictionary with material data
     """
-    # # Coba eksekusi kode dengan error handling
     try:
         return analyze_materials([obj])
-    # # Tangani error jika terjadi
     except Exception as e:
         return {
             "dominant_type": "dielectric",
@@ -1405,15 +1336,11 @@ def lumi_sample_object_material(obj: bpy.types.Object) -> Dict[str, Any]:
         }
 
 
-# ============================================================================
-# ENHANCED MATERIAL ANALYSIS SYSTEM
-# ============================================================================
-
 # Material-specific lighting adjustment rules
 MATERIAL_LIGHTING_RULES = {
     "metallic": {
         "intensity_multiplier": 0.8,
-        "size_multiplier": 1.5,  # Softer reflections
+        "size_multiplier": 1.5,
         "add_gradient": True,
         "prefer_area_lights": True,
         "avoid_direct_harsh": True,
@@ -1429,7 +1356,7 @@ MATERIAL_LIGHTING_RULES = {
         "transmission_compensation": True
     },
     "skin": {
-        "color_temperature": 5200,  # Slightly warm
+        "color_temperature": 5200,
         "soft_shadows": True,
         "add_fill": True,
         "sss_compensation": True,
@@ -1446,13 +1373,11 @@ MATERIAL_LIGHTING_RULES = {
         "avoid_specular_hotspots": True
     },
     "dielectric": {
-        # Standard non-metallic materials (plastic, wood, etc.)
         "intensity_multiplier": 1.0,
         "balanced_lighting": True,
         "moderate_shadows": True
     },
     "emission": {
-        # Materials with emission
         "reduce_ambient": True,
         "intensity_multiplier": 0.7,
         "enhance_contrast": True
@@ -1470,10 +1395,9 @@ def analyze_materials_advanced(objects: List[bpy.types.Object]) -> Dict[str, Any
     Returns:
         Dictionary with comprehensive material analysis and lighting recommendations
     """
-    # # Coba eksekusi kode dengan error handling
     try:
         material_data = {
-            "types": {},  # Material type counts
+            "types": {},
             "properties": {
                 "average_metallic": 0.0,
                 "average_roughness": 0.0,
@@ -1521,7 +1445,6 @@ def analyze_materials_advanced(objects: List[bpy.types.Object]) -> Dict[str, Any
                         if mat_analysis["base_color"]:
                             colors.append(mat_analysis["base_color"])
                         
-                        # Count material types
                         mat_type = mat_analysis["type"]
                         material_types.append(mat_type)
                         if mat_type in material_data["types"]:
@@ -1531,7 +1454,6 @@ def analyze_materials_advanced(objects: List[bpy.types.Object]) -> Dict[str, Any
                         
                         material_data["material_count"] += 1
         
-        # Calculate averages
         if metallic_values:
             material_data["properties"]["average_metallic"] = sum(metallic_values) / len(metallic_values)
             material_data["properties"]["has_metallic"] = max(metallic_values) > 0.1
@@ -1550,23 +1472,18 @@ def analyze_materials_advanced(objects: List[bpy.types.Object]) -> Dict[str, Any
             material_data["properties"]["average_emission_strength"] = sum(emission_strengths) / len(emission_strengths)
             material_data["properties"]["has_emission"] = max(emission_strengths) > 0.1
         
-        # Calculate dominant color and variance
         if colors:
             material_data["properties"]["dominant_color"] = calculate_dominant_color(colors)
             material_data["properties"]["color_variance"] = calculate_color_variance(colors)
         
-        # Detect subsurface scattering
         material_data["properties"]["has_sss"] = detect_subsurface_scattering(objects)
         
-        # Calculate complexity score
         material_data["complexity_score"] = calculate_material_complexity(material_data)
         
-        # Generate lighting recommendations
         material_data["recommendations"] = generate_lighting_recommendations(material_data)
         
         return material_data
         
-    # # Tangani error jika terjadi
     except Exception as e:
         return {
             "types": {"dielectric": 1},
@@ -1607,13 +1524,10 @@ def analyze_material_nodes(material: bpy.types.Material) -> Dict[str, Any]:
         "is_emission": False
     }
     
-    # # Coba eksekusi kode dengan error handling
     try:
         if not material.use_nodes or not material.node_tree:
-            # Legacy material analysis
             return analyze_legacy_material(material)
         
-        # Find principled BSDF node
         principled_node = None
         emission_node = None
         
@@ -1624,34 +1538,29 @@ def analyze_material_nodes(material: bpy.types.Material) -> Dict[str, Any]:
                 emission_node = node
         
         if principled_node:
-            # Extract principled BSDF values
             analysis["metallic"] = get_node_input_value(principled_node, "Metallic", 0.0)
             analysis["roughness"] = get_node_input_value(principled_node, "Roughness", 0.5)
             analysis["transmission"] = get_node_input_value(principled_node, "Transmission", 0.0)
             
-            # Get base color
             base_color_input = get_node_input_value(principled_node, "Base Color", (1.0, 1.0, 1.0, 1.0))
             if len(base_color_input) >= 3:
                 analysis["base_color"] = base_color_input[:3]
             
-            # Check for subsurface scattering
             if hasattr(principled_node.inputs, 'Subsurface'):
                 sss_value = get_node_input_value(principled_node, "Subsurface", 0.0)
                 analysis["has_sss"] = sss_value > 0.01
             
-            # Determine material type
             if analysis["metallic"] and analysis["metallic"] > 0.5:
                 analysis["type"] = "metallic"
             elif analysis["transmission"] and analysis["transmission"] > 0.1:
                 analysis["type"] = "glass"
                 analysis["is_glass"] = True
             elif analysis["has_sss"]:
-                analysis["type"] = "skin"  # Or organic material with SSS
+                analysis["type"] = "skin"
             else:
                 analysis["type"] = "dielectric"
         
         if emission_node:
-            # Check emission strength
             emission_strength = get_node_input_value(emission_node, "Strength", 1.0)
             analysis["emission_strength"] = emission_strength
             analysis["is_emission"] = emission_strength > 0.1
@@ -1660,7 +1569,6 @@ def analyze_material_nodes(material: bpy.types.Material) -> Dict[str, Any]:
         
         return analysis
         
-    # # Tangani error jika terjadi
     except Exception as e:
         return analysis
 
@@ -1751,9 +1659,7 @@ def calculate_color_variance(colors: List[Tuple[float, float, float]]) -> float:
     if len(colors) <= 1:
         return 0.0
     
-    # # Coba eksekusi kode dengan error handling
     try:
-        # Calculate variance for each channel
         r_values = [color[0] for color in colors]
         g_values = [color[1] for color in colors]
         b_values = [color[2] for color in colors]
@@ -1762,10 +1668,8 @@ def calculate_color_variance(colors: List[Tuple[float, float, float]]) -> float:
         g_variance = statistics.variance(g_values) if len(g_values) > 1 else 0.0
         b_variance = statistics.variance(b_values) if len(b_values) > 1 else 0.0
         
-        # Average variance across channels
         avg_variance = (r_variance + g_variance + b_variance) / 3.0
         
-        # Normalize to 0-1 range (variance is typically small for colors)
         return min(1.0, avg_variance * 10.0)
         
     except:
@@ -1811,15 +1715,12 @@ def calculate_material_complexity(material_data: Dict[str, Any]) -> float:
     Returns:
         Complexity score (1.0 = simple, higher = more complex)
     """
-    # # Coba eksekusi kode dengan error handling
     try:
         base_score = 1.0
         
-        # More material types = higher complexity
         type_count = len(material_data["types"])
         base_score += type_count * 0.5
         
-        # Special materials increase complexity
         props = material_data["properties"]
         if props.get("has_glass", False):
             base_score += 1.0
@@ -1830,11 +1731,9 @@ def calculate_material_complexity(material_data: Dict[str, Any]) -> float:
         if props.get("has_metallic", False):
             base_score += 0.6
         
-        # Color variance affects complexity
         color_variance = props.get("color_variance", 0.0)
         base_score += color_variance * 0.5
         
-        # High transmission or extreme roughness
         if props.get("average_transmission", 0.0) > 0.5:
             base_score += 0.5
         if props.get("average_roughness", 0.5) < 0.1 or props.get("average_roughness", 0.5) > 0.9:
@@ -1856,12 +1755,11 @@ def generate_lighting_recommendations(material_data: Dict[str, Any]) -> Dict[str
     Returns:
         Dictionary with lighting recommendations
     """
-    # # Coba eksekusi kode dengan error handling
     try:
         recommendations = {
             "intensity_multiplier": 1.0,
             "size_multiplier": 1.0,
-            "color_temperature": 5500,  # Default daylight
+            "color_temperature": 5500,
             "shadow_softness": 0.5,
             "additional_lights": [],
             "avoid_techniques": [],
@@ -1869,7 +1767,6 @@ def generate_lighting_recommendations(material_data: Dict[str, Any]) -> Dict[str
             "special_considerations": []
         }
         
-        # Get dominant material types
         type_counts = material_data.get("types", {})
         if not type_counts:
             return recommendations
@@ -1877,19 +1774,15 @@ def generate_lighting_recommendations(material_data: Dict[str, Any]) -> Dict[str
         dominant_type = max(type_counts, key=type_counts.get)
         properties = material_data.get("properties", {})
         
-        # Apply rules for dominant material type
         if dominant_type in MATERIAL_LIGHTING_RULES:
             rules = MATERIAL_LIGHTING_RULES[dominant_type]
             
-            # Apply basic multipliers
             recommendations["intensity_multiplier"] = rules.get("intensity_multiplier", 1.0)
             recommendations["size_multiplier"] = rules.get("size_multiplier", 1.0)
             
-            # Color temperature adjustments
             if "color_temperature" in rules:
                 recommendations["color_temperature"] = rules["color_temperature"]
             
-            # Special lighting techniques
             if rules.get("add_rim_light", False):
                 recommendations["additional_lights"].append({
                     "type": "rim",
@@ -1904,7 +1797,6 @@ def generate_lighting_recommendations(material_data: Dict[str, Any]) -> Dict[str
                     "position": "opposite_key"
                 })
             
-            # Preferred techniques
             if rules.get("prefer_area_lights", False):
                 recommendations["preferred_techniques"].append("use_area_lights")
             
@@ -1912,39 +1804,35 @@ def generate_lighting_recommendations(material_data: Dict[str, Any]) -> Dict[str
                 recommendations["shadow_softness"] = 0.8
                 recommendations["preferred_techniques"].append("soft_shadows")
             
-            # Techniques to avoid
             if rules.get("avoid_harsh_shadows", False):
                 recommendations["avoid_techniques"].append("harsh_directional_lighting")
             
             if rules.get("avoid_direct_harsh", False):
                 recommendations["avoid_techniques"].append("direct_spot_lights")
         
-        # Additional adjustments based on specific properties
         if properties.get("has_glass", False):
             recommendations["special_considerations"].append("requires_environment_lighting")
             recommendations["special_considerations"].append("backlight_important")
             
         if properties.get("has_emission", False):
-            recommendations["intensity_multiplier"] *= 0.8  # Reduce ambient
+            recommendations["intensity_multiplier"] *= 0.8
             recommendations["special_considerations"].append("reduce_ambient_contribution")
             
         if properties.get("has_metallic", False):
-            recommendations["size_multiplier"] *= 1.3  # Larger lights for softer reflections
+            recommendations["size_multiplier"] *= 1.3
             recommendations["special_considerations"].append("requires_controlled_reflections")
             
         if properties.get("has_sss", False):
             recommendations["preferred_techniques"].append("subsurface_friendly_lighting")
             recommendations["special_considerations"].append("avoid_extreme_angles")
         
-        # Complexity-based adjustments
         complexity = material_data.get("complexity_score", 1.0)
         if complexity > 2.0:
             recommendations["special_considerations"].append("high_complexity_materials")
-            recommendations["intensity_multiplier"] *= 0.9  # Slightly reduce intensity for complex materials
+            recommendations["intensity_multiplier"] *= 0.9
         
         return recommendations
         
-    # # Tangani error jika terjadi
     except Exception as e:
         return {
             "intensity_multiplier": 1.0,
@@ -1966,17 +1854,14 @@ def apply_material_adjustments(light: bpy.types.Object, recommendations: Dict[st
         light: Blender light object
         recommendations: Lighting recommendations from material analysis
     """
-    # # Coba eksekusi kode dengan error handling
     try:
         if not light or not light.data or light.type != 'LIGHT':
             return
         
-        # Apply intensity adjustments
         intensity_mult = recommendations.get("intensity_multiplier", 1.0)
         if hasattr(light.data, 'energy'):
             light.data.energy *= intensity_mult
         
-        # Apply size adjustments for area lights
         if light.data.type == 'AREA':
             size_mult = recommendations.get("size_multiplier", 1.0)
             if hasattr(light.data, 'size'):
@@ -1984,21 +1869,16 @@ def apply_material_adjustments(light: bpy.types.Object, recommendations: Dict[st
             if hasattr(light.data, 'size_y'):
                 light.data.size_y *= size_mult
         
-        # Apply color temperature if supported
         color_temp = recommendations.get("color_temperature")
         if color_temp and hasattr(light.data, 'color'):
             apply_color_temperature(light, color_temp)
         
-        # Adjust shadow softness for supported light types
         shadow_softness = recommendations.get("shadow_softness", 0.5)
         if light.data.type == 'SUN' and hasattr(light.data, 'angle'):
-            # For sun lights, angle controls softness
-            light.data.angle = shadow_softness * 0.1  # Convert to radians
+            light.data.angle = shadow_softness * 0.1
         elif light.data.type == 'SPOT' and hasattr(light.data, 'spot_blend'):
-            # For spot lights, increase blend for softer shadows
             light.data.spot_blend = max(0.1, shadow_softness * 0.5)
         
-    # # Tangani error jika terjadi
     except Exception as e:
         pass
 
@@ -2011,35 +1891,25 @@ def apply_color_temperature(light: bpy.types.Object, temperature: float) -> None
         light: Blender light object
         temperature: Color temperature in Kelvin
     """
-    # # Coba eksekusi kode dengan error handling
     try:
-        # Simple color temperature to RGB conversion
-        # This is a simplified version - could be enhanced with proper blackbody curve
         if temperature <= 3000:
-            # Warm/orange
             color = (1.0, 0.6, 0.2)
         elif temperature <= 4000:
-            # Warm white
             color = (1.0, 0.8, 0.5)
         elif temperature <= 5500:
-            # Neutral white
             color = (1.0, 1.0, 1.0)
         elif temperature <= 7000:
-            # Cool white
             color = (0.8, 0.9, 1.0)
         else:
-            # Very cool/blue
             color = (0.6, 0.8, 1.0)
         
         if hasattr(light.data, 'color'):
             light.data.color = color
             
-    # # Tangani error jika terjadi
     except Exception as e:
         pass
 
 
-# Export functions
 __all__ = [
     'SubjectAnalysis',
     'analyze_subject',

@@ -3,15 +3,12 @@ Template Error Handling
 Error handling and recovery utilities for template operations.
 """
 
-# Import modul utama Blender
 import bpy
 import time
 import traceback
 from typing import List, Dict, Tuple, Optional, Any
 from contextlib import contextmanager
 
-
-# ===== CUSTOM EXCEPTIONS =====
 
 class TemplateError(Exception):
     """Base exception for template system"""
@@ -138,7 +135,6 @@ def validate_scene_for_template(context: bpy.types.Context, template: Dict) -> T
     errors = []
     warnings = []
     
-    # # Coba eksekusi kode dengan error handling
     try:
         # Check context validity
         if not context:
@@ -149,25 +145,22 @@ def validate_scene_for_template(context: bpy.types.Context, template: Dict) -> T
             errors.append("No active scene")
             return errors, warnings
         
-        # Check selection
-        # # Ambil objek yang dipilih dalam scene
-        if not context.selected_objects:
-            errors.append("no_selection")
-        else:
-            # # Ambil objek yang dipilih dalam scene
-            mesh_objects = [obj for obj in context.selected_objects if obj.type == 'MESH']
-            if not mesh_objects:
-                errors.append("invalid_selection")
+        # Check selected objects
+        selected_objects = context.selected_objects
+        if not selected_objects:
+            warnings.append("No objects selected")
+        
+        mesh_objects = [obj for obj in selected_objects if obj.type == 'MESH']
+        if not mesh_objects:
+            errors.append("invalid_selection")
         
         # Check scene scale
-        # # Coba eksekusi kode dengan error handling
         try:
             scale = context.scene.unit_settings.scale_length
             if scale > 100:
                 warnings.append("large_scale_warning")
             elif scale < 0.001:
                 warnings.append("Scene scale very small, lights may be too large")
-        # # Tangani error jika terjadi
         except AttributeError:
             pass  # Unit settings not available in older versions
         
@@ -205,7 +198,6 @@ def validate_scene_for_template(context: bpy.types.Context, template: Dict) -> T
         if bpy.app.version < (3, 0, 0):
             warnings.append("Some features may not work properly in Blender versions older than 3.0")
         
-    # # Tangani error jika terjadi
     except Exception as e:
         errors.append(f"Validation failed: {str(e)}")
     
@@ -372,22 +364,17 @@ class TemplateOperationStack:
     
     def rollback(self):
         """Undo all operations"""
-        # # Coba eksekusi kode dengan error handling
         try:
             # Process operations in reverse order
             for operation_type, data in reversed(self.operations):
-                # # Coba eksekusi kode dengan error handling
                 try:
                     if operation_type == "create_objects":
                         for obj in data:
-                            # # Akses data objek Blender
                             if obj and obj.name in bpy.data.objects:
-                                # # Akses data objek Blender
                                 bpy.data.objects.remove(obj, do_unlink=True)
                     
                     elif operation_type == "modify_object":
                         obj = data
-                        # # Akses data objek Blender
                         if obj and obj.name in bpy.data.objects:
                             original = self.modified_objects.get(obj, {})
                             # Restore original properties
@@ -400,7 +387,6 @@ class TemplateOperationStack:
                         if collection and collection.name in bpy.data.collections:
                             bpy.data.collections.remove(collection)
                 
-                # # Tangani error jika terjadi
                 except Exception as e:
                     pass
             
@@ -412,7 +398,6 @@ class TemplateOperationStack:
             
             pass
             
-        # # Tangani error jika terjadi
         except Exception as e:
             pass
 
@@ -427,13 +412,11 @@ def safe_template_operation(operation_name: str):
             # Create operation stack for rollback
             operation_stack = TemplateOperationStack()
             
-            # # Coba eksekusi kode dengan error handling
             try:
                 # Validate context first
                 context_valid, context_errors = validate_blender_context(context)
                 if not context_valid:
                     report_errors(self, context_errors, [])
-                    # # Batalkan operasi
                     return {'CANCELLED'}
                 
                 # Execute the operation
@@ -442,20 +425,16 @@ def safe_template_operation(operation_name: str):
                 # Operation succeeded
                 return result
                 
-            # # Tangani error jika terjadi
             except TemplateError as e:
                 # Our custom errors - user-friendly handling
                 operation_stack.rollback()
                 report_exception(self, e, operation_name)
-                # # Batalkan operasi
                 return {'CANCELLED'}
                 
-            # # Tangani error jika terjadi
             except Exception as e:
                 # System errors - rollback and report
                 operation_stack.rollback()
                 report_exception(self, e, operation_name)
-                # # Batalkan operasi
                 return {'CANCELLED'}
         
         return wrapper
@@ -468,18 +447,15 @@ def safe_template_context(operator: bpy.types.Operator, operation: str):
     
     operation_stack = TemplateOperationStack()
     
-    # # Coba eksekusi kode dengan error handling
     try:
         yield operation_stack
         # If we get here, operation succeeded
         
-    # # Tangani error jika terjadi
     except TemplateError as e:
         operation_stack.rollback()
         report_exception(operator, e, operation)
         raise
         
-    # # Tangani error jika terjadi
     except Exception as e:
         operation_stack.rollback()
         report_exception(operator, e, operation)
@@ -497,13 +473,11 @@ def get_template_error_context() -> Dict[str, Any]:
         "addon_version": "1.0.0",  # Should come from addon metadata
     }
     
-    # # Coba eksekusi kode dengan error handling
     try:
         context = bpy.context
         if context:
             context_info.update({
                 "mode": context.mode,
-                # # Ambil objek yang dipilih dalam scene
                 "selected_objects": len(context.selected_objects),
                 "scene_objects": len(context.scene.objects) if context.scene else 0,
                 "active_object": context.active_object.name if context.active_object else None,

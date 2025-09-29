@@ -46,16 +46,16 @@ class CameraSpecificOverlay:
     def _generate_connection_colors(self):
         """Generate distinct colors for camera-light connections."""
         colors = [
-            Color((1.0, 0.3, 0.3)),  # Red
-            Color((0.3, 1.0, 0.3)),  # Green
-            Color((0.3, 0.3, 1.0)),  # Blue
-            Color((1.0, 1.0, 0.3)),  # Yellow
-            Color((1.0, 0.3, 1.0)),  # Magenta
-            Color((0.3, 1.0, 1.0)),  # Cyan
-            Color((1.0, 0.6, 0.3)),  # Orange
-            Color((0.6, 0.3, 1.0)),  # Purple
-            Color((0.3, 1.0, 0.6)),  # Spring Green
-            Color((1.0, 0.3, 0.6)),  # Rose
+            Color((1.0, 0.3, 0.3)),
+            Color((0.3, 1.0, 0.3)),
+            Color((0.3, 0.3, 1.0)),
+            Color((1.0, 1.0, 0.3)),
+            Color((1.0, 0.3, 1.0)),
+            Color((0.3, 1.0, 1.0)),
+            Color((1.0, 0.6, 0.3)),
+            Color((0.6, 0.3, 1.0)),
+            Color((0.3, 1.0, 0.6)),
+            Color((1.0, 0.3, 0.6)),
         ]
         
         self._connection_colors = {}
@@ -67,7 +67,6 @@ class CameraSpecificOverlay:
             if self._color_index < len(self._connection_colors):
                 self._connection_colors[camera_name] = self._connection_colors[self._color_index]
             else:
-                # Generate random color if we run out of predefined colors
                 import random
                 self._connection_colors[camera_name] = Color((
                     random.random(), random.random(), random.random()
@@ -88,13 +87,10 @@ class CameraSpecificOverlay:
             self._camera_light_connections.clear()
             return
             
-        # Get camera light manager
         camera_light_manager = get_camera_light_manager()
         
-        # Clear previous connections
         self._camera_light_connections.clear()
         
-        # Get all cameras and their assigned lights
         cameras = [obj for obj in scene.objects if obj.type == 'CAMERA']
         
         for camera in cameras:
@@ -105,12 +101,10 @@ class CameraSpecificOverlay:
     def _draw_camera_light_connection(self, camera_pos: Vector, light_pos: Vector, 
                                      color: Color, region, rv3d, batch_lines: List):
         """Draw a connection line between camera and light."""
-        # Convert 3D positions to 2D screen coordinates
         camera_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, camera_pos)
         light_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, light_pos)
         
         if camera_2d and light_2d:
-            # Only draw if both points are visible
             batch_lines.extend([
                 (camera_pos, color),
                 (light_pos, color)
@@ -122,11 +116,9 @@ class CameraSpecificOverlay:
         camera_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, camera_pos)
         
         if camera_2d:
-            # Draw a small circle around the camera
             color = self._get_camera_color(camera.name)
-            radius = 0.2  # World space radius
+            radius = 0.2
             
-            # Create circle points
             circle_points = []
             segments = 16
             for i in range(segments):
@@ -134,12 +126,9 @@ class CameraSpecificOverlay:
                 x = math.cos(angle) * radius
                 y = math.sin(angle) * radius
                 
-                # Create offset in camera's local space
                 offset = camera.matrix_world @ Vector((x, y, 0))
                 point = camera_pos + (offset - camera_pos)
                 circle_points.append((point, color))
-                
-            # Add circle lines
             for i in range(len(circle_points)):
                 batch_shapes.extend([
                     circle_points[i],
@@ -153,23 +142,18 @@ class CameraSpecificOverlay:
         light_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, light_pos)
         
         if light_2d:
-            # Draw small indicators for each assigned camera
             indicator_count = len(assigned_cameras)
             for i, camera_name in enumerate(assigned_cameras):
                 color = self._get_camera_color(camera_name)
                 
-                # Position indicators around the light
                 angle = 2 * math.pi * i / indicator_count
                 offset_distance = 0.15
                 
-                # Calculate offset position
                 offset_x = math.cos(angle) * offset_distance
                 offset_y = math.sin(angle) * offset_distance
                 
-                # Create indicator position
                 indicator_pos = light_pos + Vector((offset_x, offset_y, 0))
                 
-                # Draw small square indicator
                 size = 0.05
                 square_points = [
                     (indicator_pos + Vector((-size, -size, 0)), color),
@@ -195,14 +179,12 @@ class CameraSpecificOverlay:
         camera_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, camera_pos)
         
         if camera_2d:
-            # Draw pulsing circle for active camera
             import time
-            pulse = abs(math.sin(time.time() * 3))  # 3 Hz pulse
+            pulse = abs(math.sin(time.time() * 3))
             
-            color = Color((1.0, 1.0, 0.0))  # Yellow for active camera
-            radius = 0.3 + pulse * 0.1  # Pulsing radius
+            color = Color((1.0, 1.0, 0.0))
+            radius = 0.3 + pulse * 0.1
             
-            # Create circle points
             circle_points = []
             segments = 24
             for i in range(segments):
@@ -210,12 +192,9 @@ class CameraSpecificOverlay:
                 x = math.cos(angle) * radius
                 y = math.sin(angle) * radius
                 
-                # Create offset in camera's local space
                 offset = scene.camera.matrix_world @ Vector((x, y, 0))
                 point = camera_pos + (offset - camera_pos)
                 circle_points.append((point, color))
-                
-            # Add circle lines
             for i in range(len(circle_points)):
                 batch_shapes.extend([
                     circle_points[i],
@@ -233,23 +212,19 @@ class CameraSpecificOverlay:
         if not camera_specific_props or not camera_specific_props.camera_specific_lights_enabled:
             return
             
-        # Get drawing context
         region = context.region
         rv3d = context.region_data
         
         if not region or not rv3d:
             return
             
-        # Update connections if camera changed
         if scene.camera != self._last_camera:
             self._update_camera_light_connections(context)
             self._last_camera = scene.camera
             
-        # Initialize batch lists
         batch_lines = []
         batch_shapes = []
         
-        # Draw camera-light connections
         for camera_name, lights in self._camera_light_connections.items():
             camera_obj = scene.objects.get(camera_name)
             if not camera_obj:
@@ -264,13 +239,11 @@ class CameraSpecificOverlay:
                     camera_pos, light_pos, camera_color, region, rv3d, batch_lines
                 )
                 
-        # Draw camera indicators
         for camera_name in self._camera_light_connections.keys():
             camera_obj = scene.objects.get(camera_name)
             if camera_obj:
                 self._draw_camera_indicator(camera_obj, region, rv3d, batch_shapes)
                 
-        # Draw light indicators
         for light in context.scene.objects:
             if light.type == 'LIGHT':
                 assigned_cameras = []
@@ -281,10 +254,8 @@ class CameraSpecificOverlay:
                 if assigned_cameras:
                     self._draw_light_indicator(light, assigned_cameras, region, rv3d, batch_shapes)
                     
-        # Draw active camera highlight
         self._draw_active_camera_highlight(context, region, rv3d, batch_shapes)
         
-        # Render the batches
         if batch_lines:
             shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
             batch = batch_for_shader(shader, 'LINES', {

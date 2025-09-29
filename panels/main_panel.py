@@ -1,8 +1,7 @@
 """
-Main Panel Module
-Contains the main panel class for the LumiFlow Blender addon UI.
+LumiFlow Main UI Panel
+Defines the main UI panel and all UI drawing logic for LumiFlow Blender addon.
 """
-# # Import modul utama Blender
 import bpy
 from ..utils import lumi_is_addon_enabled
 
@@ -18,23 +17,16 @@ except ImportError:
 def draw_color_controls_ui(layout, context):
     layout.label(text="Color controls not available", icon='ERROR')
 
-"""
-Panel UI Utama LumiFlow
-Mendefinisikan panel UI utama dan semua logika drawing UI untuk LumiFlow Blender addon.
-"""
 # Import template browser helper
-# # Coba eksekusi kode dengan error handling
 try:
     from .template_browser import draw_template_quick_access
-# # Tangani error jika terjadi
 except ImportError:
     def draw_template_quick_access(layout, context):
         # Fallback if template browser not available
         pass
 
-# # Definisi class untuk UI Panel
 class LUMI_PT_light_control(bpy.types.Panel):
-    """Panel utama LumiFlow untuk kontrol pencahayaan"""
+    """Main LumiFlow panel for lighting control"""
     bl_label = "💡 LumiFlow"
     bl_idname = "LUMI_PT_light_control"
     bl_space_type = 'VIEW_3D'
@@ -64,7 +56,6 @@ class LUMI_PT_light_control(bpy.types.Panel):
 
     def _draw_main_toggle(self, layout, scene):
         """Enable/Disable toggle"""
-        # # Buat kotak container UI
         box = layout.box()
         row = box.row()
         row.scale_y = 1.5
@@ -93,26 +84,20 @@ class LUMI_PT_light_control(bpy.types.Panel):
 
     def _draw_template_quick_access(self, layout: bpy.types.UILayout, context: bpy.types.Context):
         """Template Quick Access - Only most popular templates for main panel"""
-        # # Coba eksekusi kode dengan error handling
         try:
             # Enhanced template section for main panel
-            # # Buat kotak container UI
             box = layout.box()
             header_row = box.row(align=True)
             header_row.label(text="Quick Templates", icon='LIGHT')
             
             # Quick access to most popular templates only
-            # # Ambil objek mesh yang dipilih dalam scene
             selected_meshes = [obj for obj in context.selected_objects if obj.type == 'MESH']
             enabled = bool(selected_meshes)
-
             # Always show the template buttons, but disable them when no mesh is selected
             col = box.column(align=True)
             quick_row = col.row(align=True)
             quick_row.scale_y = 1.0
             quick_row.enabled = enabled
-            # Only show 3-4 most commonly used templates
-            # # Coba eksekusi kode dengan error handling
             try:
                 quick_row.operator("lumi.apply_template_default", text="Key Light").template_id = "key_light_only"
                 quick_row.operator("lumi.apply_template_default", text="Rim Light").template_id = "rim_light_only"
@@ -126,7 +111,6 @@ class LUMI_PT_light_control(bpy.types.Panel):
             quick_row2 = col.row(align=True)
             quick_row2.scale_y = 1.0
             quick_row2.enabled = enabled
-            # # Coba eksekusi kode dengan error handling
             try:
                 quick_row2.operator("lumi.apply_template_default", text="Fill Light").template_id = "fill_light_only"
                 quick_row2.operator("lumi.apply_template_default", text="Background").template_id = "backlight_only"
@@ -137,10 +121,8 @@ class LUMI_PT_light_control(bpy.types.Panel):
                 quick_row2.operator("object.light_add", text="Product").type = 'SUN'
                 quick_row2.operator("object.light_add", text="Loop Portrait").type = 'POINT'           
                 
-        # # Tangani error jika terjadi
         except Exception as e:
             # Fallback if template system not available
-            # # Buat kotak container UI
             box = layout.box()
             box.label(text="Quick Templates", icon='LIGHT')
             box.label(text="Select objects to apply templates", icon='INFO')
@@ -167,11 +149,7 @@ class LUMI_PT_light_control(bpy.types.Panel):
         layout.use_property_split = False
         layout.use_property_decorate = False
         
-        # Color Controls expandable section
-        #self._draw_color_controls_section(layout, scene)
-        
-        # Light Mixer expandable section
-        #self._draw_light_mixer_section(layout, scene)       
+       
               
         # Only essential expandable sections remain in main panel       
         self._draw_scroll_settings(layout, scene)
@@ -193,41 +171,35 @@ class LUMI_PT_light_control(bpy.types.Panel):
             
             if getattr(scene, 'lumi_scroll_settings_expanded', False):
                 # Use layout directly instead of content_box
-                # # Coba eksekusi kode dengan error handling
                 try:
                     self._draw_smart_controls(layout, scene)
-                # # Tangani error jika terjadi
                 except (AttributeError, RuntimeError):
                     error_row = layout.row()
                     error_row.label(text="Error accessing scroll settings", icon='ERROR')
 
     def _get_selected_lights(self, context: bpy.types.Context) -> list[bpy.types.Object]:
         """Safe method to get selected lights with error handling"""
-        # # Coba eksekusi kode dengan error handling
         try:
-            # # Ambil objek yang dipilih dalam scene
             return [obj for obj in context.selected_objects if obj.type == 'LIGHT']
-        # # Tangani error jika terjadi
         except (AttributeError, RuntimeError):
             return []
-
+    
     def _draw_positioning_controls(self, layout: bpy.types.UILayout, context: bpy.types.Context):
         """Improved positioning controls with better organization"""
-        # # Coba eksekusi kode dengan error handling
         try:
             props = context.scene.light_props if hasattr(context.scene, 'light_props') else None
             
             # Header with current mode indicator
-            # # Buat kotak container UI
             box = layout.box()
             header_row = box.row(align=True)
             header_row.label(text="Positioning Mode", icon='TOOL_SETTINGS')
             
             # Mode buttons in a cleaner grid
-            col = box.column(align=True)
-            self._draw_positioning_mode_buttons(col, props)
+            if props is not None:
+                self._draw_positioning_mode_buttons(box, props)
+            else:
+                box.label(text="Light properties not available", icon='ERROR')
             
-        # # Tangani error jika terjadi
         except (AttributeError, RuntimeError):
             error_row = layout.row()
             error_row.label(text="Error Positioning Mode", icon='ERROR')
@@ -245,14 +217,12 @@ class LUMI_PT_light_control(bpy.types.Panel):
         
         # Create 3x2 grid
         for i in range(0, len(modes), 3):
-            # # Buat baris horizontal UI
             row = layout.row(align=True)
             row.scale_y = 1.3
             
             for j in range(3):
                 if i + j < len(modes):
                     mode_id, op_name, label, icon = modes[i + j]
-                    # # Coba eksekusi kode dengan error handling
                     try:
                         is_active = props and hasattr(props, 'positioning_mode') and props.positioning_mode == mode_id
                         row.operator(op_name, text=label, icon=icon, depress=is_active)
@@ -273,7 +243,6 @@ class LUMI_PT_light_control(bpy.types.Panel):
 
     def _draw_smart_controls(self, layout: bpy.types.UILayout, scene: bpy.types.Scene):
         """Improved smart controls layout"""
-        # # Buat kolom vertikal UI
         col = layout.column(align=True)
         # Tighter spacing overall
         col.separator(factor=0.5)
@@ -296,7 +265,6 @@ class LUMI_PT_light_control(bpy.types.Panel):
 
     def _draw_overlay_controls(self, layout: bpy.types.UILayout, scene: bpy.types.Scene):
         """Overlay controls at bottom"""
-        # # Buat baris horizontal UI
         row = layout.row(align=True)
         row.scale_y = 1.1     
         if hasattr(scene, 'lumi_show_overlay_tips'):
@@ -313,30 +281,22 @@ MAIN_PANEL_CLASSES = [
     LUMI_PT_light_control,
 ]
 
-# # Fungsi untuk mendaftarkan class ke Blender
 def register():
     """Register all panel classes"""
     for cls in MAIN_PANEL_CLASSES:
-        # # Coba eksekusi kode dengan error handling
         try:
-            # # Daftarkan class ke sistem Blender
             bpy.utils.register_class(cls)
             print(f"✅ Registered: {cls.__name__}")
-        # # Tangani error jika terjadi
         except Exception as e:
             print(f"❌ Failed to register {cls.__name__}: {e}")
 
 
-# # Fungsi untuk membatalkan pendaftaran class
 def unregister():
     """Unregister all panel classes"""
     for cls in reversed(MAIN_PANEL_CLASSES):
-        # # Coba eksekusi kode dengan error handling
         try:
-            # # Batalkan pendaftaran class
             bpy.utils.unregister_class(cls)
             print(f"✅ Unregistered: {cls.__name__}")
-        # # Tangani error jika terjadi
         except Exception as e:
             print(f"❌ Failed to unregister {cls.__name__}: {e}")
 

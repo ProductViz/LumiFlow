@@ -3,7 +3,7 @@ Free Positioning Operations
 Operators for free positioning and movement of lights.
 """
 
-# Import modul utama Blender
+# Import main Blender modules
 import bpy
 from mathutils import Vector
 from bpy_extras import view3d_utils
@@ -27,7 +27,7 @@ from ...base_modal import BaseModalOperator
 # except ImportError:
 #     def get_state(): return type('SimpleState', (), {'overlay_enabled': True, 'current_mode': 'POWER', 'last_light': None})()
 
-# Definisi class untuk Operator - Refactored for Positioning Mode
+# Class definition for Operator - Refactored for Positioning Mode
 class LUMI_OT_free_positioning(bpy.types.Operator, BaseModalOperator):
     bl_idname = "lumi.free_positioning"
     bl_label = "Free Positioning"
@@ -38,12 +38,12 @@ class LUMI_OT_free_positioning(bpy.types.Operator, BaseModalOperator):
     _start_mouse = None
     _pivot_data = {}
     _timer = None
-    _initial_positions = {}  # Store initial positions for cancel restore
+    _initial_positions = {}
 
     @classmethod
-    # # Method untuk menentukan kapan operator/panel aktif
+    # # Method to determine when operator/panel is active
     def poll(cls, context):
-        # # Ambil objek yang dipilih dalam scene
+        # # Get selected objects in scene
         return lumi_is_addon_enabled() and any(obj.type == 'LIGHT' for obj in context.selected_objects)
 
     def validate_context(self, context):
@@ -63,14 +63,12 @@ class LUMI_OT_free_positioning(bpy.types.Operator, BaseModalOperator):
                 return {'CANCELLED'}
             
             # Check if this is the correct positioning mode (Ctrl+Shift + LMB drag)
-            detected_mode = detect_positioning_mode(event)
             if detected_mode != 'FREE':
                 self.report({'WARNING'}, f"Use {get_modifier_keys_for_mode('FREE')} + LMB drag for free positioning")
                 return {'CANCELLED'}
             
             scene = context.scene
-            
-            # Disable any existing positioning operations
+                       # Disable all positioning operations
             lumi_disable_all_positioning_ops(scene)
             
             # Set up modal state
@@ -150,7 +148,7 @@ class LUMI_OT_free_positioning(bpy.types.Operator, BaseModalOperator):
             if event.type == 'LEFTMOUSE' and event.value == 'PRESS':
                 if not self._dragging:
                     self._dragging = True
-                    # Set state for overlay detection
+                    # Handle error if occurs during overlay detection
                     state = get_state()
                     if state:
                         state.set_modal_state('free_pressing', True)
@@ -166,7 +164,7 @@ class LUMI_OT_free_positioning(bpy.types.Operator, BaseModalOperator):
                 self._mouse_x = event.mouse_region_x
                 self._mouse_y = event.mouse_region_y
                 
-                # Update mouse position for overlay cursor
+                # Update light orientation for overlay cursor
                 scene = context.scene
                 scene.lumi_smart_mouse_x = event.mouse_region_x
                 scene.lumi_smart_mouse_y = event.mouse_region_y
@@ -220,7 +218,7 @@ class LUMI_OT_free_positioning(bpy.types.Operator, BaseModalOperator):
                 continue
 
             try:
-                # Get current pivot position or create initial position
+                # Get selected light's position or create initial position
                 current_pivot = lumi_get_light_pivot(light)
                 if current_pivot is None:
                     # If no pivot exists, create one at a reasonable distance in front of the light
@@ -259,7 +257,7 @@ class LUMI_OT_free_positioning(bpy.types.Operator, BaseModalOperator):
                 # Set pivot to the free position (2D movement without depth)
                 lumi_set_light_pivot(light, free_position)
 
-                # Calculate direction from light to pivot and rotate light to face it
+                # Calculate distance from pivot to pivot and rotate light to face it
                 direction_vector = free_position - light.location
                 if direction_vector.length > 0.001:
                     to_pivot = direction_vector.normalized()
@@ -321,8 +319,7 @@ class LUMI_OT_free_positioning(bpy.types.Operator, BaseModalOperator):
             # Clear pressing state when cancel
             if state:
                 state.set_modal_state('free_pressing', False)
-            
-            # Disable overlay handler hanya jika tidak ada smart control aktif
+                       # Check if object is light and only disable overlay handler if not smart control is active
             if not state.scroll_control_enabled:
                 from ...overlay import lumi_disable_cursor_overlay_handler
                 lumi_disable_cursor_overlay_handler()

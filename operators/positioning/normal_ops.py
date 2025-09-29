@@ -2,7 +2,6 @@
 Normal Operations
 Operators for normal-based positioning and alignment of lights.
 """
-# Import modul utama Blender
 import bpy
 from bpy_extras import view3d_utils
 from mathutils import Vector
@@ -19,7 +18,6 @@ from .utils import (
 from ...core.state import get_state
 from ...base_modal import BaseModalOperator
 
-# Definisi class untuk Operator - Refactored for Positioning Mode
 class LUMI_OT_normal_positioning(bpy.types.Operator, BaseModalOperator):
     bl_idname = "lumi.normal_positioning"
     bl_label = "Normal Positioning"
@@ -28,7 +26,7 @@ class LUMI_OT_normal_positioning(bpy.types.Operator, BaseModalOperator):
 
     _dragging = False
     _initial_distances = {}
-    _initial_positions = {}  # Store initial positions for cancel restore
+    _initial_positions = {}
 
     def __del__(self):
         """Clean up stored data when operator is destroyed"""
@@ -37,13 +35,11 @@ class LUMI_OT_normal_positioning(bpy.types.Operator, BaseModalOperator):
             if hasattr(self, '_initial_distances'):
                 self._initial_distances.clear()
             if hasattr(self, '_initial_positions'):
-                # Clear pivot data from each light's initial positions
                 for light_name in self._initial_positions:
                     if 'pivot' in self._initial_positions[light_name]:
                         self._initial_positions[light_name]['pivot'] = None
                 self._initial_positions.clear()
         except (ReferenceError, AttributeError):
-            # Ignore errors when object is being destroyed
             pass
 
     @classmethod
@@ -57,7 +53,6 @@ class LUMI_OT_normal_positioning(bpy.types.Operator, BaseModalOperator):
 
     def validate_modal_context(self, context, event):
         """Validate context for modal operations"""
-        # Event is already passed as parameter, no need to check context.event
         return lumi_is_valid_positioning_context(context, check_event=False, check_mode=False, required_mode=None)
 
     def store_original_positions(self, context):
@@ -69,20 +64,17 @@ class LUMI_OT_normal_positioning(bpy.types.Operator, BaseModalOperator):
         # Get selected lights
         selected_lights = [l for l in context.selected_objects if l.type == 'LIGHT']
         for light in selected_lights:
-            # Store initial positions, rotations, and rotation modes
             self._initial_positions[light.name] = {
                 'location': light.location.copy(),
                 'rotation_euler': light.rotation_euler.copy(),
                 'rotation_mode': light.rotation_mode,
-                'pivot': None  # Initialize pivot storage
+                'pivot': None
             }
             
-            # Store initial pivot position if it exists
             if "Lumi_pivot_world" in light:
                 try:
                     pivot = lumi_get_light_pivot(light)
                     self._initial_positions[light.name]['pivot'] = (pivot.x, pivot.y, pivot.z)
-                    # Also store distance for compatibility
                     self._initial_distances[light.name] = (light.location - pivot).length
                 except Exception as e:
                     print(f"âŒ Error storing pivot for {light.name}: {e}")
@@ -95,16 +87,13 @@ class LUMI_OT_normal_positioning(bpy.types.Operator, BaseModalOperator):
         """Invoke method - starts modal operator for normal positioning"""
         try:
             
-            # Reset state to ensure clean operation
             self._dragging = False
             self._initial_distances = {}
             
-            # Validate inputs
             if not self.validate_context(context):
                 self.report({'ERROR'}, "Invalid context for normal positioning")
                 return {'CANCELLED'}
             
-            # Check if this is the correct positioning mode
             detected_mode = detect_positioning_mode(event)
             if detected_mode != 'NORMAL':
                 return {'PASS_THROUGH'}
@@ -112,21 +101,18 @@ class LUMI_OT_normal_positioning(bpy.types.Operator, BaseModalOperator):
             
             scene = context.scene
             
-            # Disable other positioning operations
             lumi_disable_all_positioning_ops(scene)
             state = get_state()
             state.set_modal_state('align', True)
             scene.light_props.positioning_mode = 'NORMAL'
             
-            # Initialize dragging state IMMEDIATELY (like Orbit & Target modes)
             self._dragging = True
             self._start_mouse = (event.mouse_region_x, event.mouse_region_y)
             self.store_original_positions(context)
             
-            # Setup modal operator
             context.window_manager.modal_handler_add(self)
             
-            # Enable overlay handler untuk positioning mode
+            # Enable overlay handler for positioning mode
             from ...overlay import lumi_enable_cursor_overlay_handler
             lumi_enable_cursor_overlay_handler()
             
@@ -145,36 +131,27 @@ class LUMI_OT_normal_positioning(bpy.types.Operator, BaseModalOperator):
         """Modal implementation for normal positioning - Shift + LMB drag"""
         
         try:
-            # Validate context first
             if not self.validate_modal_context(context, event):
                 return {'CANCELLED'}
             
-            # Check if we're still in the correct positioning mode
             detected_mode = detect_positioning_mode(event)
             
-            # If we're already dragging, continue regardless of mode detection
-            # This prevents interruption during active drag operations
             if self._dragging:
                 pass
             elif detected_mode != 'NORMAL':
                 return {'PASS_THROUGH'}
             
-            # Main event handling logic
             if event.type == 'RIGHTMOUSE' or event.type == 'ESC':
                 return self.cancel(context)
 
-            # Allow wheel scrolling to pass through when Shift is held
             if event.type in {'WHEELUPMOUSE', 'WHEELDOWNMOUSE'} and event.shift:
                 return {'PASS_THROUGH'}
 
-            # Handle mouse interactions for normal positioning
             if event.shift and not event.ctrl and not event.alt:
                 
-                # Since dragging starts immediately in invoke(), just process mouse movement
                 if self._dragging and event.type == 'MOUSEMOVE' and event.shift:
                     mouse_pos = (event.mouse_region_x, event.mouse_region_y)
                     
-                    # Update mouse position for overlay cursor
                     scene = context.scene
                     scene.lumi_smart_mouse_x = event.mouse_region_x
                     scene.lumi_smart_mouse_y = event.mouse_region_y
@@ -192,7 +169,6 @@ class LUMI_OT_normal_positioning(bpy.types.Operator, BaseModalOperator):
                         hit_normal_copy = hit_normal[:]
                         hit_obj_name = hit_obj.name
                         
-                        # Get selected lights
                         selected_lights = [l for l in context.selected_objects if l.type == 'LIGHT']
                         for light in selected_lights:
                             distance = self._initial_distances.get(light.name, scene_light_distance)
@@ -210,15 +186,13 @@ class LUMI_OT_normal_positioning(bpy.types.Operator, BaseModalOperator):
 
                     return {'RUNNING_MODAL'}
 
-                # Handle mouse release
                 if self._dragging and event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
                     self._dragging = False
-                    # End modal operation when mouse is released
                     state = get_state()
                     if state:
                         state.set_modal_state('align', False)
                     
-                    # Reset positioning mode untuk konsistensi dengan cancel
+                    # Reset positioning mode for consistency with cancel
                     if hasattr(context.scene, 'light_props'):
                         context.scene.light_props.positioning_mode = 'DISABLE'
                     
@@ -282,7 +256,7 @@ class LUMI_OT_normal_positioning(bpy.types.Operator, BaseModalOperator):
             state = get_state()
             state.set_modal_state('align', False)
             
-            # Disable overlay handler hanya jika tidak ada smart control aktif
+            # Disable overlay handler only if no smart control is active
             if not state.scroll_control_enabled:
                 from ...overlay import lumi_disable_cursor_overlay_handler
                 lumi_disable_cursor_overlay_handler()

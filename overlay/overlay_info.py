@@ -26,15 +26,13 @@ def draw_overlay_info():
     if not selected_lights:
         return
     
-    # Persiapan rendering
+    # Rendering preparation
     colors = get_config_colors(context)
     (info_x, info_y), _ = get_overlay_positions(context, region)
     font_scale, line_spacing = get_text_settings(context)
     
-    # Generate info lines
     info_lines = get_info_lines(selected_lights[0], context, colors)
     
-    # Render
     if info_lines:
         draw_text(info_lines, (info_x, info_y), font_scale=font_scale, line_spacing=line_spacing)
 
@@ -44,11 +42,9 @@ def get_info_lines(light_obj, context, colors):
     data = light_obj.data
     ltype = data.type
     
-    # Get current smart control mode and check if scroll control is active
     smart_mode = getattr(context.scene, 'lumi_smart_mode', 'DISTANCE')
     scroll_control_active = getattr(context.scene, 'lumi_scroll_control_enabled', False)
     
-    # Light type and name
     display_type = ltype
     if ltype == 'AREA':
         shape = getattr(data, "shape", "SQUARE")
@@ -59,37 +55,29 @@ def get_info_lines(light_obj, context, colors):
         (light_obj.name, "", colors['normal'], 0.5, 0.5, 1.0)   
     ]
     
-    # Get all available modes information using centralized system
     all_modes_info = ModeManager.get_all_modes_info(light_obj, context)
     
-    # Process each mode for display
     for label, value in all_modes_info:
-        # Determine which mode this corresponds to for highlighting
         mode_name = None
         for mode in ModeManager.MODES.keys():
             if ModeManager.get_mode_display_name(mode, ltype) == label:
                 mode_name = mode
                 break
         
-        # Apply highlighting if this mode is active and scroll control is active
         if mode_name and scroll_control_active and smart_mode == mode_name:
             color = colors['highlight']
         else:
             color = colors['secondary']
         
-        # Special formatting for certain values
         if 'm' in value and not value.endswith('m'):
-            # Ensure meter values have proper formatting
             clean_value = value.replace('m', '').strip() + 'm'
         elif 'K' in value and not value.endswith('K'):
-            # Ensure temperature values have proper formatting
             clean_value = value.replace(' K', '').strip() + 'K'
         else:
             clean_value = value
         
         lines.append((label, f": {clean_value}", color, 0.5, 0.5))  
     
-    # Add HSV color information (not handled by mode system)
     if hasattr(data, 'color') and len(data.color) >= 3:
         r, g, b = data.color[:]
         h, s, v = lumi_rgb_to_hsv(r, g, b)

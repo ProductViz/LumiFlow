@@ -3,7 +3,6 @@ Operator Utilities
 Contains specialized utility functions for operators: modal states, smart control, raycast, etc.
 """
 
-# # Import modul utama Blender
 import bpy
 from mathutils import Vector
 from bpy_extras import view3d_utils
@@ -41,7 +40,6 @@ def lumi_raycast_at_mouse(context: bpy.types.Context, mouse_pos: tuple[int, int]
     if not lumi_is_addon_enabled():
         return None, None, None, None
         
-    # # Coba eksekusi kode dengan error handling
     try:
         region = context.region
         rv3d = context.region_data
@@ -56,15 +54,12 @@ def lumi_raycast_at_mouse(context: bpy.types.Context, mouse_pos: tuple[int, int]
         )
         
         return (obj, location, normal, index) if result else (None, None, None, None)
-    # # Tangani error jika terjadi
     except Exception as e:
-        pass
         return None, None, None, None
 
 
 def lumi_safe_context_override(context: bpy.types.Context, operation_func) -> bool:
     """Safely override context for operations."""
-    # # Coba eksekusi kode dengan error handling
     try:
         # Blender 4.x: use temp_override if available
         if hasattr(context, 'temp_override'):
@@ -78,13 +73,9 @@ def lumi_safe_context_override(context: bpy.types.Context, operation_func) -> bo
                     return operation_func()
         # Blender 3.6: run directly
         return operation_func()
-    # # Tangani error jika terjadi
     except Exception as e:
-        pass
-        # # Coba eksekusi kode dengan error handling
         try:
             return operation_func()
-        # # Tangani error jika terjadi
         except Exception:
             return False
 
@@ -105,18 +96,18 @@ def lumi_ray_cast_between_points(
     exclude_objects: Optional[List[bpy.types.Object]] = None
 ) -> Tuple[bool, Optional[bpy.types.Object], Optional[Vector], float]:
     """
-    Lakukan raycast antara dua titik untuk mendeteksi obstruksi.
+    Perform raycast between two points to detect obstructions.
     
     Args:
         context: Blender context
-        start_point: Titik awal raycast (posisi light)
-        end_point: Titik akhir raycast (posisi target)
-        exclude_objects: Daftar objek yang diabaikan dalam deteksi
+        start_point: Raycast start point (light position)
+        end_point: Raycast end point (target position)
+        exclude_objects: List of objects to exclude from detection
     
     Returns:
         Tuple (has_obstruction, hit_object, hit_location, obstruction_distance)
     """
-    # Validasi input
+    # Input validation
     if not isinstance(start_point, Vector):
         print(f"❌ Error: start_point is not Vector: {type(start_point)}")
         return False, None, None, 0.0
@@ -129,34 +120,34 @@ def lumi_ray_cast_between_points(
         exclude_objects = []
     
     try:
-        # Hitung arah dan jarak
+        # Calculate direction and distance
         direction = (end_point - start_point).normalized()
         distance = (end_point - start_point).length
         
-        # Tambahkan toleransi kecil untuk menghindari self-intersection
+        # Add small tolerance to avoid self-intersection
         ray_start = start_point + direction * 0.001
         ray_distance = distance - 0.002
         
         if ray_distance <= 0:
             return False, None, None, 0.0
         
-        # Lakukan raycast
+        # Perform raycast
         result, location, normal, index, obj, matrix = context.scene.ray_cast(
             context.view_layer.depsgraph, ray_start, direction
         )
         
         if result:
-            # Validasi location dari raycast
+            # Validate raycast location
             if not isinstance(location, Vector):
                 print(f"❌ Error: raycast location is not Vector: {type(location)}")
                 return False, None, None, 0.0
             
-            # Hitung jarak ke obstruksi
+            # Calculate distance to obstruction
             obstruction_distance = (location - ray_start).length
             
-            # Periksa apakah obstruksi terjadi sebelum mencapai target
+            # Check if obstruction occurs before reaching target
             if obstruction_distance < ray_distance:
-                # Periksa apakah objek yang terkena bukan objek yang dikecualikan
+                # Check if hit object is not in excluded objects
                 if obj not in exclude_objects:
                     return True, obj, location, obstruction_distance
         
@@ -178,15 +169,15 @@ def lumi_check_line_of_sight_with_sampling(
     sample_count: int = 5
 ) -> Tuple[bool, List[dict]]:
     """
-    Periksa line-of-sight dengan multi-point sampling di sekitar posisi light.
+    Check line-of-sight with multi-point sampling around light position.
     
     Args:
         context: Blender context
-        light_position: Posisi light yang diusulkan
-        target_position: Posisi target object
-        exclude_objects: Daftar objek yang diabaikan
-        sample_radius: Radius sampling di sekitar posisi light
-        sample_count: Jumlah titik sampling
+        light_position: Proposed light position
+        target_position: Target object position
+        exclude_objects: List of objects to exclude
+        sample_radius: Sampling radius around light position
+        sample_count: Number of sampling points
     
     Returns:
         Tuple (has_clear_path, sample_results)
@@ -197,19 +188,19 @@ def lumi_check_line_of_sight_with_sampling(
     sample_results = []
     clear_paths = 0
     
-    # Generate titik sampling dalam pola lingkaran
+    # Generate sampling points in circular pattern
     import math
     for i in range(sample_count):
         angle = (2 * math.pi * i) / sample_count
         
-        # Hitung offset sampling
+        # Calculate sampling offset
         offset_x = sample_radius * math.cos(angle)
         offset_y = sample_radius * math.sin(angle)
         
-        # Buat titik sampling (dalam bidang XY relatif terhadap arah ke target)
+        # Create sampling point (in XY plane relative to target direction)
         direction_to_target = (target_position - light_position).normalized()
         
-        # Buat basis vektor untuk sampling
+        # Create basis vectors for sampling
         if abs(direction_to_target.z) < 0.9:
             right = direction_to_target.cross(Vector((0, 0, 1))).normalized()
         else:
@@ -217,11 +208,11 @@ def lumi_check_line_of_sight_with_sampling(
         
         up = right.cross(direction_to_target).normalized()
         
-        # Hitung posisi sampling
+        # Calculate sampling position
         sample_offset = right * offset_x + up * offset_y
         sample_position = light_position + sample_offset
         
-        # Lakukan raycast dari titik sampling
+        # Perform raycast from sampling point
         has_obstruction, hit_obj, hit_loc, distance = lumi_ray_cast_between_points(
             context, sample_position, target_position, exclude_objects
         )
@@ -239,7 +230,7 @@ def lumi_check_line_of_sight_with_sampling(
         if not has_obstruction:
             clear_paths += 1
     
-    # Pertimbangkan jalur yang jelas jika setengah atau lebih sampling tidak terhalangi
+    # Consider path clear if half or more samples are unobstructed
     has_clear_path = clear_paths >= max(1, sample_count // 2)
     
     return has_clear_path, sample_results

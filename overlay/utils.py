@@ -2,20 +2,16 @@
 Overlay Utilities
 Utility functions for overlay drawing, text rendering, and theme management.
 """
-# # Import modul utama Blender
 import bpy
 import blf
 import math
 from typing import List, Tuple
 
-# Import GPU modules for drawing
 import gpu
 from gpu_extras.batch import batch_for_shader
 
-# Import konfigurasi terpusat
 from .config import OverlayConfig
 
-# Global font ID
 _FONT_ID = 0
 
 def _calculate_font_size(scaled_font_size, spacing):
@@ -68,36 +64,30 @@ def get_config_colors(context: bpy.types.Context) -> dict:
     return OverlayConfig.get_all_colors()
 
 def get_overlay_positions(context: bpy.types.Context, region) -> tuple:
-    """Get overlay panel positions dengan konfigurasi yang sederhana."""
+    """Get overlay panel positions with simple configuration."""
     addon_prefs = context.preferences.addons.get(__package__.split('.')[0] or "LumiFlow")
     if addon_prefs and hasattr(addon_prefs.preferences, 'info_panel_position'):
         prefs = addon_prefs.preferences
         
-        # Helper function to calculate x position
         def calc_x_position(is_on_right, panel_width):
             margin = getattr(prefs, 'info_panel_margin_x', 20)
             return (region.width - panel_width - margin) if is_on_right else margin
         
-        # Get position settings
         info_on_right = getattr(prefs, 'info_panel_position', 'BOTTOM_RIGHT') in ['BOTTOM_RIGHT', 'TOP_RIGHT']
         tips_on_right = getattr(prefs, 'tips_panel_position', 'BOTTOM_LEFT') in ['BOTTOM_RIGHT', 'TOP_RIGHT']
         
-        # Calculate positions using helper function
         margin = getattr(prefs, 'info_panel_margin_x', 20)
         info_x = calc_x_position(info_on_right, 250)
         tips_x = calc_x_position(tips_on_right, 300)
         
-        # Y positions
         info_y = margin
         tips_y = margin + 20
         
         return (info_x, info_y), (tips_x, tips_y)
     
-    # Use default positions from centralized config
     default_info = OverlayConfig.get_position('info', (region.width - 270, 20))
     default_tips = OverlayConfig.get_position('tips', (20, 20))
     
-    # Adjust info position based on region width if needed
     if default_info[0] > region.width - 50:
         info_pos = (region.width - 270, default_info[1])
     else:
@@ -115,13 +105,13 @@ def draw_text(
     alignment: str = 'left'  # 'left' or 'right'
 ) -> None:
     """
-    Fungsi tunggal untuk menggambar teks, menggantikan draw_overlay_text dan draw_overlay_tips.
-    Menggunakan konfigurasi terpusat dari OverlayConfig.
+    Single function to draw text, replacing draw_overlay_text and draw_overlay_tips.
+    Uses centralized configuration from OverlayConfig.
     
     Args:
-        lines: List of tuples dengan format:
-               - Legacy: (label, value, color) atau (label, value, color, spacing)
-               - New: (label, value, color, spacing_before, spacing_after) atau 
+        lines: List of tuples with format:
+               - Legacy: (label, value, color) or (label, value, color, spacing)
+               - New: (label, value, color, spacing_before, spacing_after) or 
                      (label, value, color, spacing_before, spacing_after, font_scale)
         position: (x, y) starting position
         font_scale: Font size multiplier
@@ -130,13 +120,11 @@ def draw_text(
         is_tips: If True, uses tips styling (smaller font, different spacing)
         alignment: Text alignment ('left' or 'right')
     """
-    # Get drawing settings from centralized config
     base_font_size = OverlayConfig.get_drawing_setting(
         'font_size_tips' if is_tips else 'font_size_default'
     )
     base_line_height = OverlayConfig.get_drawing_setting('line_height_default')
     
-    # Apply scaling
     spacing_multiplier = OverlayConfig.get_drawing_setting(
         'tips_spacing_multiplier' if is_tips else 'line_spacing_multiplier'
     )
@@ -151,34 +139,33 @@ def draw_text(
         'value_offset_tips' if is_tips else 'value_offset_default'
     )
     
-    # Pass 1: collect row spacings and font sizes
     row_spacings = []
     row_font_scales = []
     
     for entry in lines:
-        # Parse tuple dengan dukungan backward compatibility
+        # Parse tuple with backward compatibility support
         if len(entry) == 3:
-            # Format lama: (label, value, color)
+            # Legacy format: (label, value, color)
             label, value, color = entry
             spacing_before = 1.0
             spacing_after = 1.0
             font_scale_multiplier = 1.0
         elif len(entry) == 4:
-            # Format lama dengan spacing: (label, value, color, spacing)
+            # Legacy format with spacing: (label, value, color, spacing)
             label, value, color, spacing = entry
             spacing_before = spacing
             spacing_after = spacing
-            # Untuk backward compatibility, gunakan logika font size lama
+            # For backward compatibility, use old font size logic
             font_scale_multiplier = _get_font_scale_from_spacing(spacing)
         elif len(entry) == 5:
-            # Format baru: (label, value, color, spacing_before, column_offset)
+            # New format: (label, value, color, spacing_before, column_offset)
             label, value, color, spacing_before, column_offset = entry
             font_scale_multiplier = 1.0
         elif len(entry) == 6:
-            # Format baru dengan font scale: (label, value, color, spacing_before, column_offset, font_scale)
+            # New format with font scale: (label, value, color, spacing_before, column_offset, font_scale)
             label, value, color, spacing_before, column_offset, font_scale_multiplier = entry
         else:
-            # Fallback untuk format tidak dikenal
+            # Fallback for unknown format
             label, value, color = entry[:3]
             spacing_before = 1.0
             spacing_after = 1.0
@@ -187,30 +174,29 @@ def draw_text(
         label_lines = label.splitlines()
         value_lines = value.splitlines() if value else []
         
-        # Spacing sebelum baris pertama
+        # Spacing before first row
         row_spacings.append(spacing_before)
         row_font_scales.append(font_scale_multiplier)
         
-        # Spacing untuk baris label tambahan (jika multi-line)
+        # Spacing for additional label rows (if multi-line)
         for _ in label_lines[1:]:
-            row_spacings.append(0.5)  # Spacing kecil untuk baris lanjutan
+            row_spacings.append(0.5)  # Small spacing for continuation rows
             row_font_scales.append(font_scale_multiplier)
         
-        # Spacing untuk baris value tambahan (jika multi-line)
+        # Spacing for additional value rows (if multi-line)
         if value_lines:
             for _ in value_lines[1:]:  # Skip first value line (drawn with label)
-                row_spacings.append(0.5)  # Spacing kecil untuk baris lanjutan
+                row_spacings.append(0.5)  # Small spacing for continuation rows
                 row_font_scales.append(font_scale_multiplier)
         
-        # Spacing setelah baris terakhir (untuk jarak ke entry berikutnya)
-        # Gunakan spacing_before sebagai spacing_after untuk backward compatibility
+        # Spacing after last row (for distance to next entry)
+        # Use spacing_before as spacing_after for backward compatibility
         row_spacings.append(spacing_before)
-        row_font_scales.append(1.0)  # Font scale tidak penting untuk spacing saja
+        row_font_scales.append(1.0)  # Font scale not important for spacing only
     
-    # Pass 2: draw text
     row_idx = 0
     for entry in lines:
-        # Parse tuple dengan dukungan backward compatibility
+        # Parse tuple with backward compatibility
         if len(entry) == 3:
             label, value, color = entry
             font_scale_multiplier = 1.0
@@ -220,11 +206,11 @@ def draw_text(
             font_scale_multiplier = _get_font_scale_from_spacing(spacing)
             column_offset = None  # Use default offset
         elif len(entry) == 5:
-            # Format baru: (label, value, color, spacing_before, column_offset)
+            # New format: (label, value, color, spacing_before, column_offset)
             label, value, color, spacing_before, column_offset = entry
             font_scale_multiplier = 1.0
         elif len(entry) == 6:
-            # Format baru dengan font scale: (label, value, color, spacing_before, column_offset, font_scale)
+            # New format with font scale: (label, value, color, spacing_before, column_offset, font_scale)
             label, value, color, spacing_before, column_offset, font_scale_multiplier = entry
         else:
             label, value, color = entry[:3]
@@ -239,14 +225,12 @@ def draw_text(
             y_offset = sum(row_spacings[row_idx:]) * scaled_line_height
             current_y = y + y_offset
             
-            # Set font size berdasarkan font_scale_multiplier (bukan spacing)
+            # Set font size based on font_scale_multiplier (not spacing)
             current_font_size = int(scaled_font_size * row_font_scales[row_idx])
             blf.size(font_id, current_font_size)
             
-            # Calculate text width for alignment
             text_width = blf.dimensions(font_id, line)[0]
             
-            # Set position based on alignment
             if alignment == 'right':
                 draw_x = x - text_width
             else:
@@ -257,21 +241,16 @@ def draw_text(
             blf.draw(font_id, line)
             
             if value and l_idx == 0 and value_lines:
-                # Set font size untuk value (gunakan font scale yang sama dengan label)
+                # Set font size for value (use same font scale as label)
                 current_font_size = int(scaled_font_size * row_font_scales[row_idx])
                 blf.size(font_id, current_font_size)
                 
-                # Check if value contains keymap shortcuts (for icons)
                 value_text = value_lines[0]
-                # Processing value text for keymap icons
                 if ":" in value_text and is_tips:
-                    # Split value into description and keymap
                     parts = value_text.split(":", 1)
                     description = parts[0].strip()
                     keymap_text = parts[1].strip() if len(parts) > 1 else ""
-                    # Split into description and keymap
                     
-                    # Calculate value text width for alignment
                     desc_width = blf.dimensions(font_id, description)[0]
                     
                     # Set value position based on alignment
@@ -282,57 +261,36 @@ def draw_text(
                         # For left alignment, value goes to the right of label
                         # Use column_offset if provided, otherwise use default calculation
                         if column_offset is not None:
-                            # Direct column offset control
                             value_x = x + int(column_offset * font_scale)
                         else:
-                            # Default behavior with configurable offset
                             adjusted_offset = int(x_value_offset * font_scale * 0.75)  # Use 75% of original offset
                             value_x = x + adjusted_offset
                         
                     blf.position(font_id, value_x, current_y, 0)
                     blf.draw(font_id, description)
                     
-                    # Draw icons for keymap if available
                     if keymap_text:
                         try:
-                            # Lazy import to avoid circular dependencies
                             from .icon_manager import get_icon_manager
                             icon_manager = get_icon_manager()
                             
-                            # Calculate icon position
                             icon_x = value_x + desc_width + 5
                             icon_size = icon_manager.get_icon_size()
-                            # Align icon with text baseline - raise icons to match text alignment
-                            # Use a portion of current font size for better vertical alignment
                             vertical_offset = int(current_font_size * 0.9)  # Raise by 30% of font size
                             icon_y = current_y - icon_size + vertical_offset
                             
-                            # About to draw icons for keymap
-                            # Icon position calculated
-                            # Icon size set
-                            # Current font size set
                             
-                            # Draw keymap icons
                             icons_width = icon_manager.draw_keymap_icons(keymap_text, icon_x, icon_y)
-                            # Icons drawn with total width
                             
-                            # Draw remaining text (only parts that don't have icons)
-                            # Get the parsed parts from icon manager to know what was drawn as icons
                             remaining_text = keymap_text
                             
-                            # Remove all parts that have icons: modifiers, mouse buttons, and letter keys
-                            # This list should match what icon_manager.draw_keymap_icons can handle
                             icon_parts = ['Ctrl', 'Shift', 'Alt', 'LMB_Drag', 'MMB_Drag', 'RMB_Drag', 'A', 'C', 'X', 'V', 'D']
                             
-                            # Remove each icon part and any associated + signs
                             for part in icon_parts:
-                                # Remove the part itself
                                 remaining_text = remaining_text.replace(part, '')
                                 
-                            # Remove + signs and clean up
                             remaining_text = remaining_text.replace('+', '')
                             
-                            # Strip any remaining whitespace
                             remaining_text = remaining_text.strip()
                             
                             if remaining_text:
@@ -340,13 +298,11 @@ def draw_text(
                                 blf.position(font_id, text_x, current_y, 0)
                                 blf.draw(font_id, remaining_text)
                         except Exception as e:
-                            # Fallback to regular text if icon manager fails
                             print(f"Icon manager error: {e}")
                             fallback_x = value_x + desc_width + 5
                             blf.position(font_id, fallback_x, current_y, 0)
                             blf.draw(font_id, keymap_text)
                 else:
-                    # Regular value text (no icons)
                     value_width = blf.dimensions(font_id, value_text)[0]
                     
                     # Set value position based on alignment
@@ -363,11 +319,10 @@ def draw_text(
         
         if value and len(value_lines) > 1:
             for v_idx in range(1, len(value_lines)):
-                # Calculate y position for multiline values
                 y_offset = sum(row_spacings[row_idx+1:]) * scaled_line_height
                 current_y = y + y_offset
                 
-                # Set font size untuk multi-line value
+                # Set font size for multi-line value
                 current_font_size = int(scaled_font_size * row_font_scales[row_idx])
                 blf.size(font_id, current_font_size)
                 
@@ -376,10 +331,8 @@ def draw_text(
                 
                 # Set value position based on alignment
                 if alignment == 'right':
-                    # For right alignment, multiline values align to the right
                     value_x = x - value_width
                 else:
-                    # For left alignment, multiline values align with first value
                     value_x = x + int(x_value_offset * font_scale)
                     
                 blf.position(font_id, value_x, current_y, 0)
@@ -387,7 +340,7 @@ def draw_text(
                 blf.draw(font_id, value_lines[v_idx])
                 row_idx += 1
         
-        # Skip spacing_after row (ini hanya untuk spacing, bukan untuk drawing)
+        # Skip spacing_after row (this is only for spacing, not for drawing)
         row_idx += 1
 
 # get_info_lines() moved to overlay_info.py - only used by overlay_info module

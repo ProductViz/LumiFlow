@@ -2,7 +2,6 @@
 Pie Menus Module
 Contains all pie menu classes for the LumiFlow Blender addon UI.
 """
-# # Import modul utama Blender
 import bpy
 
 from ..utils import lumi_is_addon_enabled
@@ -427,8 +426,6 @@ class LUMI_MT_template_favorites(bpy.types.Menu):
 
     def draw(self, context):
         layout = self.layout
-        
-        # Get favorites from scene
         scene = context.scene
         favorites = getattr(scene, 'lumi_template_favorites', '')
         
@@ -474,11 +471,9 @@ class LUMI_MT_template_menu(bpy.types.Menu):
     bl_idname = "LUMI_MT_template_menu"
     
     @classmethod
-    # # Method untuk menentukan kapan operator/panel aktif
     def poll(cls, context):
         return lumi_is_addon_enabled()
 
-    # # Method untuk menggambar UI
     def draw(self, context):
         layout = self.layout
 

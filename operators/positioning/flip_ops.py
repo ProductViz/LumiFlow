@@ -79,7 +79,7 @@ class LUMI_OT_flip_to_camera_front(bpy.types.Operator):
 
     def position_light_behind_target(self, light, camera, pivot_point, context):
         """Position light behind target facing camera (legacy method for flip_to_camera_front)"""
-        # Gunakan fungsi bersama dengan face_background=False (menghadap ke target)
+        # Use shared function with face_background=False (facing target)
         return position_light_on_camera_z_axis(light, camera, pivot_point, context, face_background=False)
 
 # =============================================================================
@@ -87,9 +87,8 @@ class LUMI_OT_flip_to_camera_front(bpy.types.Operator):
 # =============================================================================
 
 def get_target_objects_for_light(context, light):
-    """Get target objects untuk light filtering"""
+    """Get target objects for light filtering"""
     try:
-        # Get candidate objects (selected non-light objects)
         candidates = [obj for obj in context.selected_objects if obj.type != 'LIGHT']
         
         # If no selected objects, get objects in camera view or all scene objects
@@ -156,22 +155,18 @@ def _get_fallback_candidates(context):
         print(f"⚠️ Camera view detection failed: {e}")
     
     # Fallback to all non-light objects in scene
-    all_objects = [obj for obj in context.scene.objects if obj.type != 'LIGHT']
-    print(f"🔍 Using {len(all_objects)} all non-light objects in scene")
     return all_objects
 
 def find_target_on_camera_z_axis(camera, camera_forward_normalized, context):
-    """Cari target object yang berada di sumbu Z kamera"""
-    
-    # Validasi input
+    """Find target object on camera Z axis"""
     if not isinstance(camera_forward_normalized, Vector):
-        print(f"❌ Error: camera_forward_normalized is not Vector: {type(camera_forward_normalized)}")
+        print(f"Error: camera_forward_normalized is not Vector: {type(camera_forward_normalized)}")
         return None, None
         
-    print(f"🔍 Camera location: ({camera.location.x:.3f}, {camera.location.y:.3f}, {camera.location.z:.3f})")
+    print(f"Camera location: ({camera.location.x:.3f}, {camera.location.y:.3f}, {camera.location.z:.3f})")
     print(f"🔍 Camera forward: ({camera_forward_normalized.x:.3f}, {camera_forward_normalized.y:.3f}, {camera_forward_normalized.z:.3f})")
     
-    # Dapatkan target objects untuk filter background
+    # Get target objects for background filter
     target_objects = get_target_objects_for_light(context, None)
     
     if not target_objects:
@@ -180,13 +175,13 @@ def find_target_on_camera_z_axis(camera, camera_forward_normalized, context):
     
     print(f"🔍 Found {len(target_objects)} target objects for filtering")
     
-    # Raycast sepanjang sumbu Z kamera dengan jarak yang cukup jauh
+    # Raycast along camera Z axis with sufficient distance
     ray_start = camera.location
-    ray_end = camera.location + camera_forward_normalized * 1000.0  # 1000 unit cukup jauh
+    ray_end = camera.location + camera_forward_normalized * 1000.0  # 1000 units is sufficient distance
     
     print(f"🔍 Raycasting from ({ray_start.x:.3f}, {ray_start.y:.3f}, {ray_start.z:.3f}) to ({ray_end.x:.3f}, {ray_end.y:.3f}, {ray_end.z:.3f})")
     
-    # Lakukan raycast untuk mencari objek di sumbu Z kamera
+    # Perform raycast to find objects on camera Z axis
     try:
         has_obstruction, hit_object, hit_location, distance = lumi_ray_cast_between_points(
             context, ray_start, ray_end, exclude_objects=[]
@@ -198,32 +193,32 @@ def find_target_on_camera_z_axis(camera, camera_forward_normalized, context):
         traceback.print_exc()
         return None, None
     
-    # Iterative raycast untuk melewati background objects
+    # Iterative raycast to pass through background objects
     current_start = ray_start
-    max_iterations = 10  # Batasi iterasi untuk menghindari infinite loop
+    max_iterations = 10
     
     for iteration in range(max_iterations):
         if not has_obstruction or not hit_location:
-            # Tidak ada objek lagi yang menghalangi
+            # No more objects blocking
             print(f"🔍 No more objects found after {iteration} iterations")
             break
         
-        # Validasi hit_location
+        # Validate hit_location
         if not isinstance(hit_location, Vector):
             print(f"❌ Error: hit_location is not Vector at iteration {iteration}: {type(hit_location)}")
             break
             
         if hit_object in target_objects:
-            # Menemukan target object!
+            # Found target object!
             print(f"✅ Found TARGET object '{hit_object.name}' at iteration {iteration}")
             print(f"✅ Target location: ({hit_location.x:.3f}, {hit_location.y:.3f}, {hit_location.z:.3f})")
             return hit_location, hit_object
         else:
-            # Mengenai background object, lanjutkan raycast dari titik ini
+            # Hit background object, continue raycast from this point
             print(f"🔄 Hit BACKGROUND object '{hit_object.name}' at iteration {iteration}, continuing raycast")
             
-            # Lanjutkan raycast dari sedikit setelah titik yang ditabrak
-            offset = 0.01  # Offset kecil untuk menghindari menabrak objek yang sama
+            # Continue raycast from slightly after hit point
+            offset = 0.01
             try:
                 current_start = hit_location + camera_forward_normalized * offset
                 print(f"🔄 New ray start: ({current_start.x:.3f}, {current_start.y:.3f}, {current_start.z:.3f})")
@@ -231,7 +226,7 @@ def find_target_on_camera_z_axis(camera, camera_forward_normalized, context):
                 print(f"❌ Error calculating new ray start: {e}")
                 break
             
-            # Lakukan raycast lagi
+            # Perform raycast again
             try:
                 has_obstruction, hit_object, hit_location, distance = lumi_ray_cast_between_points(
                     context, current_start, ray_end, exclude_objects=[]
@@ -241,14 +236,14 @@ def find_target_on_camera_z_axis(camera, camera_forward_normalized, context):
                 print(f"❌ Error in iteration {iteration} raycast: {e}")
                 break
     
-    # FALLBACK: Jika tidak menemukan target object di sumbu Z kamera, gunakan object pertama dari target_objects
+    # FALLBACK: If no target object found on camera Z axis, use first object from target_objects
     if target_objects:
         fallback_target = target_objects[0]
         fallback_location = fallback_target.location
         print(f"🔄 FALLBACK: Using first target object '{fallback_target.name}' at ({fallback_location.x:.3f}, {fallback_location.y:.3f}, {fallback_location.z:.3f})")
         return fallback_location, fallback_target
     
-    # FINAL FALLBACK: Jika tidak ada target_objects sama sekali, cari object visible apa saja
+    # FINAL FALLBACK: If no target_objects at all, find any visible object
     all_visible_objects = [obj for obj in context.scene.objects if obj.visible_get() and obj.type != 'LIGHT']
     if all_visible_objects:
         final_fallback = all_visible_objects[0]
@@ -256,21 +251,21 @@ def find_target_on_camera_z_axis(camera, camera_forward_normalized, context):
         print(f"🔄 FINAL FALLBACK: Using first visible object '{final_fallback.name}' at ({final_location.x:.3f}, {final_location.y:.3f}, {final_location.z:.3f})")
         return final_location, final_fallback
     
-    # Benar-benar tidak ada object
+    # Really no objects at all
     print(f"❌ No objects found in scene at all")
     return None, None
 
 def adjust_pivot_with_raycast(light, context, light_position, original_pivot):
-    """Adjust pivot dengan raycast untuk background lighting
+    """Adjust pivot with raycast for background lighting
     
     Args:
-        light: Object light
+        light: Light object
         context: Blender context
-        light_position: Posisi light saat ini
-        original_pivot: Pivot point asli
+        light_position: Current light position
+        original_pivot: Original pivot point
     """
     try:
-        # STEP 1: Tentukan arah raycast (ke arah background)
+        # STEP 1: Determine raycast direction (toward background)
         light_direction = (light_position - original_pivot).normalized()
         ray_distance = (light_position - original_pivot).length
         ray_end = light_position + light_direction * (ray_distance * 2.0)
@@ -279,32 +274,32 @@ def adjust_pivot_with_raycast(light, context, light_position, original_pivot):
         print(f"🔍 Ray start: ({light_position.x:.3f}, {light_position.y:.3f}, {light_position.z:.3f})")
         print(f"🔍 Ray end: ({ray_end.x:.3f}, {ray_end.y:.3f}, {ray_end.z:.3f})")
         
-        # STEP 2: Lakukan raycast
+        # STEP 2: Perform raycast
         has_obstruction, hit_object, hit_location, distance = lumi_ray_cast_between_points(
             context, light_position, ray_end, exclude_objects=[light]
         )
         
-        # STEP 3: Handle hasil raycast
+        # STEP 3: Handle raycast result
         if has_obstruction and hit_location:
-            # Update pivot ke lokasi mesh yang ditabrak di arah background
+            # Update pivot to hit mesh location in background direction
             lumi_set_light_pivot(light, hit_location)
             print(f"🎯 Pivot adjusted to mesh at ({hit_location.x:.3f}, {hit_location.y:.3f}, {hit_location.z:.3f})")
             print(f"🎯 Hit object: {hit_object.name if hit_object else 'Unknown'}")
             
-            # Re-orient light untuk menghadap ke pivot yang baru (konsisten dengan system)
+            # Re-orient light to face new pivot (consistent with system)
             direction_to_pivot = (hit_location - light_position).normalized()
             rot_quat = direction_to_pivot.to_track_quat('-Z', 'Y')
             light.rotation_euler = rot_quat.to_euler()
             print(f"🎯 Light re-oriented to face new pivot")
         else:
-            # JIKA TIDAK MENEMUKAN SURFACE, ATUR PIVOT DI ANGKA DEFAULT
-            # Tempatkan pivot di depan light di arah background dengan jarak default
+            # IF NO SURFACE FOUND, SET PIVOT TO DEFAULT VALUE
+            # Place pivot in front of light in background direction with default distance
             default_distance = 2.0
             default_pivot_position = light_position + light_direction * default_distance
             lumi_set_light_pivot(light, default_pivot_position)
             print(f"🎯 No mesh detected, pivot set to default position at ({default_pivot_position.x:.3f}, {default_pivot_position.y:.3f}, {default_pivot_position.z:.3f})")
             
-            # Re-orient light untuk menghadap ke pivot default (konsisten dengan system)
+            # Re-orient light to face default pivot (consistent with system)
             direction_to_pivot = (default_pivot_position - light_position).normalized()
             rot_quat = direction_to_pivot.to_track_quat('-Z', 'Y')
             light.rotation_euler = rot_quat.to_euler()
@@ -312,23 +307,23 @@ def adjust_pivot_with_raycast(light, context, light_position, original_pivot):
             
     except Exception as e:
         print(f"❌ Error in pivot adjustment: {e}")
-        # Lanjutkan meskipun pivot adjustment gagal
+        # Continue even if pivot adjustment fails
 
 def position_light_on_camera_z_axis(light, camera, pivot_point, context, face_background=False):
-    """Fungsi bersama untuk memposisikan light di sumbu Z kamera
+    """Shared function to position light on camera Z axis
     
     Args:
-        light: Object light yang akan diposisikan
-        camera: Camera aktif sebagai referensi
-        pivot_point: Titik pivot/target awal
+        light: Light object to position
+        camera: Active camera as reference
+        pivot_point: Initial pivot/target point
         context: Blender context
-        face_background: Jika True, light menghadap ke background; jika False, menghadap ke target
+        face_background: If True, light faces background; if False, faces target
     
     Returns:
-        bool: True jika operasi berhasil, False jika gagal
+        bool: True if operation successful, False if failed
     """
     
-    # STEP 1: Dapatkan forward direction kamera (sumbu Z kamera yang sebenarnya)
+    # STEP 1: Get camera forward direction (actual camera Z axis)
     try:
         camera_forward = camera.matrix_world.to_3x3() @ Vector((0, 0, -1))
         camera_forward_normalized = camera_forward.normalized()
@@ -337,8 +332,8 @@ def position_light_on_camera_z_axis(light, camera, pivot_point, context, face_ba
         print(f"❌ Error calculating camera forward: {e}")
         return False
     
-    # STEP 2: DETEKSI TARGET DI SUMBU Z KAMERA
-    # Raycast dari kamera sepanjang sumbu Z kamera untuk mencari target
+    # STEP 2: DETECT TARGET ON CAMERA Z AXIS
+    # Raycast from camera along camera Z axis to find target
     target_location, target_object_from_ray = find_target_on_camera_z_axis(camera, camera_forward_normalized, context)
     
     if target_location is None:
@@ -509,13 +504,13 @@ class LUMI_OT_flip_to_camera_back(bpy.types.Operator):
         
         # TAHAP AKHIR: ATUR ULANG PIVOT KE PERMUKAAN PERTAMA YANG TERKENA RAYCAST
         # Cast ray dari light menuju pivot untuk mendeteksi permukaan pertama
-        ray_end = light.location + direction_to_pivot * (camera_distance * 2.0)  # Perpanjang ray untuk memastikan menabrak
+        ray_end = light.location + direction_to_pivot * (camera_distance * 2.0)
         
         has_obstruction, hit_object, hit_location, distance = lumi_ray_cast_between_points(
             context, light.location, ray_end, exclude_objects=[light]
         )
         
-        # Set pivot ke lokasi permukaan pertama yang terkena raycast
+        # Set pivot to first surface location hit by raycast
         if has_obstruction and hit_location:
             lumi_set_light_pivot(light, hit_location)
             print(f"🎯 Pivot adjusted to FIRST SURFACE at ({hit_location.x:.3f}, {hit_location.y:.3f}, {hit_location.z:.3f})")
@@ -523,9 +518,8 @@ class LUMI_OT_flip_to_camera_back(bpy.types.Operator):
         else:
             print(f"🎯 No surface detected, using original pivot")
         
-        # PENTING: Jangan re-orient light! Light harus tetap co-located dengan camera
-        # Light tetap menghadap ke arah yang sama seperti camera
-        # Tidak ada perubahan rotasi light
+        # IMPORTANT: Don't re-orient light! Light must remain co-located with camera
+        # Light continues to face the same direction as camera
         
         # Update scene
         context.view_layer.update()
@@ -538,10 +532,10 @@ class LUMI_OT_flip_to_camera_along(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     # BACKGROUND INTEGRATION NOTE:
-    # Operator ini memposisikan light di POSISI YANG SAMA dengan camera front
-    # TETAPI light menghadap ke BACKGROUND (bukan ke target)
-    # - Posisi: SAMA seperti camera front (between target and background)
-    # - Cahaya menghadap: BACKGROUND (background/rim lighting)
+    # This operator positions light at the SAME POSITION as camera front
+    # BUT light faces BACKGROUND (not target)
+    # - Position: SAME as camera front (between target and background)
+    # - Light faces: BACKGROUND (background/rim lighting)
     # - Integration point: Detect background to illuminate it from target side
     # - Use case: Rim lighting, background illumination, separation lighting
 
@@ -572,12 +566,12 @@ class LUMI_OT_flip_to_camera_along(bpy.types.Operator):
                 pivot_point = lumi_get_light_pivot(light)
 
                 # Position light same as camera front but facing background
-                # Gunakan fungsi bersama dengan face_background=True (menghadap ke background)
+                # Use shared function with face_background=True (facing background)
                 old_location = light.location.copy()
                 
                 success = position_light_on_camera_z_axis(light, camera, pivot_point, context, face_background=True)
                 
-                # Increment flipped_count jika operasi berhasil
+                # Increment flipped_count if operation successful
                 if success:
                     flipped_count += 1
 
@@ -634,12 +628,12 @@ class LUMI_OT_flip_across_pivot(bpy.types.Operator):
                 direction_to_pivot = (pivot_point - new_position).normalized()
                 light.rotation_euler = direction_to_pivot.to_track_quat('-Z', 'Y').to_euler()
                 
-                # TAHAP AKHIR: ATUR ULANG PIVOT PADA MESH YANG DITABRAK
-                # Cast ray dari light menuju pivot untuk mendeteksi mesh yang ditabrak
+                # FINAL STEP: RESET PIVOT TO HIT MESH
+                # Cast ray from light toward pivot to detect hit mesh
                 current_distance = (new_position - pivot_point).length
-                ray_end = new_position + direction_to_pivot * (current_distance * 2.0)  # Perpanjang ray untuk memastikan menabrak
+                ray_end = new_position + direction_to_pivot * (current_distance * 2.0)
                 
-                # Dapatkan target objects untuk filter background
+                # Get target objects for background filter
                 target_objects = self.get_target_objects_for_light(context, light)
                 
                 has_obstruction, hit_object, hit_location, distance = lumi_ray_cast_between_points(
@@ -647,15 +641,15 @@ class LUMI_OT_flip_across_pivot(bpy.types.Operator):
                 )
                 
                 if has_obstruction and hit_location and hit_object in target_objects:
-                    # Update pivot ke lokasi mesh yang ditabrak HANYA jika objek tersebut adalah target
+                    # Update pivot to hit mesh location ONLY if object is target
                     lumi_set_light_pivot(light, hit_location)
                     print(f"🎯 Pivot adjusted to TARGET mesh at ({hit_location.x:.3f}, {hit_location.y:.3f}, {hit_location.z:.3f})")
                     
-                    # Re-orient light untuk menghadap ke pivot point yang baru
+                    # Re-orient light to face new pivot point
                     direction_to_pivot = (hit_location - new_position).normalized()
                     light.rotation_euler = direction_to_pivot.to_track_quat('-Z', 'Y').to_euler()
                 elif has_obstruction and hit_location and hit_object not in target_objects:
-                    # Jika yang ditabrak adalah background, gunakan pivot asli
+                    # If hit is background, use original pivot
                     print(f"🎯 Hit BACKGROUND object {hit_object.name}, using original pivot")
                 else:
                     print(f"🎯 No mesh detected, using original pivot")
@@ -876,13 +870,13 @@ class LUMI_OT_flip_horizontal(bpy.types.Operator):
             context, light.location, ray_end, exclude_objects=[light]
         )
         
-        # Set pivot ke lokasi permukaan pertama yang terkena raycast
+        # Set pivot to first surface location hit by raycast
         if has_obstruction and hit_location:
             lumi_set_light_pivot(light, hit_location)
             print(f"🎯 Pivot adjusted to FIRST SURFACE at ({hit_location.x:.3f}, {hit_location.y:.3f}, {hit_location.z:.3f})")
             print(f"🎯 Hit object: {hit_object.name if hit_object else 'Unknown'}")
             
-            # Re-orient light untuk menghadap ke pivot yang baru (surface)
+            # Re-orient light to face new pivot (surface)
             new_direction_to_pivot = (hit_location - light.location).normalized()
             rot_quat = new_direction_to_pivot.to_track_quat('-Z', 'Y')
             light.rotation_euler = rot_quat.to_euler()
@@ -1041,13 +1035,13 @@ class LUMI_OT_flip_vertical(bpy.types.Operator):
             context, light.location, ray_end, exclude_objects=[light]
         )
         
-        # Set pivot ke lokasi permukaan pertama yang terkena raycast
+        # Set pivot to first surface location hit by raycast
         if has_obstruction and hit_location:
             lumi_set_light_pivot(light, hit_location)
             print(f"🎯 Pivot adjusted to FIRST SURFACE at ({hit_location.x:.3f}, {hit_location.y:.3f}, {hit_location.z:.3f})")
             print(f"🎯 Hit object: {hit_object.name if hit_object else 'Unknown'}")
             
-            # Re-orient light untuk menghadap ke pivot yang baru (surface)
+            # Re-orient light to face new pivot (surface)
             new_direction_to_pivot = (hit_location - light.location).normalized()
             rot_quat = new_direction_to_pivot.to_track_quat('-Z', 'Y')
             light.rotation_euler = rot_quat.to_euler()
