@@ -73,12 +73,12 @@ class LUMI_PT_light_control(bpy.types.Panel):
         assignment_row.label(text="Assign to : ", icon='LIGHT')
         
         # Scene button
-        scene_active = getattr(scene, 'lumi_light_assignment_mode', 'CAMERA') == 'SCENE'
+        scene_active = getattr(scene, 'lumi_light_assignment_mode', 'SCENE') == 'SCENE'
         scene_op = assignment_row.operator("lumi.set_light_assignment_mode", text="Scene", depress=scene_active, icon='SCENE_DATA')
         scene_op.mode = 'SCENE'
         
         # Camera button  
-        camera_active = getattr(scene, 'lumi_light_assignment_mode', 'CAMERA') == 'CAMERA'
+        camera_active = getattr(scene, 'lumi_light_assignment_mode', 'SCENE') == 'CAMERA'
         camera_op = assignment_row.operator("lumi.set_light_assignment_mode", text="Camera", depress=camera_active, icon='CAMERA_DATA')
         camera_op.mode = 'CAMERA'
 

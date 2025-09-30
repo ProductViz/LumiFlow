@@ -477,7 +477,7 @@ def assign_light_to_active_camera(light_obj):
             return
         
         scene = context.scene
-        assignment_mode = getattr(scene, 'lumi_light_assignment_mode', 'CAMERA')
+        assignment_mode = getattr(scene, 'lumi_light_assignment_mode', 'SCENE')
         
         manager = get_camera_light_manager()
         

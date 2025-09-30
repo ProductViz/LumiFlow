@@ -1111,7 +1111,7 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                 return
 
             # Get current assignment mode
-            assignment_mode = getattr(context.scene, 'lumi_light_assignment_mode', 'CAMERA')
+            assignment_mode = getattr(context.scene, 'lumi_light_assignment_mode', 'SCENE')
             
             all_lights = [obj for obj in collection.objects if obj.type == 'LIGHT']
             lights_to_remove = []

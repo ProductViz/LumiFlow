@@ -44,11 +44,11 @@ def draw_overlay_tips():
     
     if not lights:
         tips_lines = [
-            ("ðŸ’¡ LumiFlow Tips", "", colors['header'], 0.5, 1.0, 1.3),  
-            ("ðŸš€ Create Your First Light:", "", colors['normal'], 0.3, 0.8, 1.1),   
-            ("1. Select or Point mouse at mesh surface", "", colors['secondary'], 0.5, 0.5, 1.0),  
+            ("💡 LumiFlow Tips", "", colors['header'], 0.5, 70, 1.3),  
+            ("🚀 Create Your First Light:", "", colors['normal'], 0.5, 70, 1.1),   
+            ("1. Select or Point mouse at mesh surface", "", colors['secondary'], 0.5, 70, 1.0),  
             ("2. Press", ": Ctrl + Shift + A", colors['secondary'], 0.5, 50, 1.0),
-            ("3. Choose light type from menu", "", colors['secondary'], 0.5, 1.0, 1.0),
+            ("3. Choose light type from menu", "", colors['secondary'], 0.5, 70, 1.0),
         ]
     elif selected_light:
         tips_lines = get_selected_light_tips_template(selected_light, colors)
@@ -66,13 +66,13 @@ def get_general_tips_template(colors=None):
         colors = OverlayConfig.get_all_colors()
     
     return [
-        ("ðŸ’¡ LumiFlow Tips", "", colors['header'], 0.7, 1.0, 1.3),  
-        ("Select a light to begin", "", colors['normal'], 0.5, 0.8, 1.1),
-        ("Flip Light", ": Ctrl + Shift + C", colors['secondary'], 0.5, 90, 1.0),
-        ("Light Linking", ": Ctrl + Shift + X", colors['secondary'], 0.5, 90, 1.0),
-        ("Cycle Selection", ": Ctrl + Shift + D", colors['secondary'], 0.7, 90, 1.0),
-        ("Or Add More Ligt", "", colors['normal'], 0.5, 0.5, 1.0),
-        ("Smart Add", ": Ctrl + Shift + A", colors['dim'], 0.5, 90,1.0),
+        ("💡 LumiFlow Tips", "", colors['header'], 0.7, 70, 1.3),  
+        ("Select a light to begin", "", colors['normal'], 0.5, 70, 1.1),
+        ("Flip", ": Ctrl + Shift + C", colors['secondary'], 0.5, 30, 1.1),
+        ("Linking", ": Ctrl + Shift + X", colors['secondary'], 0.5, 45, 1.1),
+        ("Solo", ": Ctrl + Shift + D", colors['secondary'], 0.7, 30, 1.1),
+        ("Or Add More Ligt", "", colors['normal'], 0.5, 70, 1.1),
+        ("Smart Add", ": Ctrl + Shift + A", colors['secondary'], 0.5, 70,1.1),
 
     ]
 
@@ -84,56 +84,56 @@ def get_selected_light_tips_template(selected_light, colors=None):
     light_type = selected_light.data.type
     
     tips_lines = [
-        ("ðŸ’¡ LumiFlow Tips", "", colors['header'], 0.7, 1.0, 1.3), 
-        ("Smart Controls:", "", colors['normal'], 0.5, 0.8, 1.1),
+        ("💡 LumiFlow Tips", "", colors['header'], 0.8, 70, 1.3), 
+        ("Smart Controls", "", colors['normal'], 0.55, 70, 1.1),
     ]
     
     if light_type == 'POINT':
         tips_lines.extend([
-            ("  Distance", ": Ctrl + MMB_Drag", colors['secondary'], 0.5, 95, 1.0),
-            ("  Power", ": Shift + MMB_Drag", colors['secondary'], 0.5, 95, 1.0),
-            ("  Radius", ": Alt + MMB_Drag", colors['secondary'], 0.5, 95, 1.0),
-            ("  Temperature", ": Ctrl+Alt + MMB_Drag", colors['secondary'], 0.7, 95, 1.0),
+            ("Distance", ": Ctrl + MMB_Drag", colors['secondary'], 0.5, 70, 1.1),
+            ("Power", ": Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.1),
+            ("Radius", ": Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.1),
+            ("Temp.", ": Ctrl+Alt + MMB_Drag", colors['secondary'], 0.8, 70, 1.1),
         ])
     elif light_type == 'SUN':
         tips_lines.extend([
-            ("  Distance", ": Ctrl + MMB_Drag", colors['secondary'], 0.5, 95, 1.0),
-            ("  Power", ": Shift + MMB_Drag", colors['secondary'], 0.5, 95, 1.0),
-            ("  Angle", ": Alt + MMB_Drag", colors['secondary'], 0.5, 95, 1.0),
-            ("  Temperature", ": Ctrl+Alt + MMB_Drag", colors['secondary'], 0.7, 95, 1.0),
+            ("Distance", ": Ctrl + MMB_Drag", colors['secondary'], 0.5, 70, 1.1),
+            ("Power", ": Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.1),
+            ("Angle", ": Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.1),
+            ("Temp.", ": Ctrl+Alt + MMB_Drag", colors['secondary'], 0.8, 70, 1.1),
         ])
     elif light_type == 'SPOT':
         tips_lines.extend([
-            ("  Distance", ": Ctrl + MMB_Drag", colors['secondary'], 0.5, 95, 1.0),
-            ("  Power", ": Shift + MMB_Drag", colors['secondary'], 0.5, 95, 1.0),
-            ("  Angle", ": Alt + MMB_Drag", colors['secondary'], 0.5, 95, 1.0),
-            ("  Blend", ": Ctrl+Shift + MMB_Drag", colors['secondary'], 0.5, 95, 1.0),
-            ("  Temperature", ": Shift+Alt + MMB_Drag", colors['secondary'], 0.7, 95, 1.0),
+            ("Distance", ": Ctrl + MMB_Drag", colors['secondary'], 0.5, 70, 1.1),
+            ("Power", ": Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.1),
+            ("Angle", ": Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.1),
+            ("Blend", ": Ctrl+Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.1),
+            ("Temp.", ": Shift+Alt + MMB_Drag", colors['secondary'], 0.8, 70, 1.1),
         ])
     elif light_type == 'AREA':
         tips_lines.extend([
-            ("  Distance", ": Ctrl + MMB_Drag", colors['secondary'], 0.5, 95, 1.0),
-            ("  Power", ": Shift + MMB_Drag", colors['secondary'], 0.5, 95, 1.0),
-            ("  Scale", ": Alt + MMB_Drag", colors['secondary'], 0.5, 95, 1.0),
-            ("  Blend", ": Ctrl+Shift + MMB_Drag", colors['secondary'], 0.5, 95, 1.0),
-            ("  Temperature", ": Shift+Alt + MMB_Drag", colors['secondary'], 0.7, 95, 1.0),
+            ("Distance", ": Ctrl + MMB_Drag", colors['secondary'], 0.5, 70, 1.1),
+            ("Power", ": Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.1),
+            ("Scale", ": Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.1),
+            ("Blend", ": Ctrl+Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.1),
+            ("Temp.", ": Shift+Alt + MMB_Drag", colors['secondary'], 0.8, 70, 1.1),
         ])
     
     tips_lines.extend([
-        ("Positioning Modes:", "", colors['normal'], 0.5, 70, 1.0),
-        ("  Highlight", ": Ctrl + LMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-        ("  Normal", ": Shift + LMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-        ("  Orbit", ": Alt + LMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-        ("  Target", ": Ctrl+Alt + LMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-        ("  Free", ": Ctrl+Shift + LMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-        ("  Move", ": Shift+Alt + LMB_Drag", colors['secondary'], 0.7, 70, 1.0),
-    ])
-    
-    tips_lines.extend([
-        ("Other Options:", "", colors['normal'], 0.5, 0.3, 1.0),
-        ("  Flip Light", ": Ctrl + Shift + C", colors['secondary'], 0.5, 90, 1.0),
-        ("  Light Linking", ": Ctrl + Shift + X", colors['secondary'], 0.5, 90, 1.0),
-        ("  Cycle Select", ": Ctrl + Shift + D", colors['secondary'], 0.5, 90, 1.0),
+        ("Positioning Modes", "", colors['normal'], 0.55, 70, 1.1),
+        ("Highlight", ": Ctrl + LMB_Drag", colors['secondary'], 0.5, 70, 1.1),
+        ("Normal", ": Shift + LMB_Drag", colors['secondary'], 0.5, 70, 1.1),
+        ("Orbit", ": Alt + LMB_Drag", colors['secondary'], 0.5, 70, 1.1),
+        ("Target", ": Ctrl+Alt + LMB_Drag", colors['secondary'], 0.5, 70, 1.1),
+        ("Free", ": Ctrl+Shift + LMB_Drag", colors['secondary'], 0.5, 70, 1.1),
+        ("Move", ": Shift+Alt + LMB_Drag", colors['secondary'], 0.8, 70, 1.1),
+        ("Menu", "", colors['normal'], 0.55, 70, 1.1),
+        ("Smart Add", ": Ctrl + Shift + A", colors['secondary'], 0.5, 70, 1.1),
+        ("Flip", ": Ctrl + Shift + C", colors['secondary'], 0.5, 70, 1.1),
+        ("Linking", ": Ctrl + Shift + X", colors['secondary'], 0.5, 70, 1.1),
+        ("Solo", ": Ctrl + Shift + D", colors['secondary'], 0.8, 70, 1.1),
+        ("Select", "", colors['normal'], 0.55, 70, 1.1),
+        ("Cycle", ": D", colors['secondary'], 0.5, 70, 1.1),
         
     ])
     

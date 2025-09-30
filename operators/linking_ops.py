@@ -1582,9 +1582,7 @@ class LUMI_OT_clear_light_linking(bpy.types.Operator):
         # Complete operation successfully
         return {'FINISHED'}
 
-# ============================================================================
-# UI DRAWING FUNCTIONS FOR ADVANCED LIGHT LINKING - OPTIMIZED FOR READ-ONLY
-# ============================================================================
+
 
 def draw_advanced_linking_ui(layout, context):
     """

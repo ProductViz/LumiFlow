@@ -392,7 +392,7 @@ def register_properties() -> None:
                 ('SCENE', "Scene", "New lights are visible to all cameras (global)", 'SCENE_DATA', 0),
                 ('CAMERA', "Camera", "New lights are only visible to the active camera", 'CAMERA_DATA', 1)
             ],
-            default='CAMERA'
+            default='SCENE'
         )),
         ("lumi_director_active", bpy.props.BoolProperty(name="Key Light Director Active", default=False, description="Key Light Director modal is active")),
         ("lumi_director_target_object", bpy.props.PointerProperty(name="Director Target Object", type=bpy.types.Object)),

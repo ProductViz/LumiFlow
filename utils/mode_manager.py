@@ -76,8 +76,8 @@ class ModeManager:
             'description': 'Light angle/spot size/spread (multi-property handler)',
             'properties': {
                 'getter': lambda light, ctx: ModeManager._get_angle_value(light),
-                'formatter': lambda value: f"{value:.1f}Â°",
-                'unit': 'Â°'
+                'formatter': lambda value: f"{value:.1f}°",
+                'unit': '°'
             },
             'availability': {
                 'SUN': True,      # Controls angle
@@ -280,11 +280,12 @@ class ModeManager:
         light_type = data.type
         
         if light_type == 'SUN':
-            return getattr(data, 'angle', 0.0)
+            # Convert SUN light angle from radians to degrees for display
+            return getattr(data, 'angle', 0.0) * 180.0 / math.pi
         elif light_type == 'SPOT':
-            return getattr(data, 'spot_size', 0.0) * 180.0 / math.pi  # Convert radians to degrees
+            return getattr(data, 'spot_size', 0.0) * 180.0 / math.pi
         elif light_type == 'AREA':
-            return getattr(data, 'spread', 0.0)
+            return getattr(data, 'spread', 0.0) * 180.0
         else:
             return 0.0
     

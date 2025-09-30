@@ -3,6 +3,7 @@ Smart Control Operations
 Operators for smart control and manipulation of lights.
 """
 import bpy
+import math
 from ..utils import (
     lumi_is_addon_enabled, lumi_reset_highlight,
     lumi_update_light_orientation, lumi_apply_kelvin_to_lights
@@ -66,9 +67,9 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
             'accel_factor': 1.5
         },
         'ANGLE': {
-            'base': 0.001,
-            'speed_factor': 0.8,
-            'accel_factor': 1.2
+            'base': 0.008,
+            'speed_factor': 1.2,
+            'accel_factor': 1.8
         },
         'TEMPERATURE': {
             'base': 0.006,
@@ -143,10 +144,6 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
                 self._start_value = getattr(scene, 'light_temperature', 5500.0)
             elif current_mode == 'BLEND':
                 self._start_value = getattr(scene, 'light_blend', 0.5)
-            elif current_mode == 'SPOT_SIZE':
-                self._start_value = getattr(scene, 'light_spot_size', 45.0)
-            elif current_mode == 'SPREAD':
-                self._start_value = getattr(scene, 'light_spread', 180.0)
             
             lumi_enable_cursor_overlay_handler()
             
@@ -400,19 +397,28 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
                                     data.size_y = max(0.01, data.size_y + scale_factor)
                 elif scroll_mode == 'ANGLE':
                     scene.lumi_status_angle_active = True
-                    angle_delta = amount * 0.05
+                    angle_delta = amount * 10
+                    print(f"DEBUG ANGLE: amount={amount:.6f}, angle_delta={angle_delta:.6f}")
                     for light in selected_lights:
                         data = light.data
                         if data.type == 'SUN':
-                            data.angle = max(0.0, data.angle + angle_delta)
+                            # Convert angle_delta from degrees to radians for SUN light
+                            sun_delta = angle_delta * math.pi / 180.0
+                            data.angle = max(0.0, min(math.pi, data.angle + sun_delta))
                         elif data.type == 'SPOT':
-                            data.spot_size = max(0.0, min(3.1415, data.spot_size + angle_delta))
+                            
+                            spot_delta = angle_delta * math.pi / 180.0  
+                            data.spot_size = max(0.0, min(math.pi, data.spot_size + spot_delta))
                         elif data.type == 'AREA' and hasattr(data, 'spread'):
-                            data.spread = max(0.0, min(1.0, data.spread + angle_delta))
+                            if data.spread > 1.0:
+                                data.spread = 0.5  
+                            
+                            spread_delta = angle_delta / 180.0  
+                            data.spread = max(0.0, min(1.0, data.spread + spread_delta))
+                            
                 elif scroll_mode == 'TEMPERATURE':
-                    scene.lumi_status_temperature_active = True
-                    # Use smart sensitivity amount directly with reasonable temperature scaling
-                    color_step = amount * 100.0  # Scale factor for temperature changes
+                    scene.lumi_status_temperature_active = True  
+                    color_step = amount * 100.0  
                     current_temp = getattr(scene, 'lumi_color_temperature', 5500)
                     new_temp = max(1000, min(20000, current_temp + color_step))
                     new_temp_int = int(new_temp)
