@@ -68,9 +68,9 @@ def get_general_tips_template(colors=None):
     return [
         ("💡 LumiFlow Tips", "", colors['header'], 0.7, 70, 1.3),  
         ("Select a light to begin", "", colors['normal'], 0.5, 70, 1.1),
-        ("Flip", ": Ctrl + Shift + C", colors['secondary'], 0.5, 30, 1.1),
-        ("Linking", ": Ctrl + Shift + X", colors['secondary'], 0.5, 45, 1.1),
-        ("Solo", ": Ctrl + Shift + D", colors['secondary'], 0.7, 30, 1.1),
+        ("Flip", ": Ctrl + Shift + C", colors['secondary'], 0.5, 50, 1.1),
+        ("Linking", ": Ctrl + Shift + X", colors['secondary'], 0.5, 50, 1.1),
+        ("Solo", ": Ctrl + Shift + D", colors['secondary'], 0.7, 50, 1.1),
         ("Or Add More Ligt", "", colors['normal'], 0.5, 70, 1.1),
         ("Smart Add", ": Ctrl + Shift + A", colors['secondary'], 0.5, 70,1.1),
 

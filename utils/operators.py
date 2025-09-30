@@ -1,3 +1,7 @@
+# LumiFlow - Smart lighting tools for Blender
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024 LumiFlow Developer
+
 """
 Operator Utilities
 Contains specialized utility functions for operators: modal states, smart control, raycast, etc.

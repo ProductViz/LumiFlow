@@ -1,4 +1,12 @@
+# LumiFlow - Smart lighting tools for Blender
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024 LumiFlow Developer
 
+"""
+Operators Module
+Consolidated imports for all operator modules in LumiFlow.
+Provides access to positioning, linking, smart operations, and other operator functionality.
+"""
 import bpy
 from .positioning import *
 from .linking_ops import *

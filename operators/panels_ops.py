@@ -1,3 +1,11 @@
+# LumiFlow - Smart lighting tools for Blender
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024 LumiFlow Developer
+
+"""
+Panel Operations
+Operators for panel functionality including overlay toggles and addon control.
+"""
 import bpy
 from ..utils.common import lumi_is_addon_enabled
 

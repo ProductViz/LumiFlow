@@ -1,3 +1,7 @@
+# LumiFlow - Smart lighting tools for Blender
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024 LumiFlow Developer
+
 """
 Pie Menus Module
 Contains all pie menu classes for the LumiFlow Blender addon UI.

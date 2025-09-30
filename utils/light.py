@@ -1,3 +1,7 @@
+# LumiFlow - Smart lighting tools for Blender
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024 LumiFlow Developer
+
 """
 Light Utilities
 Contains specialized light-related utility functions: positioning, creation, intensity calculations, and mode management.

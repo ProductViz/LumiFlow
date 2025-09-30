@@ -1,3 +1,7 @@
+# LumiFlow - Smart lighting tools for Blender
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024 LumiFlow Developer
+
 """
 Free Positioning Operations
 Operators for free positioning and movement of lights.
@@ -63,6 +67,7 @@ class LUMI_OT_free_positioning(bpy.types.Operator, BaseModalOperator):
                 return {'CANCELLED'}
             
             # Check if this is the correct positioning mode (Ctrl+Shift + LMB drag)
+            detected_mode = detect_positioning_mode(event)
             if detected_mode != 'FREE':
                 self.report({'WARNING'}, f"Use {get_modifier_keys_for_mode('FREE')} + LMB drag for free positioning")
                 return {'CANCELLED'}
@@ -224,6 +229,16 @@ class LUMI_OT_free_positioning(bpy.types.Operator, BaseModalOperator):
                     # If no pivot exists, create one at a reasonable distance in front of the light
                     current_pivot = light.location + Vector((0, 0, -2))
                 
+                # Calculate camera distance to pivot for adaptive scaling
+                camera_distance = (ray_origin - current_pivot).length
+                
+                # Adaptive scale factor based on camera distance
+                # Closer camera = smaller scale factor for finer control
+                # Farther camera = larger scale factor for faster movement
+                base_scale = 0.01
+                distance_factor = max(0.1, min(camera_distance / 10.0, 10.0))  # Clamp between 0.1 and 10.0
+                adaptive_scale_factor = base_scale * distance_factor
+                
                 # Project current pivot to screen coordinates
                 pivot_screen = view3d_utils.location_3d_to_region_2d(region, rv3d, current_pivot)
                 
@@ -232,27 +247,42 @@ class LUMI_OT_free_positioning(bpy.types.Operator, BaseModalOperator):
                     screen_delta = coord - pivot_screen
                     
                     # Convert screen movement to world movement
-                    # Get right and up vectors of the viewport
-                    view_right = view3d_utils.region_2d_to_vector_3d(region, rv3d, (coord.x + 1, coord.y)) - view3d_utils.region_2d_to_vector_3d(region, rv3d, coord)
-                    view_up = view3d_utils.region_2d_to_vector_3d(region, rv3d, (coord.x, coord.y + 1)) - view3d_utils.region_2d_to_vector_3d(region, rv3d, coord)
+                    # Get right and up vectors of the viewport with validation
+                    try:
+                        coord_right = Vector((coord.x + 1, coord.y))
+                        coord_up = Vector((coord.x, coord.y + 1))
+                        
+                        view_right = view3d_utils.region_2d_to_vector_3d(region, rv3d, coord_right) - view3d_utils.region_2d_to_vector_3d(region, rv3d, coord)
+                        view_up = view3d_utils.region_2d_to_vector_3d(region, rv3d, coord_up) - view3d_utils.region_2d_to_vector_3d(region, rv3d, coord)
+                        
+                        # Validate and normalize vectors
+                        if view_right.length > 0.001:
+                            view_right.normalize()
+                        else:
+                            # Fallback: use camera right vector
+                            view_right = rv3d.view_matrix.to_3x3().transposed()[0]
+                            
+                        if view_up.length > 0.001:
+                            view_up.normalize()
+                        else:
+                            # Fallback: use camera up vector
+                            view_up = rv3d.view_matrix.to_3x3().transposed()[1]
+                    except Exception:
+                        # Fallback: use camera matrix vectors
+                        cam_matrix = rv3d.view_matrix.to_3x3().transposed()
+                        view_right = cam_matrix[0]
+                        view_up = cam_matrix[1]
                     
-                    # Normalize vectors
-                    if view_right.length > 0:
-                        view_right.normalize()
-                    if view_up.length > 0:
-                        view_up.normalize()
-                    
-                    # Calculate world movement based on screen movement
-                    # Scale factor to make movement feel natural
-                    scale_factor = 0.01
-                    world_movement = (view_right * screen_delta.x + view_up * screen_delta.y) * scale_factor
+                    # Calculate world movement using adaptive scale factor
+                    world_movement = (view_right * screen_delta.x + view_up * screen_delta.y) * adaptive_scale_factor
                     
                     # Apply movement to current pivot position
                     free_position = current_pivot + world_movement
                 else:
-                    # Fallback: use ray casting at fixed distance if projection fails
-                    distance = 5.0
-                    free_position = ray_origin + view_vector * distance
+                    # Fallback: use ray casting with adaptive distance if projection fails
+                    # Use distance based on camera distance for better behavior when close
+                    fallback_distance = max(1.0, min(camera_distance * 0.5, 20.0))  # Adaptive distance
+                    free_position = ray_origin + view_vector * fallback_distance
 
                 # Set pivot to the free position (2D movement without depth)
                 lumi_set_light_pivot(light, free_position)

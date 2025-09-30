@@ -1,3 +1,7 @@
+"""
+Core Module
+Contains core functionality for state management and global variables used throughout LumiFlow.
+"""
 from .state import get_state, LumiFlowState
 from .globals import (
     get_scroll_control_enabled,

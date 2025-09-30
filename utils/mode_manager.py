@@ -1,3 +1,7 @@
+# LumiFlow - Smart lighting tools for Blender
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024 LumiFlow Developer
+
 """
 Mode Manager
 Centralized mode management system for all overlay modules.

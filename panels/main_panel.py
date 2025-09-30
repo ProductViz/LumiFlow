@@ -1,3 +1,7 @@
+# LumiFlow - Smart lighting tools for Blender
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024 LumiFlow Developer
+
 """
 LumiFlow Main UI Panel
 Defines the main UI panel and all UI drawing logic for LumiFlow Blender addon.

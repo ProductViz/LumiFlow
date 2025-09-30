@@ -1,3 +1,11 @@
+# LumiFlow - Smart lighting tools for Blender
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024 LumiFlow Developer
+
+"""
+Menu Operations
+Operators for menu functionality including smart light operations and template management.
+"""
 import bpy
 from mathutils import Vector
 from ..utils.common import lumi_is_addon_enabled

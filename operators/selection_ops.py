@@ -1,3 +1,11 @@
+# LumiFlow - Smart lighting tools for Blender
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024 LumiFlow Developer
+
+"""
+Selection Operations
+Operators for light selection, deletion, and cycling functionality.
+"""
 import bpy
 from ..utils.common import lumi_is_addon_enabled, lumi_get_light_collection 
 

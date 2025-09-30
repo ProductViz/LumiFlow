@@ -1,3 +1,7 @@
+# LumiFlow - Smart lighting tools for Blender
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024 LumiFlow Developer
+
 """
 Positioning Operations Module
 Contains all operators related to light positioning: highlight, normal, target, orbit, and smart controls.
