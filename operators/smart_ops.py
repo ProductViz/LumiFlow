@@ -18,7 +18,7 @@ from .positioning.utils import lumi_get_active_power_value
 from mathutils import Vector
 from ..core.state import get_state
 from ..base_modal import BaseModalOperator
-from ..overlay import lumi_enable_cursor_overlay_handler, lumi_disable_cursor_overlay_handler
+from ..ui.overlay import lumi_enable_cursor_overlay_handler, lumi_disable_cursor_overlay_handler
 from ..utils.mode_manager import ModeManager
 
 

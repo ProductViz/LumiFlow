@@ -58,7 +58,7 @@ from .operators.smart_template.template_ops import (
 )
 
 # Import main panel class with specific import to avoid issues
-from .panels.main_panel import (
+from .ui.main_panel import (
     LUMI_PT_light_control,
 )
 
@@ -67,7 +67,7 @@ from .panels.main_panel import (
 # Template browser classes have been deleted
 
 # Import menu classes from pie_menus
-from .menus.pie_menus import (
+from .ui.pie_menus import (
     LUMI_MT_add_light_pie,
     LUMI_MT_smart_template_light_pie,
     LUMI_MT_template_menu,
@@ -75,9 +75,9 @@ from .menus.pie_menus import (
 )
 
 # Import menu, draw, and utils modules
-from .menus import *
+from .ui.pie_menus import *
 from .utils import *
-from .overlay import lumi_scene_update_handler
+from .ui.overlay import lumi_scene_update_handler
 
 # Import free positioning operators explicitly
 from .operators.positioning.free_ops import (
@@ -154,7 +154,7 @@ from .utils.properties import (
 # Collect all classes from automatically imported modules
 import inspect
 # Import from local addon modules
-from . import operators, panels, menus, utils
+from . import operators, utils, ui
 
 def get_classes():
     """Collect all classes from modules dynamically"""
@@ -167,10 +167,10 @@ def get_classes():
             if inspect.isclass(obj):
                 classes_list.append(obj)
     
-    # Get classes from menus module
-    if hasattr(menus, '__all__'):
-        for name in menus.__all__:
-            obj = getattr(menus, name)
+    # Get classes from ui module (pie_menus, main_panel)
+    if hasattr(ui, '__all__'):
+        for name in ui.__all__:
+            obj = getattr(ui, name)
             if inspect.isclass(obj):
                 classes_list.append(obj)
     
@@ -646,14 +646,14 @@ def reinitialize_overlay_system():
     """Re-initialize overlay system after file load or addon enable"""
     try:
         # Clean up and reset overlay system using overlay_manager
-        from .overlay.config import overlay_manager
+        from .ui.overlay.config import overlay_manager
         overlay_manager.disable_all_handlers()
         overlay_manager.handlers.clear()
         
         # Re-register overlay handlers if addon is enabled
         if hasattr(bpy.context, 'scene') and bpy.context.scene:
             if hasattr(bpy.context.scene, 'lumi_enabled') and bpy.context.scene.lumi_enabled:
-                from .overlay import (
+                from .ui.overlay import (
                     lumi_enable_draw_handler,
                     lumi_enable_overlay_draw_handler,
                     lumi_enable_stroke_overlay_handler,
@@ -1010,7 +1010,7 @@ def unregister() -> None:
     
     # Clean up icon manager
     try:
-        from .overlay.icon_manager import cleanup_icon_manager
+        from .ui.overlay.icon_manager import cleanup_icon_manager
         cleanup_icon_manager()
     except Exception:
         pass

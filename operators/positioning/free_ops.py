@@ -86,7 +86,7 @@ class LUMI_OT_free_positioning(bpy.types.Operator, BaseModalOperator):
             self._timer = context.window_manager.event_timer_add(0.1, window=context.window)
             
             # Enable overlay handler untuk positioning mode
-            from ...overlay import lumi_enable_cursor_overlay_handler
+            from ...ui.overlay import lumi_enable_cursor_overlay_handler
             lumi_enable_cursor_overlay_handler()
             
             # Initialize dragging state
@@ -229,16 +229,6 @@ class LUMI_OT_free_positioning(bpy.types.Operator, BaseModalOperator):
                     # If no pivot exists, create one at a reasonable distance in front of the light
                     current_pivot = light.location + Vector((0, 0, -2))
                 
-                # Calculate camera distance to pivot for adaptive scaling
-                camera_distance = (ray_origin - current_pivot).length
-                
-                # Adaptive scale factor based on camera distance
-                # Closer camera = smaller scale factor for finer control
-                # Farther camera = larger scale factor for faster movement
-                base_scale = 0.01
-                distance_factor = max(0.1, min(camera_distance / 10.0, 10.0))  # Clamp between 0.1 and 10.0
-                adaptive_scale_factor = base_scale * distance_factor
-                
                 # Project current pivot to screen coordinates
                 pivot_screen = view3d_utils.location_3d_to_region_2d(region, rv3d, current_pivot)
                 
@@ -246,43 +236,26 @@ class LUMI_OT_free_positioning(bpy.types.Operator, BaseModalOperator):
                     # Calculate screen space movement
                     screen_delta = coord - pivot_screen
                     
-                    # Convert screen movement to world movement
-                    # Get right and up vectors of the viewport with validation
-                    try:
-                        coord_right = Vector((coord.x + 1, coord.y))
-                        coord_up = Vector((coord.x, coord.y + 1))
-                        
-                        view_right = view3d_utils.region_2d_to_vector_3d(region, rv3d, coord_right) - view3d_utils.region_2d_to_vector_3d(region, rv3d, coord)
-                        view_up = view3d_utils.region_2d_to_vector_3d(region, rv3d, coord_up) - view3d_utils.region_2d_to_vector_3d(region, rv3d, coord)
-                        
-                        # Validate and normalize vectors
-                        if view_right.length > 0.001:
-                            view_right.normalize()
-                        else:
-                            # Fallback: use camera right vector
-                            view_right = rv3d.view_matrix.to_3x3().transposed()[0]
-                            
-                        if view_up.length > 0.001:
-                            view_up.normalize()
-                        else:
-                            # Fallback: use camera up vector
-                            view_up = rv3d.view_matrix.to_3x3().transposed()[1]
-                    except Exception:
-                        # Fallback: use camera matrix vectors
-                        cam_matrix = rv3d.view_matrix.to_3x3().transposed()
-                        view_right = cam_matrix[0]
-                        view_up = cam_matrix[1]
+                    # Calculate view distance for accurate screen-to-world scaling
+                    camera_distance = (ray_origin - current_pivot).length
                     
-                    # Calculate world movement using adaptive scale factor
-                    world_movement = (view_right * screen_delta.x + view_up * screen_delta.y) * adaptive_scale_factor
+                    # Use perspective projection to calculate accurate world-space movement
+                    # This method properly accounts for viewport depth and perspective
+                    offset_coord = Vector((pivot_screen.x + screen_delta.x, pivot_screen.y + screen_delta.y))
+                    
+                    # Convert both positions from screen to world space at the same depth
+                    pivot_world = view3d_utils.region_2d_to_location_3d(region, rv3d, pivot_screen, current_pivot)
+                    offset_world = view3d_utils.region_2d_to_location_3d(region, rv3d, offset_coord, current_pivot)
+                    
+                    # Calculate actual world movement vector
+                    world_movement = offset_world - pivot_world
                     
                     # Apply movement to current pivot position
                     free_position = current_pivot + world_movement
                 else:
-                    # Fallback: use ray casting with adaptive distance if projection fails
-                    # Use distance based on camera distance for better behavior when close
-                    fallback_distance = max(1.0, min(camera_distance * 0.5, 20.0))  # Adaptive distance
-                    free_position = ray_origin + view_vector * fallback_distance
+                    # Fallback: use ray casting at current depth if projection fails
+                    camera_distance = (ray_origin - current_pivot).length
+                    free_position = ray_origin + view_vector * camera_distance
 
                 # Set pivot to the free position (2D movement without depth)
                 lumi_set_light_pivot(light, free_position)
@@ -351,7 +324,7 @@ class LUMI_OT_free_positioning(bpy.types.Operator, BaseModalOperator):
                 state.set_modal_state('free_pressing', False)
                        # Check if object is light and only disable overlay handler if not smart control is active
             if not state.scroll_control_enabled:
-                from ...overlay import lumi_disable_cursor_overlay_handler
+                from ...ui.overlay import lumi_disable_cursor_overlay_handler
                 lumi_disable_cursor_overlay_handler()
             
             # Reset positioning mode

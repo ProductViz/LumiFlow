@@ -78,7 +78,7 @@ class LUMI_OT_move_positioning(bpy.types.Operator, BaseModalOperator):
             self._timer = context.window_manager.event_timer_add(0.1, window=context.window)
             
             # Enable overlay handler for positioning mode
-            from ...overlay import lumi_enable_cursor_overlay_handler
+            from ...ui.overlay import lumi_enable_cursor_overlay_handler
             lumi_enable_cursor_overlay_handler()
             
             # Initialize dragging state
@@ -230,6 +230,10 @@ class LUMI_OT_move_positioning(bpy.types.Operator, BaseModalOperator):
                 # Store initial light-to-pivot offset for maintaining relationship
                 initial_light_to_pivot = current_pivot - light.location
                 
+                # Get viewport origin for distance calculation
+                view_vector = view3d_utils.region_2d_to_vector_3d(region, rv3d, coord)
+                ray_origin = view3d_utils.region_2d_to_origin_3d(region, rv3d, coord)
+                
                 # Project current pivot to screen coordinates
                 pivot_screen = view3d_utils.location_3d_to_region_2d(region, rv3d, current_pivot)
                 
@@ -237,21 +241,16 @@ class LUMI_OT_move_positioning(bpy.types.Operator, BaseModalOperator):
                     # Calculate screen space movement from current pivot to cursor
                     screen_delta = coord - pivot_screen
                     
-                    # Convert screen movement to world movement
-                    # Get right and up vectors of the viewport
-                    view_right = view3d_utils.region_2d_to_vector_3d(region, rv3d, (coord.x + 1, coord.y)) - view3d_utils.region_2d_to_vector_3d(region, rv3d, coord)
-                    view_up = view3d_utils.region_2d_to_vector_3d(region, rv3d, (coord.x, coord.y + 1)) - view3d_utils.region_2d_to_vector_3d(region, rv3d, coord)
+                    # Use perspective projection to calculate accurate world-space movement
+                    # This method properly accounts for viewport depth and perspective
+                    offset_coord = Vector((pivot_screen.x + screen_delta.x, pivot_screen.y + screen_delta.y))
                     
-                    # Normalize vectors
-                    if view_right.length > 0:
-                        view_right.normalize()
-                    if view_up.length > 0:
-                        view_up.normalize()
+                    # Convert both positions from screen to world space at the same depth
+                    pivot_world = view3d_utils.region_2d_to_location_3d(region, rv3d, pivot_screen, current_pivot)
+                    offset_world = view3d_utils.region_2d_to_location_3d(region, rv3d, offset_coord, current_pivot)
                     
-                    # Calculate world movement based on screen movement
-                    # Use same scale factor as Free mode for consistency
-                    scale_factor = 0.01
-                    world_movement = (view_right * screen_delta.x + view_up * screen_delta.y) * scale_factor
+                    # Calculate actual world movement vector
+                    world_movement = offset_world - pivot_world
                     
                     # Move pivot to new position (following cursor naturally)
                     new_pivot_location = current_pivot + world_movement
@@ -271,11 +270,9 @@ class LUMI_OT_move_positioning(bpy.types.Operator, BaseModalOperator):
                         light.rotation_mode = 'XYZ'
                         light.rotation_euler = rot_quat.to_euler('XYZ')
                 else:
-                    # Fallback: use ray casting at fixed distance if projection fails
-                    view_vector = view3d_utils.region_2d_to_vector_3d(region, rv3d, coord)
-                    ray_origin = view3d_utils.region_2d_to_origin_3d(region, rv3d, coord)
-                    distance = 5.0
-                    new_pivot_location = ray_origin + view_vector * distance
+                    # Fallback: use ray casting at current depth if projection fails
+                    camera_distance = (ray_origin - current_pivot).length
+                    new_pivot_location = ray_origin + view_vector * camera_distance
                     
                     # Move light to maintain the same relative offset from the new pivot
                     new_light_location = new_pivot_location - initial_light_to_pivot
@@ -331,7 +328,7 @@ class LUMI_OT_move_positioning(bpy.types.Operator, BaseModalOperator):
             
             # Disable overlay handler only if no smart control is active
             if not state.scroll_control_enabled:
-                from ...overlay import lumi_disable_cursor_overlay_handler
+                from ...ui.overlay import lumi_disable_cursor_overlay_handler
                 lumi_disable_cursor_overlay_handler()
             
             # Reset positioning mode

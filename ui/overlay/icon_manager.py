@@ -1,6 +1,12 @@
 """
 Icon Manager Module
-Manages PNG icons for overlay keymap display.
+Manages PNG icons for overlay keymap display in the LumiFlow addon.
+
+This module handles:
+- Loading icon images from assets/icons/ directory
+- Creating GPU textures for rendering
+- Drawing icons in overlay with proper aspect ratio
+- Parsing keymap strings and rendering corresponding icons
 """
 import bpy
 import gpu
@@ -10,7 +16,12 @@ from typing import Dict, Optional, Tuple
 
 
 class IconManager:
-    """Manages loading, caching, and drawing of PNG icons for overlay keymaps."""
+    """
+    Manages loading, caching, and drawing of PNG icons for overlay keymaps.
+    
+    This singleton-pattern class handles all icon-related operations for the overlay system.
+    Icons are loaded once and cached as GPU textures for efficient rendering.
+    """
     
     def __init__(self):
         self.icons: Dict[str, bpy.types.Image] = {}
@@ -23,7 +34,10 @@ class IconManager:
     def _load_icons(self):
         """Load all available icons from assets directory."""
         try:
-            addon_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            # Get addon root directory (2 levels up from ui/overlay/)
+            current_dir = os.path.dirname(os.path.abspath(__file__))  # ui/overlay/
+            ui_dir = os.path.dirname(current_dir)  # ui/
+            addon_dir = os.path.dirname(ui_dir)  # root
             icons_dir = os.path.join(addon_dir, "assets", "icons")
             
             if not os.path.exists(icons_dir):
@@ -90,67 +104,80 @@ class IconManager:
         return self.icon_size
     
     def draw_icon(self, icon_name: str, x: int, y: int, size: Optional[int] = None):
+        """
+        Draw a single icon at the specified position.
+        
+        Args:
+            icon_name: Name of the icon to draw (e.g., 'ctrl', 'shift', 'lmb_drag')
+            x: X coordinate in pixels
+            y: Y coordinate in pixels
+            size: Optional custom size (uses default icon_size if not specified)
+        """
         if icon_name not in self.textures:
             return
         
-        texture = self.textures[icon_name]
-        shader = gpu.shader.from_builtin('IMAGE')
-        
-        icon_size = size or self.icon_size
-        
-        if icon_name in self.icon_dimensions:
-            orig_width = self.icon_dimensions[icon_name]['width']
-            orig_height = self.icon_dimensions[icon_name]['height']
+        try:
+            texture = self.textures[icon_name]
+            shader = gpu.shader.from_builtin('IMAGE')
             
-            if orig_width > 0 and orig_height > 0:
-                aspect_ratio = orig_width / orig_height
-                draw_height = icon_size
-                draw_width = int(icon_size * aspect_ratio)
+            icon_size = size or self.icon_size
+            
+            if icon_name in self.icon_dimensions:
+                orig_width = self.icon_dimensions[icon_name]['width']
+                orig_height = self.icon_dimensions[icon_name]['height']
                 
-                max_width = icon_size * 2
-                if draw_width > max_width:
-                    draw_width = max_width
+                if orig_width > 0 and orig_height > 0:
+                    aspect_ratio = orig_width / orig_height
+                    draw_height = icon_size
+                    draw_width = int(icon_size * aspect_ratio)
+                    
+                    max_width = icon_size * 2
+                    if draw_width > max_width:
+                        draw_width = max_width
+                else:
+                    draw_width = icon_size
+                    draw_height = icon_size
             else:
                 draw_width = icon_size
                 draw_height = icon_size
-        else:
-            draw_width = icon_size
-            draw_height = icon_size
-        
-        pos = (
-            (x, y),
-            (x + draw_width, y),
-            (x + draw_width, y + draw_height),
-            (x, y + draw_height)
-        )
-        
-        texCoord = (
-            (0, 0),
-            (1, 0),
-            (1, 1),
-            (0, 1)
-        )
-        
-        batch = batch_for_shader(
-            shader,
-            'TRI_FAN',
-            {
-                "pos": pos,
-                "texCoord": texCoord,
-            },
-        )
-        
-        gpu.state.blend_set('ALPHA')
-        shader.bind()
-        shader.uniform_sampler("image", texture)
-        batch.draw(shader)
-        
-        gpu.state.blend_set('NONE')
+            
+            pos = (
+                (x, y),
+                (x + draw_width, y),
+                (x + draw_width, y + draw_height),
+                (x, y + draw_height)
+            )
+            
+            texCoord = (
+                (0, 0),
+                (1, 0),
+                (1, 1),
+                (0, 1)
+            )
+            
+            batch = batch_for_shader(
+                shader,
+                'TRI_FAN',
+                {
+                    "pos": pos,
+                    "texCoord": texCoord,
+                },
+            )
+            
+            gpu.state.blend_set('ALPHA')
+            shader.bind()
+            shader.uniform_sampler("image", texture)
+            batch.draw(shader)
+            
+            gpu.state.blend_set('NONE')
+        except Exception:
+            # Silently fail if GPU rendering fails
+            pass
     
     def draw_keymap_icons(self, keymap_text: str, start_x: int, start_y: int) -> int:
         """
         Draw icons for a keymap string and return the total width used.
-{{ ... }}
+        
         Args:
             keymap_text: String like "Ctrl + Shift + MMB Drag"
             start_x: Starting X position

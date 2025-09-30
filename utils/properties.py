@@ -216,7 +216,7 @@ def lumi_enabled_update(self, context: bpy.types.Context):
                 
             # Also call scene update handler directly as backup
             # This ensures overlays are activated immediately
-            from ..overlay import lumi_scene_update_handler
+            from ..ui.overlay import lumi_scene_update_handler
             if hasattr(bpy.context, 'scene') and bpy.context.scene:
                 # Create a dummy depsgraph for the call
                 lumi_scene_update_handler(bpy.context.scene, bpy.context.evaluated_depsgraph_get())
@@ -253,7 +253,7 @@ def lumi_enabled_update(self, context: bpy.types.Context):
         
         # Clean up overlay handlers
         try:
-            from ..overlay import (
+            from ..ui.overlay import (
                 lumi_disable_draw_handler,
                 lumi_disable_overlay_draw_handler,
                 lumi_disable_stroke_overlay_handler,

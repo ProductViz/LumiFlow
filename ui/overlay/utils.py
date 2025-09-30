@@ -347,5 +347,5 @@ def draw_text(
 
 
 # Mode management functions moved to utils.mode_manager for centralized system
-# Import from there: from ..utils.mode_manager import ModeManager
+# Import from there: from ...utils.mode_manager import ModeManager
 

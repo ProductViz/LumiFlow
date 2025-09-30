@@ -15,7 +15,7 @@ from .color import lumi_rgb_to_kelvin
 
 
 class ModeManager:
-    
+    """Centralized mode management for smart controls and positioning."""
     
     # Mode definitions with unified structure
     MODES = {
@@ -126,124 +126,77 @@ class ModeManager:
                 'DEFAULT': True
             }
         },
-        # =====================================================================
-        # POSITIONING MODES
-        # =====================================================================
+    }
+    
+    # Positioning modes - generated using helper
+    MODES.update({
         'HIGHLIGHT': {
-            'display_name': 'Highlight',
-            'modifier': 'Ctrl',
+            'display_name': 'Highlight', 'modifier': 'Ctrl',
             'description': 'Highlight positioning mode',
             'properties': {
                 'getter': lambda light, ctx: ModeManager._get_positioning_status(light, 'highlight'),
                 'formatter': lambda value: "Active" if value else "Inactive",
                 'unit': ''
             },
-            'availability': {
-                'POINT': True,
-                'SUN': True,
-                'SPOT': True,
-                'AREA': True,
-                'DEFAULT': True
-            },
-            'is_positioning': True,
-            'positioning_type': 'highlight'
+            'availability': {'POINT': True, 'SUN': True, 'SPOT': True, 'AREA': True, 'DEFAULT': True},
+            'is_positioning': True, 'positioning_type': 'highlight'
         },
         'NORMAL': {
-            'display_name': 'Normal',
-            'modifier': 'Shift',
+            'display_name': 'Normal', 'modifier': 'Shift',
             'description': 'Normal positioning mode',
             'properties': {
                 'getter': lambda light, ctx: ModeManager._get_positioning_status(light, 'normal'),
                 'formatter': lambda value: "Active" if value else "Inactive",
                 'unit': ''
             },
-            'availability': {
-                'POINT': True,
-                'SUN': True,
-                'SPOT': True,
-                'AREA': True,
-                'DEFAULT': True
-            },
-            'is_positioning': True,
-            'positioning_type': 'normal'
+            'availability': {'POINT': True, 'SUN': True, 'SPOT': True, 'AREA': True, 'DEFAULT': True},
+            'is_positioning': True, 'positioning_type': 'normal'
         },
         'ORBIT': {
-            'display_name': 'Orbit',
-            'modifier': 'Alt',
+            'display_name': 'Orbit', 'modifier': 'Alt',
             'description': 'Orbit positioning mode',
             'properties': {
                 'getter': lambda light, ctx: ModeManager._get_positioning_status(light, 'orbit'),
                 'formatter': lambda value: "Active" if value else "Inactive",
                 'unit': ''
             },
-            'availability': {
-                'POINT': True,
-                'SUN': True,
-                'SPOT': True,
-                'AREA': True,
-                'DEFAULT': True
-            },
-            'is_positioning': True,
-            'positioning_type': 'orbit'
+            'availability': {'POINT': True, 'SUN': True, 'SPOT': True, 'AREA': True, 'DEFAULT': True},
+            'is_positioning': True, 'positioning_type': 'orbit'
         },
         'TARGET': {
-            'display_name': 'Target',
-            'modifier': 'Ctrl+Alt',
+            'display_name': 'Target', 'modifier': 'Ctrl+Alt',
             'description': 'Target positioning mode',
             'properties': {
                 'getter': lambda light, ctx: ModeManager._get_positioning_status(light, 'target'),
                 'formatter': lambda value: "Active" if value else "Inactive",
                 'unit': ''
             },
-            'availability': {
-                'POINT': True,
-                'SUN': True,
-                'SPOT': True,
-                'AREA': True,
-                'DEFAULT': True
-            },
-            'is_positioning': True,
-            'positioning_type': 'target'
+            'availability': {'POINT': True, 'SUN': True, 'SPOT': True, 'AREA': True, 'DEFAULT': True},
+            'is_positioning': True, 'positioning_type': 'target'
         },
         'FREE': {
-            'display_name': 'Free',
-            'modifier': 'Ctrl+Shift',
+            'display_name': 'Free', 'modifier': 'Ctrl+Shift',
             'description': 'Free positioning mode',
             'properties': {
                 'getter': lambda light, ctx: ModeManager._get_positioning_status(light, 'free'),
                 'formatter': lambda value: "Active" if value else "Inactive",
                 'unit': ''
             },
-            'availability': {
-                'POINT': True,
-                'SUN': True,
-                'SPOT': True,
-                'AREA': True,
-                'DEFAULT': True
-            },
-            'is_positioning': True,
-            'positioning_type': 'free'
+            'availability': {'POINT': True, 'SUN': True, 'SPOT': True, 'AREA': True, 'DEFAULT': True},
+            'is_positioning': True, 'positioning_type': 'free'
         },
         'MOVE': {
-            'display_name': 'Move',
-            'modifier': 'Shift+Alt',
+            'display_name': 'Move', 'modifier': 'Shift+Alt',
             'description': 'Move positioning mode',
             'properties': {
                 'getter': lambda light, ctx: ModeManager._get_positioning_status(light, 'move'),
                 'formatter': lambda value: "Active" if value else "Inactive",
                 'unit': ''
             },
-            'availability': {
-                'POINT': True,
-                'SUN': True,
-                'SPOT': True,
-                'AREA': True,
-                'DEFAULT': True
-            },
-            'is_positioning': True,
-            'positioning_type': 'move'
+            'availability': {'POINT': True, 'SUN': True, 'SPOT': True, 'AREA': True, 'DEFAULT': True},
+            'is_positioning': True, 'positioning_type': 'move'
         }
-    }
+    })
     
     # =====================================================================
     # STATIC HELPER METHODS
@@ -284,412 +237,130 @@ class ModeManager:
         light_type = data.type
         
         if light_type == 'SUN':
-            # Convert SUN light angle from radians to degrees for display
             return getattr(data, 'angle', 0.0) * 180.0 / math.pi
         elif light_type == 'SPOT':
             return getattr(data, 'spot_size', 0.0) * 180.0 / math.pi
         elif light_type == 'AREA':
             return getattr(data, 'spread', 0.0) * 180.0
-        else:
-            return 0.0
+        return 0.0
     
     @staticmethod
     def _get_positioning_status(light_obj: bpy.types.Object, positioning_type: str) -> bool:
-        """Get positioning mode status for a light.
+        """Get positioning mode status for a light."""
+        from ..core.state import get_state
+        state = get_state()
         
-        Args:
-            light_obj: Blender light object
-            positioning_type: Positioning mode type (highlight, normal, orbit, target, free, move)
-            
-        Returns:
-            bool: True if positioning mode is active for this light
-        """
-        try:
-            from ..core.state import get_state
-            state = get_state()
-            
-            # Map positioning types to modal state names
-            state_mapping = {
-                'highlight': 'highlight',
-                'normal': 'align',  # Normal positioning uses 'align' state
-                'orbit': 'rotate',  # Orbit positioning uses 'rotate' state
-                'target': 'target',
-                'free': 'free',
-                'move': 'move'
-            }
-            
-            modal_state = state_mapping.get(positioning_type)
-            if modal_state:
-                return state.get_modal_state(modal_state)
-            
-            return False
-        except Exception as e:
-            print(f"âš ï¸  LumiFlow: Error getting positioning status: {e}")
-            return False
+        state_mapping = {
+            'highlight': 'highlight',
+            'normal': 'align',
+            'orbit': 'rotate',
+            'target': 'target',
+            'free': 'free',
+            'move': 'move'
+        }
+        
+        modal_state = state_mapping.get(positioning_type)
+        return state.get_modal_state(modal_state) if modal_state else False
     
     @classmethod
     def get_active_positioning_mode(cls, context: bpy.types.Context) -> Optional[str]:
-        """Get the currently active positioning mode.
+        """Get the currently active positioning mode."""
+        from ..core.state import get_state
+        state = get_state()
         
-        Args:
-            context: Blender context
-            
-        Returns:
-            str: Active positioning mode name or None if none active
-        """
-        try:
-            from ..core.state import get_state
-            state = get_state()
-            
-            # Check all positioning modal states
-            positioning_states = {
-                'highlight': 'HIGHLIGHT',
-                'align': 'NORMAL',      # Normal positioning
-                'rotate': 'ORBIT',      # Orbit positioning
-                'target': 'TARGET',
-                'free': 'FREE',
-                'move': 'MOVE'
-            }
-            
-            for modal_state, mode_name in positioning_states.items():
-                if state.get_modal_state(modal_state):
-                    return mode_name
-            
-            return None
-        except Exception as e:
-            print(f"âš ï¸  LumiFlow: Error getting active positioning mode: {e}")
-            return None
+        positioning_states = {
+            'highlight': 'HIGHLIGHT',
+            'align': 'NORMAL',
+            'rotate': 'ORBIT',
+            'target': 'TARGET',
+            'free': 'FREE',
+            'move': 'MOVE'
+        }
+        
+        for modal_state, mode_name in positioning_states.items():
+            if state.get_modal_state(modal_state):
+                return mode_name
+        
+        return None
     
     @classmethod
     def is_positioning_mode(cls, mode_name: str) -> bool:
-        """Check if a mode is a positioning mode.
-        
-        Args:
-            mode_name: Mode name (uppercase)
-            
-        Returns:
-            bool: True if mode is a positioning mode
-        """
-        mode_config = cls.MODES.get(mode_name, {})
-        return mode_config.get('is_positioning', False)
+        """Check if a mode is a positioning mode."""
+        return cls.MODES.get(mode_name, {}).get('is_positioning', False)
     
     @classmethod
     def get_positioning_modes(cls) -> List[str]:
-        """Get list of all positioning mode names.
-        
-        Returns:
-            List of positioning mode names (uppercase)
-        """
-        return [
-            mode_name for mode_name, config in cls.MODES.items()
-            if config.get('is_positioning', False)
-        ]
+        """Get list of all positioning mode names."""
+        return [name for name, cfg in cls.MODES.items() if cfg.get('is_positioning', False)]
     
     @classmethod
     def get_smart_control_modes(cls) -> List[str]:
-        """Get list of all smart control mode names (non-positioning).
-        
-        Returns:
-            List of smart control mode names (uppercase)
-        """
-        return [
-            mode_name for mode_name, config in cls.MODES.items()
-            if not config.get('is_positioning', False)
-        ]
+        """Get list of all smart control mode names (non-positioning)."""
+        return [name for name, cfg in cls.MODES.items() if not cfg.get('is_positioning', False)]
     # =====================================================================
     
     @classmethod
     def get_available_modes(cls, light_type: str) -> List[str]:
-        """
-        Get list of available mode names for a light type.
-        
-        Args:
-            light_type: Light type (POINT, SUN, SPOT, AREA)
-            
-        Returns:
-            List of available mode names (uppercase)
-        """
-        available = []
-        for mode_name, mode_config in cls.MODES.items():
-            if cls.is_mode_available(mode_name, light_type):
-                available.append(mode_name)
-        return available
+        """Get list of available mode names for a light type."""
+        return [name for name in cls.MODES if cls.is_mode_available(name, light_type)]
     
     @classmethod
     def is_mode_available(cls, mode_name: str, light_type: str) -> bool:
-        """
-        Check if a mode is available for a specific light type.
-        
-        Args:
-            mode_name: Mode name (uppercase)
-            light_type: Light type (POINT, SUN, SPOT, AREA)
-            
-        Returns:
-            True if mode is available
-        """
-        mode_config = cls.MODES.get(mode_name)
-        if not mode_config:
+        """Check if a mode is available for a specific light type."""
+        if mode_name not in cls.MODES:
             return False
-        
-        availability = mode_config['availability']
+        availability = cls.MODES[mode_name]['availability']
         return availability.get(light_type, availability.get('DEFAULT', False))
     
     @classmethod
     def get_mode_display_name(cls, mode_name: str, light_type: str) -> str:
-        """
-        Get display name for a mode, with dynamic labels for multi-property modes.
-        
-        Args:
-            mode_name: Mode name (uppercase)
-            light_type: Light type (POINT, SUN, SPOT, AREA)
-            
-        Returns:
-            Display name for the mode
-        """
-        mode_config = cls.MODES.get(mode_name)
-        if not mode_config:
+        """Get display name for a mode, with dynamic labels for multi-property modes."""
+        if mode_name not in cls.MODES:
             return mode_name.title()
         
-        # Check for dynamic labels first
+        mode_config = cls.MODES[mode_name]
         dynamic_labels = mode_config.get('dynamic_labels', {})
-        if light_type in dynamic_labels:
-            return dynamic_labels[light_type]
-        
-        return mode_config['display_name']
+        return dynamic_labels.get(light_type, mode_config['display_name'])
     
     @classmethod
     def get_mode_modifier(cls, mode_name: str) -> str:
-        """
-        Get keyboard modifier for a mode.
-        
-        Args:
-            mode_name: Mode name (uppercase)
-            
-        Returns:
-            Keyboard modifier string
-        """
-        mode_config = cls.MODES.get(mode_name, {})
-        return mode_config.get('modifier', 'Ctrl/Shift/Alt')
+        """Get keyboard modifier for a mode."""
+        return cls.MODES.get(mode_name, {}).get('modifier', 'Ctrl/Shift/Alt')
     
     @classmethod
     def get_mode_info(cls, mode_name: str, light_obj: bpy.types.Object, context: bpy.types.Context) -> Tuple[str, str, bool]:
-        """
-        Get comprehensive mode information for display.
-        
-        Args:
-            mode_name: Mode name (uppercase)
-            light_obj: Blender light object
-            context: Blender context
-            
-        Returns:
-            Tuple of (label, formatted_value, is_available)
-        """
+        """Get comprehensive mode information for display."""
         light_type = light_obj.data.type
         
-        # Check availability
         if not cls.is_mode_available(mode_name, light_type):
-            error_msg = f"âŒ {mode_name.title()} mode not available for {light_type} lights"
+            error_msg = f"âœ {mode_name.title()} mode not available for {light_type} lights"
             return None, error_msg, False
         
-        # Get mode configuration
-        mode_config = cls.MODES.get(mode_name)
-        if not mode_config:
+        if mode_name not in cls.MODES:
             return mode_name.title(), "N/A", True
         
-        # Get display label
+        mode_config = cls.MODES[mode_name]
         label = cls.get_mode_display_name(mode_name, light_type)
         
-        # Get and format value
         try:
             getter = mode_config['properties']['getter']
             formatter = mode_config['properties']['formatter']
-            
             raw_value = getter(light_obj, context)
             formatted_value = formatter(raw_value)
-            
             return label, formatted_value, True
-            
-        except Exception as e:
+        except:
             return label, "Error", False
     
     @classmethod
     def get_all_modes_info(cls, light_obj: bpy.types.Object, context: bpy.types.Context) -> List[Tuple[str, str]]:
-        """
-        Get information for all available smart control modes for a light.
-        Excludes positioning modes - only shows Distance, Power, Scale, etc.
-        
-        Args:
-            light_obj: Blender light object
-            context: Blender context
-            
-        Returns:
-            List of (label, formatted_value) tuples for available smart control modes
-        """
-        available_modes = []
-        light_type = light_obj.data.type
-        
-        # Only iterate through smart control modes, exclude positioning modes
+        """Get information for all available smart control modes for a light."""
+        result = []
         for mode_name in cls.get_smart_control_modes():
             label, value, is_available = cls.get_mode_info(mode_name, light_obj, context)
-            if is_available and value != "N/A" and not value.startswith("âŒ"):
-                available_modes.append((label, value))
-        
-        return available_modes
-    
-    @classmethod
-    def get_mode_tips(cls, light_type: str) -> List[str]:
-        """
-        Get formatted mode tips for display in overlay.
-        
-        Args:
-            light_type: Light type (POINT, SUN, SPOT, AREA)
-            
-        Returns:
-            List of formatted tip strings
-        """
-        tips = []
-        
-        for mode_name in cls.get_available_modes(light_type):
-            display_name = cls.get_mode_display_name(mode_name, light_type)
-            modifier = cls.get_mode_modifier(mode_name)
-            
-            # Use different action text for positioning modes vs smart control modes
-            if cls.is_positioning_mode(mode_name):
-                action_text = "LMB drag"
-            else:
-                action_text = "MMB Drag"
-            
-            tips.append(f"â€¢ {display_name} ({modifier} + {action_text})")
-        
-        return tips
-    
-    @classmethod
-    def get_mode_property_details(cls, mode_name: str, light_type: str) -> Dict:
-        """
-        Get detailed property information for a mode.
-        
-        Args:
-            mode_name: Mode name (uppercase)
-            light_type: Light type (POINT, SUN, SPOT, AREA)
-            
-        Returns:
-            Dictionary with property details
-        """
-        if not cls.is_mode_available(mode_name, light_type):
-            return {}
-        
-        mode_config = cls.MODES.get(mode_name, {})
-        return {
-            'mode_name': mode_name,
-            'display_name': cls.get_mode_display_name(mode_name, light_type),
-            'modifier': cls.get_mode_modifier(mode_name),
-            'description': mode_config.get('description', ''),
-            'unit': mode_config.get('properties', {}).get('unit', ''),
-            'is_multi_property': 'dynamic_labels' in mode_config
-        }
+            if is_available and value not in ("N/A", "") and not value.startswith("âœ"):
+                result.append((label, value))
+        return result
 
 
-# =====================================================================
-# CONVENIENCE FUNCTIONS FOR BACKWARD COMPATIBILITY
-# =====================================================================
-
-def get_available_modes(light_type: str) -> List[str]:
-    """Backward compatibility function."""
-    return ModeManager.get_available_modes(light_type)
-
-def is_mode_available(mode_name: str, light_type: str) -> bool:
-    """Backward compatibility function."""
-    return ModeManager.is_mode_available(mode_name, light_type)
-
-def get_mode_label_for_light_type(mode_name: str, light_type: str) -> str:
-    """Backward compatibility function."""
-    return ModeManager.get_mode_display_name(mode_name, light_type)
-
-def get_smart_control_mode_info(mode_name: str, light_obj: bpy.types.Object, context: bpy.types.Context) -> Tuple[str, str, bool]:
-    """Backward compatibility function."""
-    return ModeManager.get_mode_info(mode_name, light_obj, context)
-
-def get_all_available_modes_info(light_obj: bpy.types.Object, context: bpy.types.Context) -> List[Tuple[str, str]]:
-    """Backward compatibility function."""
-    return ModeManager.get_all_modes_info(light_obj, context)
-
-def handle_all_smart_control_modes(mode_name: str, light_obj: bpy.types.Object, context: bpy.types.Context) -> str:
-    """Backward compatibility function."""
-    label, value, is_available = ModeManager.get_mode_info(mode_name, light_obj, context)
-    if is_available:
-        return f"{label}: {value}"
-    else:
-        return value  # Return error message
-
-
-# =====================================================================
-# POSITIONING MODE CONVENIENCE FUNCTIONS
-# =====================================================================
-
-def get_active_positioning_mode(context: bpy.types.Context) -> Optional[str]:
-    """Get the currently active positioning mode.
-    
-    Args:
-        context: Blender context
-        
-    Returns:
-        str: Active positioning mode name or None if none active
-    """
-    return ModeManager.get_active_positioning_mode(context)
-
-def is_positioning_mode(mode_name: str) -> bool:
-    """Check if a mode is a positioning mode.
-    
-    Args:
-        mode_name: Mode name (uppercase)
-        
-    Returns:
-        bool: True if mode is a positioning mode
-    """
-    return ModeManager.is_positioning_mode(mode_name)
-
-def get_positioning_modes() -> List[str]:
-    """Get list of all positioning mode names.
-    
-    Returns:
-        List of positioning mode names (uppercase)
-    """
-    return ModeManager.get_positioning_modes()
-
-def get_smart_control_modes() -> List[str]:
-    """Get list of all smart control mode names (non-positioning).
-    
-    Returns:
-        List of smart control mode names (uppercase)
-    """
-    return ModeManager.get_smart_control_modes()
-
-def get_positioning_mode_status(light_obj: bpy.types.Object, positioning_type: str) -> bool:
-    """Get positioning mode status for a light.
-    
-    Args:
-        light_obj: Blender light object
-        positioning_type: Positioning mode type (highlight, normal, orbit, target, free, move)
-        
-    Returns:
-        bool: True if positioning mode is active for this light
-    """
-    return ModeManager._get_positioning_status(light_obj, positioning_type)
-
-
-# Define exported symbols for this module
-__all__ = [
-    'ModeManager',
-    'get_available_modes',
-    'is_mode_available',
-    'get_mode_label_for_light_type',
-    'get_smart_control_mode_info',
-    'get_all_available_modes_info',
-    'handle_all_smart_control_modes',
-    'get_active_positioning_mode',
-    'is_positioning_mode',
-    'get_positioning_modes',
-    'get_smart_control_modes',
-    'get_positioning_mode_status'
-]
-
+# Exported symbols
+__all__ = ['ModeManager']

@@ -92,7 +92,7 @@ class LUMI_OT_orbit_positioning(bpy.types.Operator, BaseModalOperator):
             self._timer = context.window_manager.event_timer_add(0.1, window=context.window)
             
             # Enable overlay handler for positioning mode
-            from ...overlay import lumi_enable_cursor_overlay_handler
+            from ...ui.overlay import lumi_enable_cursor_overlay_handler
             lumi_enable_cursor_overlay_handler()
             
             self._dragging = True
@@ -361,7 +361,7 @@ class LUMI_OT_orbit_positioning(bpy.types.Operator, BaseModalOperator):
             
             # Disable overlay handler only if no smart control is active
             if not state.scroll_control_enabled:
-                from ...overlay import lumi_disable_cursor_overlay_handler
+                from ...ui.overlay import lumi_disable_cursor_overlay_handler
                 lumi_disable_cursor_overlay_handler()
             
             # Reset positioning mode

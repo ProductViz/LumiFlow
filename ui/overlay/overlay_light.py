@@ -14,7 +14,7 @@ from typing import List, Tuple, Optional
 from bpy_extras import view3d_utils
 
 from .config import OverlayConfig
-from ..utils import lumi_get_light_pivot, lumi_get_viewport_camera_position
+from ...utils import lumi_get_light_pivot, lumi_get_viewport_camera_position
 
 # ============================================================================
 # LIGHT VISUALIZATION FUNCTIONS
@@ -487,7 +487,7 @@ def lumi_draw_light_lines():
     # Main light drawing logic - only if lights are selected
     for light in lights:
         # Calculate target position for light
-        from ..utils.light import lumi_calculate_light_target_position
+        from ...utils.light import lumi_calculate_light_target_position
         target_pos = lumi_calculate_light_target_position(light, scene)
         
         # Draw visualization for this light

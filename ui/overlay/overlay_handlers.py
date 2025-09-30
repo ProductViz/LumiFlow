@@ -134,7 +134,7 @@ def lumi_scene_update_handler(scene, depsgraph):
     """Main scene update handler for managing all drawing handlers."""
     global _overlay_needs_reinit, _overlay_reinit_count
     
-    from ..utils import lumi_is_addon_enabled
+    from ...utils import lumi_is_addon_enabled
     if not lumi_is_addon_enabled():
         lumi_disable_draw_handler()
         lumi_disable_overlay_draw_handler()
@@ -184,10 +184,8 @@ def lumi_scene_update_handler(scene, depsgraph):
 
 # Import functions from other modules for handler compatibility
 from .overlay_light import lumi_draw_light_lines
-from .overlay_info import draw_overlay_info
+from .overlay_text import draw_overlay_info, draw_overlay_tips, draw_overlay_cursor
 from .overlay_mesh import _draw_scene_object_strokes_if_no_lights
-from .overlay_tips import draw_overlay_tips
-from .overlay_cursor import draw_overlay_cursor
 
 def lumi_draw_stroke_overlay():
     """Wrapper function for stroke overlay drawing."""

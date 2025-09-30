@@ -117,7 +117,7 @@ class LUMI_OT_normal_positioning(bpy.types.Operator, BaseModalOperator):
             context.window_manager.modal_handler_add(self)
             
             # Enable overlay handler for positioning mode
-            from ...overlay import lumi_enable_cursor_overlay_handler
+            from ...ui.overlay import lumi_enable_cursor_overlay_handler
             lumi_enable_cursor_overlay_handler()
             
             # Redraw UI
@@ -262,7 +262,7 @@ class LUMI_OT_normal_positioning(bpy.types.Operator, BaseModalOperator):
             
             # Disable overlay handler only if no smart control is active
             if not state.scroll_control_enabled:
-                from ...overlay import lumi_disable_cursor_overlay_handler
+                from ...ui.overlay import lumi_disable_cursor_overlay_handler
                 lumi_disable_cursor_overlay_handler()
             
             # Reset positioning mode

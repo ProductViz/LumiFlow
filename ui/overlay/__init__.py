@@ -8,20 +8,14 @@ from .overlay_light import (
     render_batches
 )
 
-from .overlay_info import (
-    draw_overlay_info
-)
-
-from .overlay_tips import (
-    draw_overlay_tips
-)
-
-from .overlay_cursor import (
+from .overlay_text import (
+    draw_overlay_info,
+    draw_overlay_tips,
     draw_overlay_cursor,
     get_smart_overlay
 )
 
-from ..utils.light import (
+from ...utils.light import (
     lumi_get_selected_lights,
     lumi_calculate_light_target_position
 )
