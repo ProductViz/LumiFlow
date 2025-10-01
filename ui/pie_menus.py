@@ -144,67 +144,23 @@ class LUMI_MT_template_studio_commercial(bpy.types.Menu):
             layout.label(text="Select mesh object to apply template", icon='INFO')
         else:
             # Has selected object data - show the menu
-            # Three-Point Setup
-            op = layout.operator("lumi.apply_lighting_template", text="Three-Point Setup", icon='LIGHT_DATA')
-            op.template_id = "three_point_setup"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            # High-Key E-commerce
-            op = layout.operator("lumi.apply_lighting_template", text="High-Key E-commerce", icon='LIGHT_DATA')
-            op.template_id = "high_key_ecommerce"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            # Clamshell Beauty
-            op = layout.operator("lumi.apply_lighting_template", text="Clamshell Beauty", icon='LIGHT_DATA')
-            op.template_id = "clamshell_beauty"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            # Butterfly Glamor
-            op = layout.operator("lumi.apply_lighting_template", text="Butterfly Glamor", icon='LIGHT_DATA')
-            op.template_id = "butterfly_glamor"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            # Loop Portrait
-            op = layout.operator("lumi.apply_lighting_template", text="Loop Portrait", icon='LIGHT_DATA')
-            op.template_id = "loop_portrait"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            layout.separator()
-            
-            # Box Lighting 360Â°
-            op = layout.operator("lumi.apply_lighting_template", text="Box Lighting 360Â°", icon='LIGHT_DATA')
-            op.template_id = "box_lighting_360"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            # Studio Sweep
-            op = layout.operator("lumi.apply_lighting_template", text="Studio Sweep", icon='LIGHT_DATA')
-            op.template_id = "studio_sweep"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            # Full Body Fashion
-            op = layout.operator("lumi.apply_lighting_template", text="Full Body Fashion", icon='LIGHT_DATA')
-            op.template_id = "full_body_fashion"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            # Food Menu Shot
-            op = layout.operator("lumi.apply_lighting_template", text="Food Menu Shot", icon='LIGHT_DATA')
-            op.template_id = "food_menu_shot"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            # Jewelry Focus
-            op = layout.operator("lumi.apply_lighting_template", text="Jewelry Focus", icon='LIGHT_DATA')
-            op.template_id = "jewelry_focus"
-            op.auto_scale = True
-            op.use_camera_relative = True
+            try:
+                from ..operators.smart_template.template_library import get_studio_commercial_templates
+                studio_templates = get_studio_commercial_templates()
+
+                if studio_templates:
+                    # Display available studio & commercial templates
+                    for template_id, template in studio_templates.items():
+                        template_name = template.get('name', template_id.replace('_', ' ').title())
+                        op = layout.operator("lumi.apply_lighting_template", text=template_name, icon='LIGHT_DATA')
+                        op.template_id = template_id
+                        op.auto_scale = True
+                        op.use_camera_relative = True
+                else:
+                    layout.label(text="No Studio & Commercial templates available", icon='INFO')
+
+            except Exception as e:
+                layout.label(text=f"Error loading templates: {str(e)[:30]}...", icon='ERROR')
 
 
 class LUMI_MT_template_dramatic_cinematic(bpy.types.Menu):
@@ -229,61 +185,23 @@ class LUMI_MT_template_dramatic_cinematic(bpy.types.Menu):
             layout.label(text="Select mesh object to apply template", icon='INFO')
         else:
             # Has selected object data - show the menu
-            # Low-Key Dramatic
-            op = layout.operator("lumi.apply_lighting_template", text="Low-Key Dramatic", icon='LIGHT_DATA')
-            op.template_id = "low_key_dramatic"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            # Hero Shot Premium
-            op = layout.operator("lumi.apply_lighting_template", text="Hero Shot Premium", icon='LIGHT_DATA')
-            op.template_id = "hero_shot_premium"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            # Rembrandt Dramatic
-            op = layout.operator("lumi.apply_lighting_template", text="Rembrandt Dramatic", icon='LIGHT_DATA')
-            op.template_id = "rembrandt_dramatic"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            # Split Lighting Contrast
-            op = layout.operator("lumi.apply_lighting_template", text="Split Lighting Contrast", icon='LIGHT_DATA')
-            op.template_id = "split_lighting_contrast"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            # Film Noir Shadows
-            op = layout.operator("lumi.apply_lighting_template", text="Film Noir Shadows", icon='LIGHT_DATA')
-            op.template_id = "film_noir_shadows"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            layout.separator()
-            
-            # Gradient Background Elegant
-            op = layout.operator("lumi.apply_lighting_template", text="Gradient Background Elegant", icon='LIGHT_DATA')
-            op.template_id = "gradient_background_elegant"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            # Automotive Reveal
-            op = layout.operator("lumi.apply_lighting_template", text="Automotive Reveal", icon='LIGHT_DATA')
-            op.template_id = "automotive_reveal"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            # Sci-Fi Interior
-            op = layout.operator("lumi.apply_lighting_template", text="Sci-Fi Interior", icon='LIGHT_DATA')
-            op.template_id = "sci_fi_interior"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            # Thriller Mood
-            op = layout.operator("lumi.apply_lighting_template", text="Thriller Mood", icon='LIGHT_DATA')
-            op.template_id = "thriller_mood"
-            op.auto_scale = True
-            op.use_camera_relative = True
+            try:
+                from ..operators.smart_template.template_library import get_dramatic_cinematic_templates
+                dramatic_templates = get_dramatic_cinematic_templates()
+
+                if dramatic_templates:
+                    # Display available dramatic & cinematic templates
+                    for template_id, template in dramatic_templates.items():
+                        template_name = template.get('name', template_id.replace('_', ' ').title())
+                        op = layout.operator("lumi.apply_lighting_template", text=template_name, icon='LIGHT_DATA')
+                        op.template_id = template_id
+                        op.auto_scale = True
+                        op.use_camera_relative = True
+                else:
+                    layout.label(text="No Dramatic & Cinematic templates available", icon='INFO')
+
+            except Exception as e:
+                layout.label(text=f"Error loading templates: {str(e)[:30]}...", icon='ERROR')
 
 
 class LUMI_MT_template_environment_realistic(bpy.types.Menu):
@@ -308,61 +226,23 @@ class LUMI_MT_template_environment_realistic(bpy.types.Menu):
             layout.label(text="Select mesh object to apply template", icon='INFO')
         else:
             # Has selected object data - show the menu
-            # Golden Hour Sun
-            op = layout.operator("lumi.apply_lighting_template", text="Golden Hour Sun", icon='LIGHT_DATA')
-            op.template_id = "golden_hour_sun"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            # Overcast Day
-            op = layout.operator("lumi.apply_lighting_template", text="Overcast Day", icon='LIGHT_DATA')
-            op.template_id = "overcast_day"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            # Direct Midday Sun
-            op = layout.operator("lumi.apply_lighting_template", text="Direct Midday Sun", icon='LIGHT_DATA')
-            op.template_id = "direct_midday_sun"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            # Forest Dappled Light
-            op = layout.operator("lumi.apply_lighting_template", text="Forest Dappled Light", icon='LIGHT_DATA')
-            op.template_id = "forest_dappled_light"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            # Moonlight Night
-            op = layout.operator("lumi.apply_lighting_template", text="Moonlight Night", icon='LIGHT_DATA')
-            op.template_id = "moonlight_night"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            layout.separator()
-            
-            # Interior Daylight
-            op = layout.operator("lumi.apply_lighting_template", text="Interior Daylight", icon='LIGHT_DATA')
-            op.template_id = "interior_daylight"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            # Interior Night
-            op = layout.operator("lumi.apply_lighting_template", text="Interior Night", icon='LIGHT_DATA')
-            op.template_id = "interior_night"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            # Architectural Facade
-            op = layout.operator("lumi.apply_lighting_template", text="Architectural Facade", icon='LIGHT_DATA')
-            op.template_id = "architectural_facade"
-            op.auto_scale = True
-            op.use_camera_relative = True
-            
-            # Sunny Road Automotive
-            op = layout.operator("lumi.apply_lighting_template", text="Sunny Road Automotive", icon='LIGHT_DATA')
-            op.template_id = "sunny_road_automotive"
-            op.auto_scale = True
-            op.use_camera_relative = True
+            try:
+                from ..operators.smart_template.template_library import get_environment_realistic_templates
+                environment_templates = get_environment_realistic_templates()
+
+                if environment_templates:
+                    # Display available environment & realistic templates
+                    for template_id, template in environment_templates.items():
+                        template_name = template.get('name', template_id.replace('_', ' ').title())
+                        op = layout.operator("lumi.apply_lighting_template", text=template_name, icon='LIGHT_DATA')
+                        op.template_id = template_id
+                        op.auto_scale = True
+                        op.use_camera_relative = True
+                else:
+                    layout.label(text="No Environment & Realistic templates available", icon='INFO')
+
+            except Exception as e:
+                layout.label(text=f"Error loading templates: {str(e)[:30]}...", icon='ERROR')
 
 
 class LUMI_MT_template_utilities_single(bpy.types.Menu):
@@ -387,35 +267,21 @@ class LUMI_MT_template_utilities_single(bpy.types.Menu):
             layout.label(text="Select mesh object to apply template", icon='INFO')
         else:
             # Has selected object data - show the menu
-            # Key Light Only
-            op = layout.operator("lumi.apply_template_default", text="Key Light", icon='LIGHT_DATA')
-            op.template_id = "key_light_only"
-            
-            # Fill Light Only
-            op = layout.operator("lumi.apply_template_default", text="Fill Light", icon='LIGHT_DATA')
-            op.template_id = "fill_light_only"
-            
-            # Rim Light Only
-            op = layout.operator("lumi.apply_template_default", text="Rim Light", icon='LIGHT_DATA')
-            op.template_id = "rim_light_only"
-            
-            # Backlight Only
-            op = layout.operator("lumi.apply_template_default", text="Backlight", icon='LIGHT_DATA')
-            op.template_id = "backlight_only"
-            
-            layout.separator()
-            
-            # Top-Down Light
-            op = layout.operator("lumi.apply_template_default", text="Top-Down Light", icon='LIGHT_DATA')
-            op.template_id = "top_down_light"
-            
-            # Single Sun
-            op = layout.operator("lumi.apply_template_default", text="Single Sun", icon='LIGHT_DATA')
-            op.template_id = "single_sun"
-            
-            # Single Spot
-            op = layout.operator("lumi.apply_template_default", text="Single Spot", icon='LIGHT_DATA')
-            op.template_id = "single_spot"
+            try:
+                from ..operators.smart_template.template_library import get_utilities_single_lights_templates
+                utilities_templates = get_utilities_single_lights_templates()
+
+                if utilities_templates:
+                    # Display available utilities & single lights templates
+                    for template_id, template in utilities_templates.items():
+                        template_name = template.get('name', template_id.replace('_', ' ').title())
+                        op = layout.operator("lumi.apply_template_default", text=template_name, icon='LIGHT_DATA')
+                        op.template_id = template_id
+                else:
+                    layout.label(text="No Utilities & Single Lights templates available", icon='INFO')
+
+            except Exception as e:
+                layout.label(text=f"Error loading templates: {str(e)[:30]}...", icon='ERROR')
 
 
 class LUMI_MT_template_favorites(bpy.types.Menu):
@@ -440,7 +306,7 @@ class LUMI_MT_template_favorites(bpy.types.Menu):
             fav_list = []
         
         # Import template library to get template info
-        from ..templates import ALL_TEMPLATES
+        from ..assets.templates import ALL_TEMPLATES
         
         if not fav_list:
             # No favorites - show message

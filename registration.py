@@ -72,6 +72,10 @@ from .ui.pie_menus import (
     LUMI_MT_smart_template_light_pie,
     LUMI_MT_template_menu,
     LUMI_MT_template_favorites,
+    LUMI_MT_template_studio_commercial,
+    LUMI_MT_template_dramatic_cinematic,
+    LUMI_MT_template_environment_realistic,
+    LUMI_MT_template_utilities_single,
 )
 
 # Import menu, draw, and utils modules
@@ -249,6 +253,10 @@ pie_menu_classes = [
     LUMI_MT_smart_template_light_pie,
     LUMI_MT_template_menu,
     LUMI_MT_template_favorites,
+    LUMI_MT_template_studio_commercial,
+    LUMI_MT_template_dramatic_cinematic,
+    LUMI_MT_template_environment_realistic,
+    LUMI_MT_template_utilities_single,
 ]
 
 

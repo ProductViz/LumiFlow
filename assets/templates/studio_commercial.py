@@ -1097,6 +1097,106 @@ STUDIO_COMMERCIAL_TEMPLATES = {
         }
     },
 
+    "loop_portrait": {
+        "id": "loop_portrait",
+        "name": "Loop Portrait",
+        "category": "Studio & Commercial",
+        "description": "Classic loop lighting setup for portrait photography with characteristic nose shadow",
+        "author": "LumiFlow",
+        "version": "1.0",
+        "lights": [
+            {
+                "name": "Key Light",
+                "type": "AREA",
+                "position": {
+                    "method": "spherical",
+                    "params": {
+                        "azimuth": 45,
+                        "elevation": 15,
+                        "distance": 2.5
+                    }
+                },
+                "rotation": {
+                    "target": "subject",
+                    "offset": (0, 0, 0)
+                },
+                "properties": {
+                    "size": 2.0,
+                    "size_y": 3.0,
+                    "intensity": 350,
+                    "color": (1.0, 0.98, 0.95),
+                    "shape": "RECTANGLE"
+                }
+            },
+            {
+                "name": "Fill Light",
+                "type": "AREA",
+                "position": {
+                    "method": "spherical",
+                    "params": {
+                        "azimuth": -30,
+                        "elevation": 10,
+                        "distance": 3.0
+                    }
+                },
+                "rotation": {
+                    "target": "subject",
+                    "offset": (0, 0, 0)
+                },
+                "properties": {
+                    "size": 2.5,
+                    "size_y": 3.5,
+                    "intensity": 120,
+                    "color": (0.95, 0.98, 1.0),
+                    "shape": "RECTANGLE"
+                }
+            },
+            {
+                "name": "Hair Light",
+                "type": "SPOT",
+                "position": {
+                    "method": "spherical",
+                    "params": {
+                        "azimuth": 150,
+                        "elevation": 50,
+                        "distance": 2.0
+                    }
+                },
+                "rotation": {
+                    "target": "subject",
+                    "offset": (0, 0, 0)
+                },
+                "properties": {
+                    "intensity": 150,
+                    "color": (1.0, 0.95, 0.85),
+                    "spot_size": 0.523599,
+                    "spot_blend": 0.2
+                }
+            }
+        ],
+        "settings": {
+            "base_distance": 2.5,
+            "auto_scale": True,
+            "preserve_existing": False
+        },
+        "material_adaptations": {
+            "default": {"portrait_character": True, "loop_shadow": 0.8}
+        },
+        "camera_preferences": {
+            "angle": "portrait_standard",
+            "height": "eye_level",
+            "focal_length": 85,
+            "distance": "portrait_medium"
+        },
+        "post_processing": {
+            "contrast": 1.1,
+            "shadows": 0.15,
+            "highlights": -0.08,
+            "clarity": 0.2,
+            "color_balance": "neutral"
+        }
+    },
+
     "jewelry_macro": {
         "id": "jewelry_macro",
         "name": "Jewelry Macro",

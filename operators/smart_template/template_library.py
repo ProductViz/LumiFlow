@@ -11,11 +11,11 @@ import math
 from typing import Dict, List, Optional, Tuple, Any
 
 try:
-    from ...templates.studio_commercial import STUDIO_COMMERCIAL_TEMPLATES
-    from ...templates.dramatic_cinematic import DRAMATIC_CINEMATIC_TEMPLATES
-    from ...templates.environment_realistic import ENVIRONMENT_REALISTIC_TEMPLATES
-    from ...templates.utilities_single_lights import UTILITIES_SINGLE_LIGHTS_TEMPLATES
-    from ...templates import ALL_TEMPLATES
+    from ...assets.templates.studio_commercial import STUDIO_COMMERCIAL_TEMPLATES
+    from ...assets.templates.dramatic_cinematic import DRAMATIC_CINEMATIC_TEMPLATES
+    from ...assets.templates.environment_realistic import ENVIRONMENT_REALISTIC_TEMPLATES
+    from ...assets.templates.utilities_single_lights import UTILITIES_SINGLE_LIGHTS_TEMPLATES
+    from ...assets.templates import ALL_TEMPLATES
     
     TEMPLATES_IMPORTED = True
 except ImportError as e:
