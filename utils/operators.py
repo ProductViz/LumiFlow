@@ -39,26 +39,41 @@ def lumi_stop_smart_control():
     pass
 
 
-def lumi_raycast_at_mouse(context: bpy.types.Context, mouse_pos: tuple[int, int]) -> tuple[bpy.types.Object | None, Vector | None, Vector | None, int | None]:
-    """Perform raycast at mouse position."""
+def lumi_raycast_at_mouse(
+    context: bpy.types.Context,
+    mouse_pos: tuple[int, int]
+) -> tuple[bpy.types.Object | None, Vector | None, Vector | None, int | None]:
+    """Perform raycast at mouse position with face orientation correction."""
     if not lumi_is_addon_enabled():
         return None, None, None, None
-        
+
     try:
         region = context.region
         rv3d = context.region_data
         if region is None or rv3d is None:
             return None, None, None, None
-            
+
         view_vector = view3d_utils.region_2d_to_vector_3d(region, rv3d, mouse_pos)
         ray_origin = view3d_utils.region_2d_to_origin_3d(region, rv3d, mouse_pos)
-        
+
         result, location, normal, index, obj, matrix = context.scene.ray_cast(
             context.view_layer.depsgraph, ray_origin, view_vector
         )
-        
-        return (obj, location, normal, index) if result else (None, None, None, None)
-    except Exception as e:
+
+        if result:
+            # Cek apakah normal menghadap kamera
+            dot_product = normal.dot(view_vector)
+
+            # Jika dot > 0, berarti normal menghadap searah dengan ray (backface)
+            # → balik normal supaya menghadap ke arah kamera
+            if dot_product > 0:
+                normal = -normal
+
+            return obj, location, normal, index
+
+        return None, None, None, None
+
+    except Exception:
         return None, None, None, None
 
 
