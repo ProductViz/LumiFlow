@@ -230,7 +230,6 @@ def lumi_enabled_update(self, context: bpy.types.Context):
                 # Try to initialize with available context
                 # CameraLightManager already has internal context validation
                 camera_manager.initialize_system(context)
-                print("🔧 Camera Light System initialization triggered")
                 
             except Exception as e:
                 # If failed, try delayed initialization through manager
@@ -276,7 +275,7 @@ def lumi_enabled_update(self, context: bpy.types.Context):
                 print(f"❌ Camera Light System cleanup failed: {e}")
             
         except Exception as e:
-            print(f"LumiFlow: Error in overlay cleanup: {e}")
+            pass
 
 def lumi_overlay_update(self, context: bpy.types.Context):
     """Update callback when overlay info property changes."""

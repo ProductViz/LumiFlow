@@ -323,7 +323,7 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                 context.view_layer.objects.active = lights_created[0]
             
         except Exception as e:
-            self.report({'ERROR'}, f"Template application failed: {str(e)}")
+            pass
     
     def calculate_initial_light_positions(self, analysis: SubjectAnalysis, template: Dict[str, Any], context: bpy.types.Context) -> List[Dict[str, Any]]:
         """Calculate initial light positions WITHOUT obstruction logic"""
@@ -371,7 +371,6 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                     # Safety check for base_distance
                     if base_distance is None or base_distance <= 0:
                         base_distance = 2.0
-                        print("WARNING: Invalid base_distance, using default value 2.0")
                     
                     distance = params.get('distance', 1.0) * base_distance
                     
@@ -380,11 +379,7 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                     y = -distance * math.cos(elevation) * math.cos(azimuth)  # Negative for front
                     z = distance * math.sin(elevation)
                     
-                    print(f"Spherical: azimuth={azimuth}, elevation={elevation}, distance={distance}")
-                    print(f"Cartesian: x={x}, y={y}, z={z}")
-                    
                     world_position = subject_center + Vector((x, y, z))
-                    print(f"World position (spherical): {world_position}")
 
                 elif method == 'cartesian':
                     # Direct cartesian coordinates
@@ -395,7 +390,6 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                     # Safety check for base_distance
                     if base_distance is None or base_distance <= 0:
                         base_distance = 2.0
-                        print("WARNING: Invalid base_distance, using default value 2.0")
                     
                     x = x * base_distance
                     y = y * base_distance
@@ -403,7 +397,6 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                     
                     if dimensions is None:
                         dimensions = Vector((1, 1, 1))
-                        self.report({'WARNING'}, "Subject dimensions not found, using default dimensions")
                     
                     offset = Vector((
                         rel_x * dimensions.x,
@@ -428,7 +421,6 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                 
                 # Final validation
                 if world_position is None:
-                    self.report({'ERROR'}, "world_position is None!")
                     raise ValueError("world_position is None")
                 
                 # Apply camera relative transformation if needed
@@ -465,7 +457,6 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                 positions.append(position_data)
                 
             except Exception as e:
-                self.report({'ERROR'}, f"Error calculating position for light {light_index}: {str(e)}")
                 continue
 
         return positions
@@ -534,7 +525,7 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                     
         except Exception as e:
             # If raycast fails, assume no obstruction to avoid breaking the flow
-            print(f"Obstruction detection failed for {light_name}: {str(e)}")
+            pass
             
         return obstruction_result
     
@@ -589,7 +580,7 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
             # No fallback to old strategies - use new logic only
                     
         except Exception as e:
-            print(f"Failed to find alternative position: {str(e)}")
+            pass
             
         return None
     
@@ -650,9 +641,7 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                 print(f"Error: closest_obstruction is not valid: {closest_obstruction}")
             
         except Exception as e:
-            print(f"Closer position adjustment failed: {str(e)}")
-            import traceback
-            traceback.print_exc()
+            pass
             
         return None
     
@@ -677,7 +666,6 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
             return True
             
         except Exception as e:
-            print(f"Line-of-sight check failed: {str(e)}")
             return False
     
     def create_lights_at_positions(self, positions: List[Dict[str, Any]], context: bpy.types.Context) -> List[bpy.types.Object]:
@@ -806,13 +794,11 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                         pass
 
                 except Exception as e:
-                    self.report({'ERROR'}, f"Error creating light '{light_name}': {e}")
                     continue
 
             return created_lights
 
         except Exception as e:
-            self.report({'ERROR'}, f"Error in create_lights_at_positions: {e}")
             return []
 
     def adjust_lights_for_obstruction(self, lights: List[bpy.types.Object], analysis: SubjectAnalysis, context: bpy.types.Context):
@@ -1297,7 +1283,6 @@ class LUMI_OT_preview_template(bpy.types.Operator):
             return {'RUNNING_MODAL'}
             
         except Exception as e:
-            self.report({'ERROR'}, f"Failed to start preview: {str(e)}")
             return self.cancel(context)
     
     def modal(self, context, event):
@@ -1355,7 +1340,6 @@ class LUMI_OT_preview_template(bpy.types.Operator):
             # Get template
             template = get_template(self.template_id)
             if not template:
-                self.report({'ERROR'}, f"Template '{self.template_id}' not found")
                 return False
             
             # Analyze subject
@@ -1424,7 +1408,6 @@ class LUMI_OT_preview_template(bpy.types.Operator):
             return True
             
         except Exception as e:
-            self.report({'ERROR'}, f"Failed to create preview lights: {str(e)}")
             return False
     
     def update_preview_intensity(self, context):
@@ -1513,7 +1496,6 @@ class LUMI_OT_preview_template(bpy.types.Operator):
             return {'FINISHED'}
             
         except Exception as e:
-            self.report({'ERROR'}, f"Failed to apply template: {str(e)}")
             return {'CANCELLED'}
     
     def cancel(self, context):
@@ -1563,7 +1545,6 @@ class LUMI_OT_preview_lighting_template(bpy.types.Operator):
             # Get template info
             template = get_template(self.template_id)
             if not template:
-                self.report({'ERROR'}, f"Template '{self.template_id}' not found")
                 return {'CANCELLED'}
 
             light_count = len(template.get('lights', []))
@@ -1574,7 +1555,6 @@ class LUMI_OT_preview_lighting_template(bpy.types.Operator):
             return {'FINISHED'}
 
         except Exception as e:
-            self.report({'ERROR'}, f"Preview failed: {str(e)}")
             return {'CANCELLED'}
 
 
@@ -1725,7 +1705,6 @@ class LUMI_OT_save_custom_template(bpy.types.Operator):
             
         # # Tangani error jika terjadi
         except Exception as e:
-            self.report({'ERROR'}, f"Failed to save template: {str(e)}")
             # # Batalkan operasi
             return {'CANCELLED'}
     
@@ -1952,7 +1931,7 @@ class LUMI_OT_save_custom_template(bpy.types.Operator):
                             template_data['_filepath'] = filepath  # Store file path for management
                             templates.append(template_data)
                     except (json.JSONDecodeError, IOError) as e:
-                        print(f"Failed to load template {filepath}: {e}")
+                        pass
         except OSError:
             pass
         
@@ -2007,7 +1986,6 @@ class LUMI_OT_manage_custom_templates(bpy.types.Operator):
             
         # # Tangani error jika terjadi
         except Exception as e:
-            self.report({'ERROR'}, f"Management action failed: {str(e)}")
             # # Batalkan operasi
             return {'CANCELLED'}
     
@@ -2054,11 +2032,9 @@ class LUMI_OT_save_lighting_template(bpy.types.Operator):
         try:
             # TODO: Implement template saving functionality
             # This would analyze current lights and create template data
-            self.report({'INFO'}, f"Template saving not yet implemented")
             return {'FINISHED'}
 
         except Exception as e:
-            self.report({'ERROR'}, f"Save failed: {str(e)}")
             return {'CANCELLED'}
 
 

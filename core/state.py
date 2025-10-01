@@ -100,7 +100,7 @@ class LumiFlowState:
             overlay_manager.disable_all_handlers()
             overlay_manager.handlers.clear()
         except Exception as e:
-            print(f"⚠️  LumiFlow: Error cleaning up overlay handlers: {e}")
+            pass
         
         self.draw_handlers.clear()
         

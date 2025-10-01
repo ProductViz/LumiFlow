@@ -246,17 +246,6 @@ def get_objects_in_camera_view(context: bpy.types.Context, camera_obj: bpy.types
         camera_obj = context.scene.camera
     
     if not camera_obj:
-        print("🔍 get_objects_in_camera_view: No camera found")
-        return []
-    
-    print(f"🔍 get_objects_in_camera_view: Using camera '{camera_obj.name}' (type: {camera_obj.data.type if camera_obj.data else 'NONE'})")
-    
-    # Get frustum planes
-    frustum_planes = get_camera_frustum_planes(context, camera_obj)
-    print(f"🔍 get_objects_in_camera_view: Got {len(frustum_planes)} frustum planes")
-    
-    if not frustum_planes:
-        print("🔍 get_objects_in_camera_view: No frustum planes generated")
         return []
     
     # Collect all objects in frustum
@@ -268,11 +257,6 @@ def get_objects_in_camera_view(context: bpy.types.Context, camera_obj: bpy.types
             total_objects_checked += 1
             if is_object_in_frustum(obj, frustum_planes):
                 objects_in_view.append(obj)
-                print(f"🔍 get_objects_in_camera_view: Object '{obj.name}' is in view")
-            else:
-                print(f"🔍 get_objects_in_camera_view: Object '{obj.name}' is NOT in view")
-    
-    print(f"🔍 get_objects_in_camera_view: Checked {total_objects_checked} objects, found {len(objects_in_view)} in view")
     return objects_in_view
 
 

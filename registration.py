@@ -696,9 +696,8 @@ def lumiflow_save_pre_handler(dummy):
                 from .core.camera_manager import get_camera_light_manager
                 camera_manager = get_camera_light_manager()
                 camera_manager._save_assignments_to_properties()
-                print("💾 Camera-light assignments saved to file")
             except Exception as e:
-                print(f"⚠️  Failed to save camera-light assignments: {e}")
+                pass
                 
     except Exception as e:
         pass
@@ -729,9 +728,8 @@ def lumiflow_post_load_handler(dummy):
                 from .core.camera_manager import get_camera_light_manager
                 camera_manager = get_camera_light_manager()
                 camera_manager._load_assignments_from_properties()
-                print("📖 Camera-light assignments loaded from file")
             except Exception as e:
-                print(f"⚠️  Failed to load camera-light assignments: {e}")
+                pass
                 
     except Exception as e:
         pass
