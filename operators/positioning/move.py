@@ -170,11 +170,16 @@ class LUMI_OT_move_positioning(bpy.types.Operator, BaseModalOperator):
                 if state:
                     state.set_modal_state('move_pressing', False)
                     state.set_modal_state('move', False)
-                
+
                 # Reset positioning mode for consistency with cancel
                 if hasattr(context.scene, 'light_props'):
                     context.scene.light_props.positioning_mode = 'DISABLE'
-                
+
+                # Disable overlay handler only if no smart control is active
+                if not state.scroll_control_enabled:
+                    from ...ui.overlay import lumi_disable_cursor_overlay_handler
+                    lumi_disable_cursor_overlay_handler()
+
                 self.cleanup(context)
                 self.report({'INFO'}, 'Move positioning completed')
                 return {'FINISHED'}
@@ -293,12 +298,36 @@ class LUMI_OT_move_positioning(bpy.types.Operator, BaseModalOperator):
                 lumi_handle_positioning_error(self, context, light_error, f"Light {light.name} update")
                 continue
 
+    def cleanup(self, context):
+        """Clean up move positioning state"""
+        try:
+            # Remove timer if it exists
+            try:
+                if self._timer is not None:
+                    context.window_manager.event_timer_remove(self._timer)
+                    self._timer = None
+            except Exception as e:
+                lumi_handle_positioning_error(self, context, e, "Move cleanup")
+
+            self._dragging = False
+
+            # Redraw UI
+            for window in context.window_manager.windows:
+                for area in window.screen.areas:
+                    if area.type == 'VIEW_3D':
+                        area.tag_redraw()
+
+            super().cleanup(context)
+
+        except Exception as e:
+            lumi_handle_positioning_error(self, context, e, "Move cleanup")
+
     def cancel(self, context):
         """Cancel move positioning and restore initial positions"""
         try:
             self._dragging = False
             self._start_mouse = None
-            
+
             # Restore initial positions, rotations, and pivots for all selected lights
             selected_lights = [obj for obj in context.selected_objects if obj.type == 'LIGHT']
             for light in selected_lights:
@@ -316,7 +345,7 @@ class LUMI_OT_move_positioning(bpy.types.Operator, BaseModalOperator):
                         # If no initial pivot stored, remove pivot
                         if "Lumi_pivot_world" in light:
                             del light["Lumi_pivot_world"]
-            
+
             # Clean up state
             state = get_state()
             scene = context.scene
@@ -325,29 +354,28 @@ class LUMI_OT_move_positioning(bpy.types.Operator, BaseModalOperator):
             # Clear pressing state when cancel
             if state:
                 state.set_modal_state('move_pressing', False)
-            
+
             # Disable overlay handler only if no smart control is active
             if not state.scroll_control_enabled:
                 from ...ui.overlay import lumi_disable_cursor_overlay_handler
                 lumi_disable_cursor_overlay_handler()
-            
+
             # Reset positioning mode
             if hasattr(context.scene, 'light_props'):
                 context.scene.light_props.positioning_mode = 'DISABLE'
             else:
                 pass
-            
+
             # Redraw UI
             for window in context.window_manager.windows:
                 for area in window.screen.areas:
                     if area.type == 'VIEW_3D':
                         area.tag_redraw()
-                        
+
             self._initial_positions = {}
             self.report({'INFO'}, "Move positioning cancelled - positions restored")
-            super().cleanup(context)
             return {'CANCELLED'}
-            
+
         except Exception as e:
             import traceback
             traceback.print_exc()

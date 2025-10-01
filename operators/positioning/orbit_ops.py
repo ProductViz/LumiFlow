@@ -293,11 +293,16 @@ class LUMI_OT_orbit_positioning(bpy.types.Operator, BaseModalOperator):
             state = get_state()
             if state:
                 state.set_modal_state('rotate', False)
-            
+
             # Reset positioning mode for consistency with cancel
             if hasattr(context.scene, 'light_props'):
                 context.scene.light_props.positioning_mode = 'DISABLE'
-            
+
+            # Disable overlay handler only if no smart control is active
+            if not state.scroll_control_enabled:
+                from ...ui.overlay import lumi_disable_cursor_overlay_handler
+                lumi_disable_cursor_overlay_handler()
+
             self.cleanup(context)
             self.report({'INFO'}, 'Orbit positioning completed')
             return {'FINISHED'}
@@ -397,18 +402,30 @@ class LUMI_OT_orbit_positioning(bpy.types.Operator, BaseModalOperator):
                 lumi_handle_positioning_error(self, context, e, "Add timer")
 
     def cleanup(self, context):
-        state = get_state()
-        # # Coba eksekusi kode dengan error handling
+        """Clean up orbit positioning state"""
         try:
-            if self._timer is not None:
-                context.window_manager.event_timer_remove(self._timer)
-                self._timer = None
+            state = get_state()
+            # # Coba eksekusi kode dengan error handling
+            try:
+                if self._timer is not None:
+                    context.window_manager.event_timer_remove(self._timer)
+                    self._timer = None
+            except Exception as e:
+                lumi_handle_positioning_error(self, context, e, "Orbit cleanup")
+
+            state.set_modal_state('rotate', False)
+            self._dragging = False
+
+            # Redraw UI
+            for window in context.window_manager.windows:
+                for area in window.screen.areas:
+                    if area.type == 'VIEW_3D':
+                        area.tag_redraw()
+
+            super().cleanup(context)
+
         except Exception as e:
             lumi_handle_positioning_error(self, context, e, "Orbit cleanup")
-        
-        state.set_modal_state('rotate', False)
-        self._dragging = False
-        super().cleanup(context)
 
 
 class LUMI_OT_orbit_angles(bpy.types.Operator):

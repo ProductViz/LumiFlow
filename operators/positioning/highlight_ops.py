@@ -281,17 +281,22 @@ class LUMI_OT_highlight_positioning(bpy.types.Operator, BaseModalOperator):
                     return {'RUNNING_MODAL'}
 
                 # Handle mouse release - finish modal operation
-                if self._dragging and event.type in {'LEFTMOUSE', 'LEFT_CTRL', 'RIGHT_CTRL'} and event.value == 'RELEASE':
+                if self._dragging and event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
                     self._dragging = False
                     # End modal operation when mouse is released
                     state = get_state()
                     if state:
                         state.set_modal_state('highlight', False)
-                    
+
                     # Reset positioning mode for consistency with cancel
                     if hasattr(context.scene, 'light_props'):
                         context.scene.light_props.positioning_mode = 'DISABLE'
-                    
+
+                    # Disable overlay handler only if no smart control is active
+                    if not state.scroll_control_enabled:
+                        from ...ui.overlay import lumi_disable_cursor_overlay_handler
+                        lumi_disable_cursor_overlay_handler()
+
                     self.cleanup(context)
                     self.report({'INFO'}, 'Highlight positioning completed')
                     return {'FINISHED'}
@@ -301,12 +306,28 @@ class LUMI_OT_highlight_positioning(bpy.types.Operator, BaseModalOperator):
         except Exception as e:
             return lumi_handle_modal_error(self, context, e, "Highlight positioning")
 
+    def cleanup(self, context):
+        """Clean up highlight positioning state"""
+        try:
+            self._dragging = False
+
+            # Redraw UI
+            for window in context.window_manager.windows:
+                for area in window.screen.areas:
+                    if area.type == 'VIEW_3D':
+                        area.tag_redraw()
+
+            super().cleanup(context)
+
+        except Exception as e:
+            lumi_handle_positioning_error(self, context, e, "Highlight cleanup")
+
     def cancel(self, context):
         """Cancel highlight positioning and restore initial positions"""
         try:
             self._dragging = False
             self._start_mouse = None
-            
+
             # Restore initial positions, rotations, and pivots for all selected lights
             selected_lights = [l for l in context.selected_objects if l.type == 'LIGHT']
             for light in selected_lights:
@@ -320,31 +341,31 @@ class LUMI_OT_highlight_positioning(bpy.types.Operator, BaseModalOperator):
                     # Restore pivot if it was stored
                     if initial_data['pivot'] is not None:
                         light["Lumi_pivot_world"] = initial_data['pivot']
-            
+
             # Clean up state
             state = get_state()
             state.set_modal_state('highlight', False)
-            
+
             # Disable overlay handler only if no smart control is active
             if not state.scroll_control_enabled:
                 from ...ui.overlay import lumi_disable_cursor_overlay_handler
                 lumi_disable_cursor_overlay_handler()
-            
+
             # Reset positioning mode
             if hasattr(context.scene, 'light_props'):
                 context.scene.light_props.positioning_mode = 'DISABLE'
             else:
                 pass
-            
+
             # Redraw UI
             for window in context.window_manager.windows:
                 for area in window.screen.areas:
                     if area.type == 'VIEW_3D':
                         area.tag_redraw()
-                        
+
             self.report({'INFO'}, "Highlight positioning cancelled - positions restored")
             return {'CANCELLED'}
-            
+
         except Exception as e:
             import traceback
             traceback.print_exc()

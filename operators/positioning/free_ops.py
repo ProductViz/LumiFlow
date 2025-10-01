@@ -186,11 +186,16 @@ class LUMI_OT_free_positioning(bpy.types.Operator, BaseModalOperator):
                 if state:
                     state.set_modal_state('free_pressing', False)
                     state.set_modal_state('free', False)
-                
+
                 # Reset positioning mode untuk konsistensi dengan cancel
                 if hasattr(context.scene, 'light_props'):
                     context.scene.light_props.positioning_mode = 'DISABLE'
-                
+
+                # Disable overlay handler only if no smart control is active
+                if not state.scroll_control_enabled:
+                    from ...ui.overlay import lumi_disable_cursor_overlay_handler
+                    lumi_disable_cursor_overlay_handler()
+
                 self.cleanup(context)
                 self.report({'INFO'}, 'Free positioning completed')
                 return {'FINISHED'}
@@ -290,12 +295,36 @@ class LUMI_OT_free_positioning(bpy.types.Operator, BaseModalOperator):
             if "Lumi_pivot_world" in light:
                 self._initial_positions[light.name]['pivot'] = tuple(light["Lumi_pivot_world"])
 
+    def cleanup(self, context):
+        """Clean up free positioning state"""
+        try:
+            # Remove timer if it exists
+            try:
+                if self._timer is not None:
+                    context.window_manager.event_timer_remove(self._timer)
+                    self._timer = None
+            except Exception as e:
+                lumi_handle_positioning_error(self, context, e, "Free cleanup")
+
+            self._dragging = False
+
+            # Redraw UI
+            for window in context.window_manager.windows:
+                for area in window.screen.areas:
+                    if area.type == 'VIEW_3D':
+                        area.tag_redraw()
+
+            super().cleanup(context)
+
+        except Exception as e:
+            lumi_handle_positioning_error(self, context, e, "Free cleanup")
+
     def cancel(self, context):
         """Cancel free positioning and restore initial positions"""
         try:
             self._dragging = False
             self._start_mouse = None
-            
+
             # Restore initial positions, rotations, and pivots for all selected lights
             selected_lights = [obj for obj in context.selected_objects if obj.type == 'LIGHT']
             for light in selected_lights:
@@ -313,7 +342,7 @@ class LUMI_OT_free_positioning(bpy.types.Operator, BaseModalOperator):
                         # If no initial pivot stored, remove pivot
                         if "Lumi_pivot_world" in light:
                             del light["Lumi_pivot_world"]
-            
+
             # Clean up state
             state = get_state()
             scene = context.scene
@@ -326,23 +355,22 @@ class LUMI_OT_free_positioning(bpy.types.Operator, BaseModalOperator):
             if not state.scroll_control_enabled:
                 from ...ui.overlay import lumi_disable_cursor_overlay_handler
                 lumi_disable_cursor_overlay_handler()
-            
+
             # Reset positioning mode
             if hasattr(context.scene, 'light_props'):
                 context.scene.light_props.positioning_mode = 'DISABLE'
             else:
                 pass
-            
+
             # Redraw UI
             for window in context.window_manager.windows:
                 for area in window.screen.areas:
                     if area.type == 'VIEW_3D':
                         area.tag_redraw()
-                        
+
             self.report({'INFO'}, "Free positioning cancelled - positions restored")
-            super().cleanup(context)
             return {'CANCELLED'}
-            
+
         except Exception as e:
             import traceback
             traceback.print_exc()
