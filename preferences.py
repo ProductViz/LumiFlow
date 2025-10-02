@@ -28,20 +28,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
     """Addon preferences for LumiFlow, allowing users to customize keymaps and UI options."""
     bl_idname = __package__ or "LumiFlow"
 
-    # Custom shortcut settings
-    enable_custom_shortcuts: bpy.props.BoolProperty(
-        name="Enable Custom Shortcuts",
-        default=True,
-        description="Allow custom keymap overrides for LumiFlow operators."
-    )
-    
-    
-    # Development panel settings
-    show_dev_panel: bpy.props.BoolProperty(
-        name="Show Development Panel",
-        default=False,
-        description="Show the development panel for addon debugging and reloading (requires Developer Extras enabled)"
-    )
     
     # =====================================================================
     # OVERLAY TEXT CUSTOMIZATION
@@ -86,24 +72,6 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         header = layout.row()
         header.label(text="🎨 LumiFlow Overlay Customization", icon='PREFERENCES')
         
-        # =====================================================================
-        # GENERAL SETTINGS
-        # =====================================================================
-        
-        box = layout.box()
-        box.label(text="General Settings", icon='SETTINGS')
-        
-        col = box.column()
-        col.prop(self, "enable_custom_shortcuts")
-        
-        # Development tools
-        col.separator()
-        dev_row = col.row()
-        dev_row.prop(self, "show_dev_panel")
-        if not context.preferences.view.show_developer_ui:
-            dev_row = col.row()
-            dev_row.alert = True
-            dev_row.label(text="⚠️ Enable 'Developer Extras' in Preferences > Interface", icon='ERROR')
         
         # =====================================================================
         # DISPLAY & FONT SETTINGS

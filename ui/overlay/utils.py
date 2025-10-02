@@ -64,36 +64,18 @@ def get_config_colors(context: bpy.types.Context) -> dict:
     return OverlayConfig.get_all_colors()
 
 def get_overlay_positions(context: bpy.types.Context, region) -> tuple:
-    """Get overlay panel positions with simple configuration."""
-    addon_prefs = context.preferences.addons.get(__package__.split('.')[0] or "LumiFlow")
-    if addon_prefs and hasattr(addon_prefs.preferences, 'info_panel_position'):
-        prefs = addon_prefs.preferences
-        
-        def calc_x_position(is_on_right, panel_width):
-            margin = getattr(prefs, 'info_panel_margin_x', 20)
-            return (region.width - panel_width - margin) if is_on_right else margin
-        
-        info_on_right = getattr(prefs, 'info_panel_position', 'BOTTOM_RIGHT') in ['BOTTOM_RIGHT', 'TOP_RIGHT']
-        tips_on_right = getattr(prefs, 'tips_panel_position', 'BOTTOM_LEFT') in ['BOTTOM_RIGHT', 'TOP_RIGHT']
-        
-        margin = getattr(prefs, 'info_panel_margin_x', 20)
-        info_x = calc_x_position(info_on_right, 250)
-        tips_x = calc_x_position(tips_on_right, 300)
-        
-        info_y = margin
-        tips_y = margin + 20
-        
-        return (info_x, info_y), (tips_x, tips_y)
+    """Get overlay panel positions with info on right and tips on left."""
+    margin = 20
     
-    default_info = OverlayConfig.get_position('info', (region.width - 270, 20))
-    default_tips = OverlayConfig.get_position('tips', (20, 20))
+    # Info panel - always on the right side
+    info_x = region.width - 270 - margin  # Right side with margin
+    info_y = margin
     
-    if default_info[0] > region.width - 50:
-        info_pos = (region.width - 270, default_info[1])
-    else:
-        info_pos = default_info
+    # Tips panel - always on the left side  
+    tips_x = margin  # Left side with margin
+    tips_y = margin
     
-    return info_pos, default_tips
+    return (info_x, info_y), (tips_x, tips_y)
 
 def draw_text(
     lines: List[Tuple[str, str, Tuple[float, float, float, float]]],

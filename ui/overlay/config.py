@@ -26,8 +26,8 @@ class OverlayConfig:
     
     # Default positions for overlay panels
     DEFAULT_POSITIONS = {
-        'info': (10, 10),
-        'tips': (10, 200)
+        'info': (10, 10),  # Will be positioned on right side
+        'tips': (10, 200)  # Will be positioned on left side
     }
     
     # Light visualization colors
