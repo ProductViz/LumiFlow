@@ -1,9 +1,16 @@
 # LumiFlow
-Smart lighting tools for Blender
+
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![Blender Version](https://img.shields.io/badge/Blender-4.2%2B-blue)](https://www.blender.org)
+[![GitHub Sponsors](https://img.shields.io/github/sponsors/ProductViz?color=red)](https://github.com/sponsors/ProductViz)
+[![Discord](https://img.shields.io/discord/123456789012345678?color=7289DA&label=Discord)](https://discord.gg/yourlink)
+
+**LumiFlow** – Smart lighting addon for Blender.  
+Free, open-source, and community-powered.
 
 ![LumiFlow Logo](assets/icons/lumiflow_logo.png)
 
-**LumiFlow** is a professional lighting workflow addon for Blender that provides smart placement, intelligent controls, and interactive positioning for lighting setups.
+---
 
 ## 🌟 Features
 
@@ -14,355 +21,163 @@ Smart lighting tools for Blender
 - **Camera-Aware Lighting**: Lights that adapt to camera positions and angles
 
 ### Positioning Tools
-- **Highlight Positioning**: Focus lights on specific scene elements
-- **Normal Positioning**: Align lights with surface normals
-- **Target Positioning**: Point lights precisely at targets
-- **Orbit Positioning**: Circular light arrangements around subjects
-- **Free Positioning**: Manual placement with smart constraints
+- Highlight, Normal, Target, Orbit, Free positioning modes
 - **Flip Operations**: Mirror and rotate light setups quickly
 
 ### Template Library
-- **Studio & Commercial**: Professional lighting setups for product photography
-- **Dramatic & Cinematic**: Mood lighting for film and animation
-- **Environment & Realistic**: Natural lighting simulations
-- **Utilities & Single Lights**: Quick individual light solutions
+- **Studio & Commercial**: Product and portrait setups
+- **Dramatic & Cinematic**: Film, horror, action, romantic moods
+- **Environment & Realistic**: Daylight, golden hour, night, weather-based
+- **Utilities & Single Lights**: Quick rim/fill/key setups
 
 ### Visual Feedback System
-- **Real-time Overlays**: Visual guides for light positioning
-- **Light Path Visualization**: See how light travels through the scene
-- **Interactive Cursors**: Smart cursor feedback during operations
-- **Camera Overlays**: View camera-specific lighting information
+- Real-time overlays for positioning
+- Light path visualization
+- Smart cursor feedback
+- Camera overlays
 
 ### Smart Controls
-- **Scroll Wheel Control**: Adjust light properties with mouse wheel
-- **Modal Operators**: Context-sensitive tools for different operations
-- **Quick Actions**: Rapid light selection and manipulation
-- **Batch Operations**: Apply changes to multiple lights simultaneously
+- **Scroll Wheel Control**: Adjust distance, power, temperature, spread
+- **Modal Operators**: Context-sensitive tools
+- **Quick Actions** & **Batch Operations**
+
+---
 
 ## 📋 Requirements
+- Blender 4.2+ (Recommended: 4.5+)
+- Windows, macOS, or Linux
+- 4GB RAM minimum (8GB recommended)
+- OpenGL 3.3 compatible GPU
 
-- **Blender**: 4.2+ (Recommended: 4.5+)
-- **Operating System**: Windows, macOS, or Linux
-- **Memory**: 4GB RAM minimum (8GB recommended)
-- **Graphics**: OpenGL 3.3 compatible GPU
+---
 
 ## 🚀 Installation
 
-### Method 1: Manual Installation
-1. Download the latest LumiFlow release (.zip file)
-2. Open Blender and go to `Edit > Preferences > Add-ons`
-3. Click `Install...` and select the downloaded .zip file
-4. Enable the addon by checking the box next to "LumiFlow"
-5. Save preferences to make it permanent
+### Method 1: From Release
+1. Download the latest LumiFlow release (.zip file) from [GitHub Releases](https://github.com/ProductViz/LumiFlow/releases)
+2. In Blender: `Edit > Preferences > Add-ons`
+3. Click **Install...** and select the .zip file
+4. Enable the addon by checking **LumiFlow**
 
 ### Method 2: Development Installation
-1. Clone the repository: `git clone https://github.com/lumiflow-org/LumiFlow`
-2. In Blender Preferences > Add-ons, click `Install...`
-3. Navigate to the cloned folder and select it
+1. Clone repo: `git clone https://github.com/ProductViz/LumiFlow`
+2. In Blender Add-ons, click **Install...**
+3. Select the cloned folder
 4. Enable the addon
 
-## 🎯 Usage
+---
 
-### Getting Started
-1. **Enable LumiFlow**: In the 3D View sidebar, find the LumiFlow panel and click "✅ ENABLED"
-2. **Choose Assignment Mode**: Select whether lights should be assigned to Scene or Camera
-3. **Add Lights**: Use the pie menu (Shift+Q) to add smart lights
-4. **Apply Templates**: Choose from pre-built lighting templates
-5. **Position Lights**: Use positioning tools for precise placement
+## 🎯 Getting Started
 
-### Main Interface
-- **Sidebar Panel**: Located in View3D > Sidebar > LumiFlow
-- **Pie Menu**: Access with Shift+Q for quick operations
-- **Template Browser**: Browse and apply lighting templates
-- **Overlay System**: Visual feedback during operations
+1. Enable LumiFlow from the **Sidebar Panel** in 3D View (N key → LumiFlow tab)  
+2. Choose assignment mode (**Scene** or **Camera**)  
+3. Add smart lights with **Shift+Q** pie menu  
+4. Apply templates for quick setups  
+5. Position lights interactively using tools or scroll controls  
 
 ### Key Shortcuts
-- **Shift+Q**: Open smart light pie menu
-- **Scroll Wheel**: Adjust light properties (when enabled)
-- **ESC**: Cancel current operation
-- **G**: Move lights (with smart constraints)
-- **R**: Rotate lights (with smart constraints)
+- **Shift+Q**: Smart Light Pie Menu  
+- **Scroll Wheel**: Adjust light properties  
+- **G / R**: Move & Rotate lights (smart constraints)  
+- **ESC**: Cancel operation  
 
-## 🏗️ Architecture
+---
 
-### Core Modules
-- **`core/`**: Central state management and globals
-- **`operators/`**: All Blender operators organized by functionality
-  - `positioning/`: Light placement and manipulation
-    - `flip_ops.py`: Light flipping operations
-    - `free_ops.py`: Free movement controls
-    - `highlight_ops.py`: Light highlighting and selection
-    - `move.py`: Light movement operations
-    - `normal_ops.py`: Normal-based positioning
-    - `orbit_ops.py`: Orbital movement controls
-    - `target_ops.py`: Target-based positioning
-    - `utils.py`: Positioning utilities
-  - `smart_template/`: Template application and management
-    - `lighting_templates.py`: Template definitions
-    - `template_analyzer.py`: Template analysis tools
-    - `template_error_handling.py`: Error handling system
-    - `template_library.py`: Template management
-    - `template_ops.py`: Template operations
-  - `smart_ops.py`: Intelligent light controls
-  - `linking_ops.py`: Light linking and relationships
-  - `menus_ops.py`: Menu system operators
-  - `panels_ops.py`: Panel control operators
-  - `selection_ops.py`: Light selection operations
-- **`panels/`**: UI panels and interface elements
-- **`menus/`**: Menu system and pie menus
-- **`utils/`**: Utility functions and helpers
-- **`overlay/`**: Visual feedback and drawing system
-- **`templates/`**: Lighting template definitions
-- **`assets/`**: Icons, presets, and resources
+## 🤝 Community & Support
 
-### Key Components
+Join the LumiFlow community:  
+- [Discord Server](https://discord.gg/yourlink) – Real-time chat & Q&A  
+- [GitHub Discussions](https://github.com/ProductViz/LumiFlow/discussions) – Feature requests & bug reports  
+- [Blender Artists Forum](https://blenderartists.org/) – Showcase & discussions  
 
-#### Base Modal System
-- `BaseModalOperator`: Foundation for all modal operations
-- Smart state management and cleanup
-- Error handling and recovery
+We also run **monthly lighting challenges**, **community showcases**, and **Q&A sessions**.
 
-#### Template System
-- Intelligent scene analysis
-- Automatic light configuration
-- Custom template creation
+---
 
-#### Overlay System
-- Real-time visual feedback
-- GPU-accelerated drawing
-- Customizable appearance
+## 💖 Support Development
 
-## 🔧 Configuration
+LumiFlow is free and open-source, but development takes time and effort.  
+If LumiFlow helps your work, consider supporting its growth:
 
-### Addon Preferences
-Access via `Edit > Preferences > Add-ons > LumiFlow`
+- [GitHub Sponsors](https://github.com/sponsors/ProductViz)  
+- [Ko-fi](https://ko-fi.com/username)  
+- [PayPal](https://paypal.me/username)  
+- [Gumroad (Pay-What-You-Want)](https://gumroad.com/lumiflow)  
+- [Patreon](https://patreon.com/username)  
 
-#### General Settings
-- **Enable Custom Shortcuts**: Allow keymap overrides
-- **Show Tips on Startup**: Display helpful tips
-- **Show Development Panel**: Enable debugging tools
+**Sponsors get recognition, early access builds, and exclusive content.**
 
-#### Overlay Customization
-- **Font Scale**: Adjust overlay text size (0.3x - 3.0x)
-- **Line Spacing**: Control text line spacing
-- **Color Themes**: Choose from predefined themes or custom colors
-
-#### Theme Presets
-- **Default**: LumiFlow blue/orange theme
-- **High Contrast Dark**: For dark environments
-- **Light Theme**: For bright workspaces
-- **Warm**: Orange/red color scheme
-- **Cool**: Blue/cyan color scheme
-- **Minimal**: Grayscale theme
-- **Neon**: Bright colors for dark environments
-- **Custom**: User-defined colors
-
-## 📚 Template Categories
-
-### Studio & Commercial
-- Product photography setups
-- Portrait lighting configurations
-- Commercial lighting arrangements
-- Studio environment simulations
-
-### Dramatic & Cinematic
-- Film noir lighting
-- Horror atmosphere lighting
-- Romantic mood lighting
-- Action scene lighting
-- Documentary style lighting
-
-### Environment & Realistic
-- Outdoor daylight simulation
-- Golden hour lighting
-- Night time illumination
-- Weather-based lighting
-- Architectural lighting
-
-### Utilities & Single Lights
-- Quick rim lights
-- Fill light configurations
-- Key light setups
-- Ambient lighting solutions
-- Special effect lighting
+---
 
 ## 🛠️ Development
+
+### Code Style
+- PEP 8 guidelines, max line length 120 chars  
+- Type hints & docstrings required  
+- Tested on Blender 4.2+  
 
 ### Project Structure
 ```
 LumiFlow/
-├── __init__.py                    # Main addon entry point and registration
-├── core/                         # Core system components
-│   ├── state.py                 # Global state management and session data
-│   ├── globals.py               # Global constants and configuration
-│   └── camera_manager.py        # Camera operations and viewport control
-├── operators/                   # All Blender operators and tools
-│   ├── positioning/             # Light positioning and manipulation tools
-│   │   ├── flip_ops.py          # Light flipping and orientation operations
-│   │   ├── free_ops.py          # Free-form movement and positioning
-│   │   ├── highlight_ops.py     # Light highlighting and visual selection
-│   │   ├── move.py              # Precise light movement operations
-│   │   ├── normal_ops.py        # Normal-based positioning and alignment
-│   │   ├── orbit_ops.py         # Orbital movement and rotation controls
-│   │   ├── target_ops.py        # Target-based positioning and aiming
-│   │   └── utils.py             # Positioning utilities and helper functions
-│   ├── smart_template/          # Template system and preset management
-│   │   ├── lighting_templates.py # Pre-defined lighting setups and configurations
-│   │   ├── template_analyzer.py # Template analysis and optimization tools
-│   │   ├── template_error_handling.py # Error handling and recovery system
-│   │   ├── template_library.py  # Template storage and management
-│   │   └── template_ops.py      # Template application and operations
-│   ├── smart_ops.py             # Intelligent light control and smart operations
-│   ├── linking_ops.py           # Light linking and relationship management
-│   ├── menus_ops.py             # Menu system and pie menu operations
-│   ├── panels_ops.py            # Panel control and UI operations
-│   └── selection_ops.py         # Light selection and group management
-├── panels/                      # User interface panels and UI elements
-├── menus/                       # Menu system and navigation components
-├── utils/                       # Utility functions and shared helpers
-├── overlay/                     # Visual feedback and drawing system
-├── templates/                   # Lighting template definitions and presets
-├── assets/                      # Icons, textures, and resource files
-└── docs/                        # Documentation and reference materials
+├── __init__.py
+├── core/
+├── operators/
+├── panels/
+├── menus/
+├── overlay/
+├── templates/
+├── assets/
+└── docs/
 ```
 
-### Building from Source
-1. Ensure Python 3.10+ and Blender 4.2+ are installed
-2. Clone the repository
-3. Install in development mode (see Installation section)
-4. Enable development panel in preferences
-5. Use reload functionality for rapid testing
-
-### Code Style
-- Follow PEP 8 guidelines
-- Maximum line length: 120 characters
-- Use type hints where appropriate
-- Include docstrings for all public functions
-- Maintain consistent naming conventions
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-#### Addon Won't Enable
-- Check Blender version compatibility (4.2+)
-- Ensure no conflicting addons are enabled
-- Check Python console for error messages
-
-#### Modal Operators Stuck
-- Use the development panel to stop all modals
-- Restart Blender if necessary
-- Check for running operations in the console
-
-#### Overlays Not Showing
-- Verify overlay is enabled in the panel
-- Check GPU drivers are up to date
-- Ensure viewport shading supports overlays
-
-#### Performance Issues
-- Reduce number of lights in complex scenes
-- Disable unnecessary overlays
-- Use simpler templates for preview
-
-### Debug Mode
-Enable development panel in preferences to access:
-- Reload addon functionality
-- Stop all modal operators
-- Debug information display
-
-## 🤝 Contributing
-
-### How to Contribute
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes following code style guidelines
-4. Test thoroughly with different Blender versions
-5. Submit a pull request with detailed description
-
-### Development Guidelines
-- All code must be compatible with Blender 4.2+
-- Include appropriate license headers
-- Remove debug statements before submitting
-- Update documentation for new features
-- Test on multiple platforms if possible
-
-### Reporting Issues
-- Use GitHub Issues with appropriate labels
-- Include Blender version and operating system
-- Provide steps to reproduce bugs
-- Include screenshots or error messages when applicable
-
-## 📄 License
-
-This project is licensed under the GNU General Public License v3.0. See the [LICENSE](LICENSE) file for details.
-
-### License Summary
-- ✅ **Commercial Use**: Use in commercial projects
-- ✅ **Modification**: Modify the code
-- ✅ **Distribution**: Share with others
-- ✅ **Private Use**: Use for personal projects
-- ❌ **Warranty**: No warranty provided
-- ❌ **Liability**: No liability for damages
-
-## 📞 Support
-
-### Community Support
-- **GitHub Discussions**: Ask questions and share ideas
-- **Blender Artists Forum**: Community thread for discussions
-- **Discord Server**: Real-time chat and support
-
-### Professional Support
-- **GitHub Sponsors**: Support development financially
-- **Custom Development**: Hire for custom features
-- **Training**: Personal or group training sessions
-
-### Documentation
-- **User Guide**: Detailed usage instructions
-- **API Reference**: Technical documentation
-- **Video Tutorials**: Step-by-step video guides
-- **FAQ**: Common questions and answers
-
-## 🎉 Roadmap
-
-### Version 1.1 (Planned)
-- [ ] Enhanced template system
-- [ ] More positioning algorithms
-- [ ] Performance optimizations
-- [ ] Additional overlay options
-
-### Version 1.2 (Future)
-- [ ] Light linking system
-- [ ] Advanced camera integration
-- [ ] Render engine integration
-- [ ] Collaborative features
-
-### Version 2.0 (Long-term)
-- [ ] Machine learning integration
-- [ ] Cloud-based templates
-- [ ] Mobile companion app
-- [ ] Professional studio tools
-
-## 🙏 Acknowledgments
-
-- **Blender Foundation**: For the amazing Blender software
-- **Community Contributors**: For feedback and improvements
-- **Beta Testers**: For helping identify bugs and issues
-- **Supporters**: For making continued development possible
-
-## 📈 Version History
-
-### v1.0.0 (Current)
-- Initial release
-- Core smart lighting system
-- Template library with 50+ presets
-- Interactive positioning tools
-- Visual feedback system
-- Customizable UI themes
+### Contributing
+1. Fork repo & create feature branch  
+2. Follow code style guidelines  
+3. Test on multiple Blender versions  
+4. Submit PR with description & screenshots  
 
 ---
 
-**LumiFlow** - Making professional lighting accessible to everyone.
+## 🎉 Roadmap
 
-For licensing inquiries: asqa3d@gmail.com
+- [ ] More smart templates  
+- [ ] Enhanced camera integration  
+- [ ] Performance optimization  
+- [ ] Community events integration  
 
-© 2024 Burhanuddin. All rights reserved.
+Future versions will bring:  
+✨ Advanced rendering integration  
+✨ AI-assisted lighting suggestions  
+✨ Studio workflow tools  
+
+---
+
+## 📄 License
+
+GPL v3.0 – see [LICENSE](LICENSE)  
+- ✅ Free for personal & commercial use  
+- ✅ Modify & distribute  
+- ❌ No warranty/liability  
+
+---
+
+## ❤️ Supporters (Simple List)
+
+Thanks to everyone who has supported LumiFlow development:
+
+- Alice
+- Bob
+- Charlie
+- Your Name Here ✨
+
+Want to join the list? [Support LumiFlow](https://github.com/sponsors/ProductViz)
+
+
+## 🙏 Acknowledgments
+- Blender Foundation for Blender  
+- Community contributors & testers  
+- Sponsors & supporters who make this possible  
+
+---
+
+**LumiFlow – Making professional lighting accessible to everyone.**  
