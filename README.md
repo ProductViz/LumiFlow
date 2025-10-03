@@ -3,12 +3,12 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Blender Version](https://img.shields.io/badge/Blender-4.2%2B-blue)](https://www.blender.org)
 [![GitHub Sponsors](https://img.shields.io/github/sponsors/ProductViz?color=red)](https://github.com/sponsors/ProductViz)
-[![Discord](https://img.shields.io/discord/123456789012345678?color=7289DA&label=Discord)](https://discord.gg/yourlink)
+[![Discord](https://img.shields.io/badge/Discord-Join%20Chat-7289DA?logo=discord&logoColor=white)](https://discord.gg/zqrSFctH5s)
 
 **LumiFlow** – Smart lighting addon for Blender.  
 Free, open-source, and community-powered.
 
-![LumiFlow Logo](assets/icons/lumiflow_logo.png)
+![LumiFlow Logo](assets/icons/lumiflow_logo_2.png) 
 
 ---
 
@@ -86,7 +86,7 @@ Free, open-source, and community-powered.
 ## 🤝 Community & Support
 
 Join the LumiFlow community:  
-- [Discord Server](https://discord.gg/yourlink) – Real-time chat & Q&A  
+- [Discord Server]([https://discord.gg/yourlink](https://discord.gg/zqrSFctH5s)) – Real-time chat & Q&A  
 - [GitHub Discussions](https://github.com/ProductViz/LumiFlow/discussions) – Feature requests & bug reports  
 - [Blender Artists Forum](https://blenderartists.org/) – Showcase & discussions  
 
