@@ -62,6 +62,9 @@ from .ui.main_panel import (
     LUMI_PT_light_control,
 )
 
+# Import update checker operators
+from .operators.panels_ops import LUMI_OT_check_update, LUMI_OT_update_addon
+
 # Template settings panel classes have been deleted
 
 # Template browser classes have been deleted
@@ -151,6 +154,19 @@ from .utils.properties import (
     lumi_light_linking_expanded_accordion_update,
     lumi_scroll_settings_expanded_update
 )
+
+def show_update_panel_update(self, context):
+    """Update function for show_update_panel property"""
+    if self.show_update_panel:
+        # Clear previous update info and trigger check when panel is shown
+        context.window_manager.lumiflow_update_info = ""
+        try:
+            bpy.ops.lumiflow.check_update()
+        except AttributeError:
+            # Operator not registered yet
+            context.window_manager.lumiflow_update_info = "ERROR|Update system not available yet"
+        except Exception as e:
+            context.window_manager.lumiflow_update_info = f"ERROR|Failed to start update check: {str(e)}"
 
 # Import new Light Mixer classes
 # light_mixer file has been deleted
@@ -259,8 +275,13 @@ pie_menu_classes = [
     LUMI_MT_template_utilities_single,
 ]
 
+# Update checker classes
+update_classes = [
+    LUMI_OT_check_update,
+    LUMI_OT_update_addon,
+]
 
-classes = get_classes() + tuple(linking_ui_classes) + tuple(panel_classes) + tuple(pie_menu_classes)
+classes = get_classes() + tuple(update_classes) + tuple(linking_ui_classes) + tuple(panel_classes) + tuple(pie_menu_classes)
 addon_keymaps = []
 
 def register_properties() -> None:
@@ -422,8 +443,14 @@ def register_properties() -> None:
         )),
         ("lumi_director_active", bpy.props.BoolProperty(name="Key Light Director Active", default=False, description="Key Light Director modal is active")),
         ("lumi_director_target_object", bpy.props.PointerProperty(name="Director Target Object", type=bpy.types.Object)),
-        ("lumi_director_target_location", bpy.props.FloatVectorProperty(name="Director Target Location", size=3)),            
+        ("lumi_director_target_location", bpy.props.FloatVectorProperty(name="Director Target Location", size=3)),
         ("lumi_light_index", IntProperty(name="Lumi Light Index", default=0)),
+        ("show_update_panel", bpy.props.BoolProperty(
+            name="Show Update Panel",
+            description="Show/hide the addon update panel",
+            default=False,
+            update=show_update_panel_update
+        )),
     ]    
     for prop_name, prop_def in props:
         setattr(bpy.types.Scene, prop_name, prop_def)
@@ -785,6 +812,9 @@ def register() -> None:
     bpy.types.Scene.light_props = bpy.props.PointerProperty(type=LightPositioningProperties)
     bpy.types.Scene.lumi_professional_props = bpy.props.PointerProperty(type=ProfessionalLightingProperties)
     bpy.types.Scene.lumi_light_control_props = bpy.props.PointerProperty(type=LightControlProperties)
+
+    # Add WindowManager properties
+    bpy.types.WindowManager.lumiflow_update_info = bpy.props.StringProperty(name="LumiFlow Update Info", default="")
     
     # Add individual professional lighting properties for UI access
     bpy.types.Scene.lumi_harmony_type = bpy.props.EnumProperty(

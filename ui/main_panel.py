@@ -58,6 +58,10 @@ class LUMI_PT_light_control(bpy.types.Panel):
 
         self._draw_expandable_sections(layout, scene)
 
+        # Update panel (conditional)
+        if scene.show_update_panel:
+            self.draw_update_section(context, layout)
+
     def _draw_main_toggle(self, layout, scene):
         """Enable/Disable toggle"""
         box = layout.box()
@@ -270,11 +274,100 @@ class LUMI_PT_light_control(bpy.types.Panel):
     def _draw_overlay_controls(self, layout: bpy.types.UILayout, scene: bpy.types.Scene):
         """Overlay controls at bottom"""
         row = layout.row(align=True)
-        row.scale_y = 1.1     
+        row.scale_y = 1.1
         if hasattr(scene, 'lumi_show_overlay_tips'):
             row.prop(scene, "lumi_show_overlay_tips", text="", icon='QUESTION')
         if hasattr(scene, 'lumi_show_overlay_info'):
             row.prop(scene, "lumi_show_overlay_info", text="", icon='INFO')
+        # Update panel toggle
+        row.prop(scene, "show_update_panel", text="", icon='FILE_REFRESH')
+
+    def draw_update_section(self, context, layout):
+        """Draw update information section"""
+        wm = context.window_manager
+
+        # Separator for visual clarity
+        layout.separator()
+
+        # Update section box
+        update_box = layout.box()
+
+        # Header
+        header_row = update_box.row()
+        header_row.label(text="Addon Update", icon='FILE_REFRESH')
+
+        # Get update info
+        update_info = wm.lumiflow_update_info
+
+        if not update_info:
+            # Still checking or first time
+            check_box = update_box.box()
+            check_box.label(text="Checking for updates...", icon='SORTTIME')
+            return
+
+        # Parse update info: "STATUS|version|download_url"
+        parts = update_info.split("|")
+        status = parts[0]
+
+        if status == "ERROR":
+            # Error occurred
+            error_box = update_box.box()
+            error_box.label(text="Error:", icon='ERROR')
+            if len(parts) > 1:
+                error_box.label(text=parts[1])
+
+        elif status == "UPTODATE":
+            # Up to date
+            uptodate_box = update_box.box()
+            col = uptodate_box.column(align=True)
+            col.label(text="✓ Up to Date", icon='CHECKMARK')
+            if len(parts) > 1:
+                col.label(text=f"Current: {parts[1]}")
+
+        elif status == "UPDATE":
+            # New version available
+            update_available_box = update_box.box()
+
+            col = update_available_box.column(align=True)
+            col.label(text="New Version Available", icon='INFO')
+
+            # Version info
+            if len(parts) > 1:
+                new_version = parts[1]
+                col.separator(factor=0.5)
+
+                # Current vs New version in 2 columns
+                row = col.row(align=True)
+                split = row.split(factor=0.5)
+
+                # Current version (left)
+                left_col = split.column(align=True)
+                left_col.label(text="Current:")
+                from .. import bl_info
+                current = bl_info["version"]
+                current_str = f"v{current[0]}.{current[1]}.{current[2]}"
+                left_col.label(text=current_str)
+
+                # New version (right)
+                right_col = split.column(align=True)
+                right_col.label(text="Latest:")
+                right_col.label(text=new_version)
+
+            col.separator(factor=0.5)
+
+            # Update button
+            if len(parts) > 2:
+                download_url = parts[2]
+                row = col.row()
+                row.scale_y = 1.5
+                op = row.operator("lumiflow.update_addon", text="Update Now", icon='IMPORT')
+                op.download_url = download_url
+                op.new_version = new_version
+
+            # Warning message
+            col.separator(factor=0.3)
+            warning_row = col.row()
+            warning_row.label(text="Blender will reload after update", icon='INFO')
 
 
 # =====================================================================
