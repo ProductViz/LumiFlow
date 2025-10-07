@@ -224,25 +224,25 @@ class LUMI_OT_cycle_lights_modal(bpy.types.Operator):
     # Method called when operator starts
     def invoke(self, context, event):
         """Function called when operator starts"""
-        
+
         # Initialize instance variables
         self._current_light_index = -1
         self._lights_cache = []
-        
+
         # Validate context before starting modal
         if not self.validate_modal_context(context):
             return {'CANCELLED'}
-            
+
         # Get initial light selection
-        self._lights_cache = self.get_all_lights(context)
+        self.refresh_lights_cache(context)
         if not self._lights_cache:
             self.report({'WARNING'}, "No lights found to cycle")
             return {'CANCELLED'}
-        
+
         # Initialize index and set initial selection
         self._current_light_index = 0
-        self.select_light(context, self._lights_cache[0])
-        
+        self.select_light_only(context, self._lights_cache[0])
+
         # Start modal operation
         context.window_manager.modal_handler_add(self)
         self.report({'INFO'}, "Light cycling active - hold D and scroll to cycle lights")

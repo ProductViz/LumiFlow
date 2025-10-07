@@ -50,16 +50,15 @@ class LUMI_PT_light_control(bpy.types.Panel):
         # Template Quick Access - Professional lighting templates
         self._draw_template_quick_access(layout, context)
 
-        # Cache selected lights to avoid multiple calculations
-        selected_lights = self._get_selected_lights(context)
+        self._draw_positioning_controls(layout, context)
+
+        self._draw_smart_setting(layout, scene)
         
-        # Light management section disabled - only show in Light Mixer panel
-        self._draw_light_management_section(layout, context, selected_lights)        
-
-        self._draw_expandable_sections(layout, scene)
-
-        # Update panel (conditional)
-        if scene.show_update_panel:
+        self._draw_overlay_controls(layout, scene)  
+        # Conditional panel rendering - only show one at a time
+        if scene.show_donate_panel:
+            self.draw_donate_section(context, layout)
+        elif scene.show_update_panel:
             self.draw_update_section(context, layout)
 
     def _draw_main_toggle(self, layout, scene):
@@ -85,10 +84,12 @@ class LUMI_PT_light_control(bpy.types.Panel):
         scene_op = assignment_row.operator("lumi.set_light_assignment_mode", text="Scene", depress=scene_active, icon='SCENE_DATA')
         scene_op.mode = 'SCENE'
         
-        # Camera button  
+        # Camera button
         camera_active = getattr(scene, 'lumi_light_assignment_mode', 'SCENE') == 'CAMERA'
         camera_op = assignment_row.operator("lumi.set_light_assignment_mode", text="Camera", depress=camera_active, icon='CAMERA_DATA')
         camera_op.mode = 'CAMERA'
+
+        # Positioning Mode Toggle - MOVE TO HEADER (as per user request)
 
     def _draw_template_quick_access(self, layout: bpy.types.UILayout, context: bpy.types.Context):
         """Template Quick Access - Only most popular templates for main panel"""
@@ -134,56 +135,32 @@ class LUMI_PT_light_control(bpy.types.Panel):
             box = layout.box()
             box.label(text="Quick Templates", icon='LIGHT')
             box.label(text="Select objects to apply templates", icon='INFO')
-
-    def _draw_light_management_section(self, layout: bpy.types.UILayout, context: bpy.types.Context, selected_lights: list[bpy.types.Object]):
-        """Combined light list and positioning controls"""
-        
-        
-        # Always show positioning controls; disable interaction when no lights are selected
-        try:
+ 
+    def _draw_smart_setting(self, layout: bpy.types.UILayout, scene: bpy.types.Scene):
+            """Smart control settings - always visible, no expansion"""
             box = layout.box()
-            box.enabled = bool(selected_lights)
-            self._draw_positioning_controls(box, context)
-        except (AttributeError, RuntimeError):
-            # Fallback: try to draw normally if the boxed layout fails
-            try:
-                self._draw_positioning_controls(layout, context)
-            except (AttributeError, RuntimeError):
-                pass
+            header_row = box.row(align=True)
+            header_row.scale_y = 1.2
+            header_row.label(text="Smart Control", icon='MOUSE_LMB')
 
-    def _draw_expandable_sections(self, layout: bpy.types.UILayout, scene: bpy.types.Scene):
-        """Essential expandable sections only - Advanced features moved to sub panels"""
-        # Set compact layout for all sections
-        layout.use_property_split = False
-        layout.use_property_decorate = False
-        
-       
-              
-        # Only essential expandable sections remain in main panel       
-        self._draw_scroll_settings(layout, scene)
-        
-        self._draw_overlay_controls(layout, scene)
+            # Always visible content - no expansion needed
+            col = box.column(align=True)
+            col.separator(factor=0.3)
 
-    def _draw_scroll_settings(self, layout: bpy.types.UILayout, scene: bpy.types.Scene):
-            """Scroll settings with improved layout"""
-            # Use layout directly instead of box for flat appearance
-            header_row = layout.row(align=True)
-            header_row.scale_y = 1.3
-            header_row.alignment = 'LEFT'
-            header_row.use_property_decorate = False
-            
-            icon = 'DOWNARROW_HLT' if getattr(scene, 'lumi_scroll_settings_expanded', False) else 'RIGHTARROW'
-            header_row.prop(scene, "lumi_scroll_settings_expanded", text="", icon=icon, emboss=False)
-            header_row.prop(scene, "lumi_scroll_settings_expanded", text="Smart Control", 
-                        icon='MOUSE_LMB', emboss=False)
-            
-            if getattr(scene, 'lumi_scroll_settings_expanded', False):
-                # Use layout directly instead of content_box
-                try:
-                    self._draw_smart_controls(layout, scene)
-                except (AttributeError, RuntimeError):
-                    error_row = layout.row()
-                    error_row.label(text="Error accessing scroll settings", icon='ERROR')
+            # Axis settings
+            axis_col = col.column(align=True)
+            axis_col.scale_y = 0.9
+            axis_hdr = axis_col.row(align=True)
+            axis_hdr.scale_y = 0.95
+            axis_hdr.label(text="Scale Axis", icon='ORIENTATION_LOCAL')
+            if hasattr(scene, 'lumi_scale_axis'):
+                axis_row = axis_col.split(factor=0.3)
+                axis_left = axis_row.row(align=True)
+                axis_left.alignment = 'RIGHT'
+                axis_left.label(text="Axis :")
+                axis_right = axis_row.row(align=True)
+                axis_right.use_property_decorate = False
+                axis_right.prop(scene, "lumi_scale_axis", text="")
 
     def _get_selected_lights(self, context: bpy.types.Context) -> list[bpy.types.Object]:
         """Safe method to get selected lights with error handling"""
@@ -193,68 +170,32 @@ class LUMI_PT_light_control(bpy.types.Panel):
             return []
     
     def _draw_positioning_controls(self, layout: bpy.types.UILayout, context: bpy.types.Context):
-        """Improved positioning controls with better organization"""
+        """Clean positioning controls - just buttons in a box"""
         try:
+            scene = context.scene
             props = context.scene.light_props if hasattr(context.scene, 'light_props') else None
-            
-            # Header with current mode indicator
-            box = layout.box()
-            header_row = box.row(align=True)
-            header_row.label(text="Positioning Mode", icon='TOOL_SETTINGS')
-            
-            # Mode buttons in a cleaner grid
-            if props is not None:
-                self._draw_positioning_mode_buttons(box, props)
+
+            # Style positioning toggle to match main addon enable toggle
+            positioning_box = layout.box()
+            positioning_row = positioning_box.row()
+            positioning_row.scale_y = 1.3  # Match main toggle height
+
+            if getattr(scene, 'lumi_positioning_mode_enabled', True):
+                positioning_row.prop(scene, "lumi_positioning_mode_enabled", text="✅ POSITIONING ENABLED", toggle=True)
             else:
-                box.label(text="Light properties not available", icon='ERROR')
-            
+                positioning_row.prop(scene, "lumi_positioning_mode_enabled", text="❌ POSITIONING DISABLED", toggle=True)
+
+
         except (AttributeError, RuntimeError):
             error_row = layout.row()
-            error_row.label(text="Error Positioning Mode", icon='ERROR')
-
-    def _draw_positioning_mode_buttons(self, layout: bpy.types.UILayout, props: bpy.types.PropertyGroup):
-        """Clean grid layout for positioning mode buttons"""
-        modes = [
-            ('HIGHLIGHT', 'lumi.highlight_positioning', 'Highlight', 'OUTLINER_OB_LIGHT'),
-            ('NORMAL', 'lumi.normal_positioning', 'Normal', 'MODIFIER'),
-            ('TARGET', 'lumi.target_positioning', 'Target', 'CONSTRAINT'),
-            ('ORBIT', 'lumi.orbit_positioning', 'Orbit', 'FORCE_FORCE'),
-            ('FREE', 'lumi.free_positioning', 'Free', 'ORIENTATION_GLOBAL'),
-            ('MOVE', 'lumi.move_positioning', 'Move', 'HAND')
-        ]
-        
-        # Create 3x2 grid
-        for i in range(0, len(modes), 3):
-            row = layout.row(align=True)
-            row.scale_y = 1.3
-            
-            for j in range(3):
-                if i + j < len(modes):
-                    mode_id, op_name, label, icon = modes[i + j]
-                    try:
-                        is_active = props and hasattr(props, 'positioning_mode') and props.positioning_mode == mode_id
-                        row.operator(op_name, text=label, icon=icon, depress=is_active)
-                    except:
-                        # Fallback to basic operators
-                        if mode_id == 'HIGHLIGHT':
-                            row.operator("lumi.highlight_positioning", text=label, icon=icon)
-                        elif mode_id == 'NORMAL':
-                            row.operator("lumi.normal_positioning", text=label, icon=icon)
-                        elif mode_id == 'TARGET':
-                            row.operator("lumi.target_positioning", text=label, icon=icon)
-                        elif mode_id == 'ORBIT':
-                            row.operator("lumi.orbit_positioning", text=label, icon=icon)
-                        elif mode_id == 'FREE':
-                            row.operator("lumi.free_positioning", text=label, icon=icon)
-                        elif mode_id == 'MOVE':
-                            row.operator("lumi.move_positioning", text=label, icon=icon)
+            error_row.label(text="Error: Positioning Mode", icon='ERROR')
 
     def _draw_smart_controls(self, layout: bpy.types.UILayout, scene: bpy.types.Scene):
         """Improved smart controls layout"""
         col = layout.column(align=True)
         # Tighter spacing overall
         col.separator(factor=0.5)
-        
+
         # Axis settings
         axis_box = col.box()
         axis_col = axis_box.column(align=True)
@@ -279,8 +220,12 @@ class LUMI_PT_light_control(bpy.types.Panel):
             row.prop(scene, "lumi_show_overlay_tips", text="", icon='QUESTION')
         if hasattr(scene, 'lumi_show_overlay_info'):
             row.prop(scene, "lumi_show_overlay_info", text="", icon='INFO')
+
         # Update panel toggle
-        row.prop(scene, "show_update_panel", text="", icon='FILE_REFRESH')
+        row.prop(scene, "show_update_panel", text="Check updates", icon='FILE_REFRESH')
+
+        # Donate toggle button
+        row.prop(scene, "show_donate_panel", text="Donate", icon='FUND')
 
     def draw_update_section(self, context, layout):
         """Draw update information section"""
@@ -369,10 +314,54 @@ class LUMI_PT_light_control(bpy.types.Panel):
             warning_row = col.row()
             warning_row.label(text="Blender will reload after update", icon='INFO')
 
+    def draw_donate_section(self, context, layout):
+        """Draw donation information section"""
+        wm = context.window_manager
 
-# =====================================================================
-# REGISTRATION CLASSES - GUARANTEED TO WORK
-# =====================================================================
+        # Separator for visual clarity
+        layout.separator()
+
+        # Donate section box
+        donate_box = layout.box()
+
+        # Header
+        header_row = donate_box.row()
+        header_row.label(text="Support LumiFlow", icon='FUND')
+
+        # Content box
+        content_box = donate_box.box()
+        col = content_box.column(align=True)
+
+        # Message
+        col.label(text="LumiFlow is free and open-source")
+        col.label(text="Your support helps development")
+        col.separator(factor=0.5)
+
+        # Donation links
+        col.label(text="Support via:", icon='HEART')
+
+        # GitHub Sponsors
+        row = col.row()
+        row.scale_y = 1.3
+        op = row.operator("wm.url_open", text="GitHub Sponsors")
+        op.url = "https://github.com/sponsors/ProductViz"
+
+        # Patreon
+        row = col.row()
+        row.scale_y = 1.3
+        op = row.operator("wm.url_open", text="Patreon")
+        op.url = "https://patreon.com/LumiFlow"
+
+        # Ko-fi
+        row = col.row()
+        row.scale_y = 1.3
+        op = row.operator("wm.url_open", text="Ko-fi")
+        op.url = "https://ko-fi.com/lumiflow"
+
+        col.separator(factor=0.3)
+        col.label(text="Thank you for your support! ❤️",)
+
+
 
 MAIN_PANEL_CLASSES = [
     LUMI_PT_light_control,

@@ -237,6 +237,39 @@ class LUMI_OT_toggle_overlay_tips(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class LUMI_OT_toggle_donate_panel(bpy.types.Operator):
+    """Toggle donate panel visibility"""
+    bl_idname = "lumi.toggle_donate_panel"
+    bl_label = "Toggle Donate Panel"
+    bl_description = "Show/hide the donation panel"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        scene = context.scene
+        scene.show_donate_panel = not scene.show_donate_panel
+
+        # Close update panel if donate panel is opened
+        if scene.show_donate_panel and scene.show_update_panel:
+            scene.show_update_panel = False
+
+        return {'FINISHED'}
+
+
+class LUMI_OT_toggle_positioning_mode(bpy.types.Operator):
+    """Toggle positioning mode on/off"""
+    bl_idname = "lumi.toggle_positioning_mode"
+    bl_label = "Toggle Positioning Mode"
+    bl_description = "Toggle positioning mode on/off (P)"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        scene = context.scene
+        scene.lumi_positioning_mode_enabled = not scene.lumi_positioning_mode_enabled
+        status = "ENABLED" if scene.lumi_positioning_mode_enabled else "DISABLED"
+        self.report({'INFO'}, f"Positioning Mode {status}")
+        return {'FINISHED'}
+
+
 class LUMI_OT_toggle_addon(bpy.types.Operator):
     """Toggle LumiFlow addon on/off"""
     bl_idname = "lumi.toggle_addon"

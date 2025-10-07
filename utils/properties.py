@@ -434,6 +434,25 @@ class LightControlProperties(PropertyGroup):
     )
 
 
+def lumi_positioning_mode_enabled_update(self, context: bpy.types.Context):
+    """Update function when positioning mode toggle changes"""
+    try:
+        # Reset any active positioning mode when disabled
+        if not self.lumi_positioning_mode_enabled:
+            if hasattr(self, 'light_props'):
+                self.light_props.positioning_mode = 'DISABLE'
+
+        # Force redraw to update UI
+        for window in bpy.context.window_manager.windows:
+            if not window:
+                continue
+            for area in window.screen.areas:
+                if area.type == 'VIEW_3D':
+                    area.tag_redraw()
+    except Exception as e:
+        print(f"Error updating positioning mode toggle: {e}")
+
+
 # Individual update functions for each accordion section
 def lumi_color_controls_expanded_update(self, context):
     """Update callback for Color Controls accordion."""
@@ -473,9 +492,10 @@ __all__ = [
     'LightControlProperties',
     'ProfessionalLightingProperties',
     'lumi_enabled_update',
-    'lumi_overlay_update', 
+    'lumi_overlay_update',
     'lumi_color_enabled_update',
     'lumi_light_linking_expanded_update',
+    'lumi_positioning_mode_enabled_update',
     'accordion_update_handler',
     'lumi_color_controls_expanded_update',
     'lumi_light_mixer_expanded_update',
@@ -484,4 +504,3 @@ __all__ = [
     'lumi_light_linking_expanded_accordion_update',
     'lumi_scroll_settings_expanded_update'
 ]
-

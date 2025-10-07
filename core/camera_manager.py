@@ -38,12 +38,13 @@ def get_camera_light_manager():
 
 class CameraLightManager:
     """Manager for camera-based light visibility system"""
-    
+
     def __init__(self):
         self.camera_light_assignments = defaultdict(list)  # {camera_name: [light_names]}
         self.original_light_states = {}  # Backup original state of all lights
         self.active_camera_name = None  # Track currently active camera
         self.is_initialized = False
+        self.light_assignments = {}  # {light_name: assignment_type} where assignment_type is 'SCENE' or camera_name
     
     def initialize_system(self, context):
         """Initialize camera-light system when addon is enabled"""
@@ -117,43 +118,72 @@ class CameraLightManager:
     
     def assign_light_to_camera(self, camera_name: str, light_name: str):
         """Assign light to specific camera"""
-        # Add to memory cache
-        if light_name not in self.camera_light_assignments[camera_name]:
-            self.camera_light_assignments[camera_name].append(light_name)
-        
-        # Save to persistent Blender properties
-        self._save_assignments_to_properties()
+        # Find the light object
+        light_obj = bpy.data.objects.get(light_name)
+        if not light_obj:
+            return
+
+        # Set custom property on the light object
+        light_obj["lumi_camera_assignment"] = camera_name
+
+        # Update memory cache
+        self.light_assignments[light_name] = camera_name
+
+        # Rebuild camera assignments
+        self._rebuild_camera_assignments()
     
     def remove_light_from_camera(self, camera_name: str, light_name: str):
         """Remove light from specific camera"""
-        if camera_name in self.camera_light_assignments:
-            if light_name in self.camera_light_assignments[camera_name]:
-                self.camera_light_assignments[camera_name].remove(light_name)
-        
-        # Save to persistent Blender properties
-        self._save_assignments_to_properties()
+        # Find the light object
+        light_obj = bpy.data.objects.get(light_name)
+        if light_obj and "lumi_camera_assignment" in light_obj:
+            del light_obj["lumi_camera_assignment"]
+
+        # Update memory cache
+        if light_name in self.light_assignments:
+            del self.light_assignments[light_name]
+
+        # Rebuild camera assignments
+        self._rebuild_camera_assignments()
     
     def get_camera_assigned_lights(self, camera_name: str) -> List[str]:
         """Get list of lights assigned to camera"""
-        # First try to load from persistent properties if memory cache is empty
-        if not self.camera_light_assignments.get(camera_name):
-            self._load_assignments_from_properties()
+        # Rebuild assignments if needed
+        if not self.camera_light_assignments:
+            self._rebuild_camera_assignments()
         return self.camera_light_assignments.get(camera_name, [])
+
+    def _rebuild_camera_assignments(self):
+        """Rebuild camera assignments from light properties"""
+        self.camera_light_assignments.clear()
+        for obj in bpy.data.objects:
+            if obj.type == 'LIGHT' and "lumi_camera_assignment" in obj:
+                assignment = obj["lumi_camera_assignment"]
+                if assignment not in self.camera_light_assignments:
+                    self.camera_light_assignments[assignment] = []
+                self.camera_light_assignments[assignment].append(obj.name)
+                self.light_assignments[obj.name] = assignment
     
     def update_light_visibility_for_camera(self, context, camera_name: str):
         """Update light visibility for specific camera"""
         if not camera_name:
             return
-            
+
         # Get all lights in scene
         all_lights = [obj for obj in context.scene.objects if obj.type == 'LIGHT']
 
         # Get lights assigned to this camera
         assigned_lights = self.get_camera_assigned_lights(camera_name)
 
+        # Get lights assigned to scene (global lights visible to all cameras)
+        scene_lights = self.get_camera_assigned_lights("SCENE")
+
+        # Combine camera-specific and scene-global lights
+        visible_lights = set(assigned_lights + scene_lights)
+
         for light in all_lights:
-            if light.name in assigned_lights:
-                # Show assigned lights
+            if light.name in visible_lights:
+                # Show assigned lights (camera-specific or scene-global)
                 light.hide_viewport = False
                 light.hide_render = False
             else:
@@ -264,54 +294,71 @@ class CameraLightManager:
         # persistent naming convention in Blender objects
     
     def _load_assignments_from_properties(self):
-        """Load camera-light assignments from Blender properties using naming system"""
+        """Load camera-light assignments from light custom properties (new system) or naming system (legacy)"""
         try:
             scene = bpy.context.scene
             loaded_count = 0
-            
+
             # Clear existing assignments
             self.camera_light_assignments.clear()
-
-            # Get all cameras in scene
-            cameras = [obj for obj in scene.objects if obj.type == 'CAMERA']
+            self.light_assignments.clear()
 
             # Get all lights in scene
             lights = [obj for obj in scene.objects if obj.type == 'LIGHT']
 
-            # Detect assignments based on naming system
-            for camera in cameras:
-                camera_name = camera.name
-
-                # Extract camera number from name
-                camera_num = self._extract_camera_number(camera_name)
-                if camera_num:
-                    # Find lights with prefix C_{camera_num}_
-                    assigned_lights = []
-                    for light in lights:
-                        if light.name.startswith(f"C_{camera_num}_"):
-                            assigned_lights.append(light.name)
-
-                    if assigned_lights:
-                        self.camera_light_assignments[camera_name] = assigned_lights
-                        loaded_count += 1
-
-            # Also check global lights (prefix G_)
-            global_lights = []
+            # First, try to load from custom properties (new system)
             for light in lights:
-                if light.name.startswith("G_"):
-                    global_lights.append(light.name)
+                if "lumi_camera_assignment" in light:
+                    assignment = light["lumi_camera_assignment"]
+                    if assignment not in self.camera_light_assignments:
+                        self.camera_light_assignments[assignment] = []
+                    self.camera_light_assignments[assignment].append(light.name)
+                    self.light_assignments[light.name] = assignment
+                    loaded_count += 1
 
-            if global_lights:
-                # Add global lights to all cameras
-                for camera_name in self.camera_light_assignments:
-                    self.camera_light_assignments[camera_name].extend(global_lights)
-            
-            # Assignments loaded successfully
-            
+            # If no assignments found with new system, try legacy naming system for migration
+            if loaded_count == 0:
+                # Get all cameras in scene
+                cameras = [obj for obj in scene.objects if obj.type == 'CAMERA']
+
+                # Detect assignments based on naming system
+                for camera in cameras:
+                    camera_name = camera.name
+
+                    # Extract camera number from name
+                    camera_num = self._extract_camera_number(camera_name)
+                    if camera_num:
+                        # Find lights with prefix C_{camera_num}_
+                        assigned_lights = []
+                        for light in lights:
+                            if light.name.startswith(f"C_{camera_num}_"):
+                                assigned_lights.append(light.name)
+                                # Migrate to new system: set custom property
+                                light["lumi_camera_assignment"] = camera_name
+                                self.light_assignments[light.name] = camera_name
+
+                        if assigned_lights:
+                            self.camera_light_assignments[camera_name] = assigned_lights
+                            loaded_count += 1
+
+                # Also check global lights (prefix G_)
+                global_lights = []
+                for light in lights:
+                    if light.name.startswith("G_"):
+                        global_lights.append(light.name)
+                        # Migrate to new system
+                        light["lumi_camera_assignment"] = "SCENE"
+                        self.light_assignments[light.name] = "SCENE"
+
+                if global_lights:
+                    # Add global lights to all cameras
+                    for camera_name in self.camera_light_assignments:
+                        self.camera_light_assignments[camera_name].extend(global_lights)
+
             return loaded_count > 0
-                    
+
         except Exception as e:
-            print(f"⚠️  Failed to load assignments from naming system: {e}")
+            print(f"⚠️  Failed to load assignments: {e}")
             import traceback
             traceback.print_exc()
             return False
@@ -448,18 +495,12 @@ def assign_light_to_active_camera(light_obj):
             light_obj.name = final_name
 
         if assignment_mode == 'SCENE':
-            # Scene mode: Assign to all cameras
-            all_cameras = [obj for obj in scene.objects if obj.type == 'CAMERA']
+            # Scene mode: Assign to "SCENE" (global visibility)
+            manager.assign_light_to_camera("SCENE", light_obj.name)
 
-            if all_cameras:
-                for camera in all_cameras:
-                    manager.assign_light_to_camera(camera.name, light_obj.name)
-
-                # Update visibility for all cameras
-                for camera in all_cameras:
-                    manager.update_light_visibility_for_camera(context, camera.name)
-            else:
-                print(f"⚠️  No cameras found in scene")
+            # Update visibility for current camera (scene lights are visible to all cameras)
+            if scene.camera:
+                manager.update_light_visibility_for_camera(context, scene.camera.name)
 
         else:  # CAMERA mode
             # Camera mode: Assign only to active camera

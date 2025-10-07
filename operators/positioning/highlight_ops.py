@@ -55,7 +55,9 @@ class LUMI_OT_highlight_positioning(bpy.types.Operator, BaseModalOperator):
     @classmethod
     def poll(cls, context):
         """Check if operator can run"""
-        return lumi_is_valid_positioning_context(context)
+        return (lumi_is_addon_enabled() and
+                getattr(context.scene, 'lumi_positioning_mode_enabled', True) and
+                any(obj.type == 'LIGHT' for obj in context.selected_objects))
 
     def validate_context(self, context):
         """Validate context for highlight positioning operations"""
@@ -370,6 +372,3 @@ class LUMI_OT_highlight_positioning(bpy.types.Operator, BaseModalOperator):
             import traceback
             traceback.print_exc()
             return {'CANCELLED'}
-
-
-

@@ -764,11 +764,92 @@ class LUMI_OT_set_light_assignment_mode(bpy.types.Operator):
 
         scene = context.scene
         scene.lumi_light_assignment_mode = self.mode
-        
+
         if self.mode == 'SCENE':
             self.report({'INFO'}, "Light assignment mode set to: Scene (global lights)")
         else:
             self.report({'INFO'}, "Light assignment mode set to: Camera (camera-specific lights)")
-            
+
+        return {'FINISHED'}
+
+class LUMI_OT_quick_assign_light(bpy.types.Operator):
+    """Quick Assign Light to Scene/Camera"""
+    bl_idname = "lumi.quick_assign_light"
+    bl_label = "Quick Assign Light"
+    bl_description = "Quick assign selected light to scene or specific camera"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return (lumi_is_addon_enabled() and
+                context.selected_objects and
+                any(obj.type == 'LIGHT' for obj in context.selected_objects))
+
+    def invoke(self, context, event):
+        if not lumi_is_addon_enabled():
+            self.report({'WARNING'}, 'LumiFlow is not active!')
+            return {'CANCELLED'}
+
+        # Check if exactly one light is selected
+        selected_lights = [obj for obj in context.selected_objects if obj.type == 'LIGHT']
+        if len(selected_lights) != 1:
+            self.report({'WARNING'}, 'Please select exactly one light')
+            return {'CANCELLED'}
+
+        self.selected_light = selected_lights[0]
+
+        # Show assignment menu
+        context.window_manager.popup_menu(self.draw_assignment_menu, title="Assign Light To", icon='LIGHT')
+        return {'FINISHED'}
+
+    def draw_assignment_menu(self, menu, context):
+        layout = menu.layout
+
+        # Scene assignment
+        op = layout.operator("lumi.assign_light_to_target", text="Scene (Global)", icon='WORLD')
+        op.light_name = self.selected_light.name
+        op.target_type = 'SCENE'
+
+        layout.separator()
+
+        # Camera assignments
+        cameras = [obj for obj in context.scene.objects if obj.type == 'CAMERA']
+        if cameras:
+            for camera in cameras:
+                op = layout.operator("lumi.assign_light_to_target", text=f"Camera: {camera.name}", icon='CAMERA_DATA')
+                op.light_name = self.selected_light.name
+                op.target_type = 'CAMERA'
+                op.camera_name = camera.name
+        else:
+            layout.label(text="No cameras found", icon='ERROR')
+
+class LUMI_OT_assign_light_to_target(bpy.types.Operator):
+    """Assign Light to Target"""
+    bl_idname = "lumi.assign_light_to_target"
+    bl_label = "Assign Light to Target"
+    bl_options = {'INTERNAL'}
+
+    light_name: bpy.props.StringProperty()
+    target_type: bpy.props.StringProperty()  # 'SCENE' or 'CAMERA'
+    camera_name: bpy.props.StringProperty()
+
+    def execute(self, context):
+        from ..core.camera_manager import get_camera_light_manager
+
+        manager = get_camera_light_manager()
+
+        if self.target_type == 'SCENE':
+            # Assign to scene (global)
+            manager.assign_light_to_camera("SCENE", self.light_name)
+            self.report({'INFO'}, f"Assigned '{self.light_name}' to Scene")
+        elif self.target_type == 'CAMERA':
+            # Assign to specific camera
+            manager.assign_light_to_camera(self.camera_name, self.light_name)
+            self.report({'INFO'}, f"Assigned '{self.light_name}' to Camera '{self.camera_name}'")
+
+        # Update visibility
+        if context.scene.camera:
+            manager.update_light_visibility_for_camera(context, context.scene.camera.name)
+
         return {'FINISHED'}
 

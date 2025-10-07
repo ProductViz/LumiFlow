@@ -2,44 +2,56 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Blender Version](https://img.shields.io/badge/Blender-4.2%2B-blue)](https://www.blender.org)
-[![GitHub Sponsors](https://img.shields.io/github/sponsors/ProductViz?color=red)](https://github.com/sponsors/ProductViz)
-[![Discord](https://img.shields.io/badge/Discord-Join%20Chat-7289DA?logo=discord&logoColor=white)](https://discord.gg/zqrSFctH5s)
+[![GitHub Sponsors](https://img.shields.io/github/sponsors/ProductViz?color=ff69b4)](https://github.com/sponsors/ProductViz)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Donate-ff5f5f?logo=ko-fi&logoColor=white)](https://ko-fi.com/productviz)
+[![Patreon](https://img.shields.io/badge/Patreon-Support-orange?logo=patreon)](https://patreon.com/productviz)
 
 **LumiFlow** – Smart lighting addon for Blender.  
 Free, open-source, and community-powered.
 
-![LumiFlow Logo](assets/icons/lumiflow_logo_2.png) 
+![LumiFlow Logo](assets/icons/lumiflow_logo_2.png)
 
 ---
 
 ## 🌟 Features
 
 ### Smart Lighting System
-- **Intelligent Light Placement**: Automatically position lights based on scene analysis
-- **Smart Templates**: Pre-built lighting setups for various scenarios (Studio, Cinematic, Environment)
-- **Interactive Positioning**: Real-time light manipulation with visual feedback
-- **Camera-Aware Lighting**: Lights that adapt to camera positions and angles
+- **Intelligent Light Placement** — Automatically positions lights based on scene geometry and context.  
+- **Smart Templates** — Ready-to-use setups for Studio, Cinematic, and Environmental lighting.  
+- **Interactive Positioning** — Real-time manipulation with visual feedback in the viewport.  
+- **Camera-Aware Lighting** — Lights dynamically adapt to the active camera.  
 
-### Positioning Tools
-- Highlight, Normal, Target, Orbit, Free positioning modes
-- **Flip Operations**: Mirror and rotate light setups quickly
-
-### Template Library
-- **Studio & Commercial**: Product and portrait setups
-- **Dramatic & Cinematic**: Film, horror, action, romantic moods
-- **Environment & Realistic**: Daylight, golden hour, night, weather-based
-- **Utilities & Single Lights**: Quick rim/fill/key setups
-
-### Visual Feedback System
-- Real-time overlays for positioning
-- Light path visualization
-- Smart cursor feedback
-- Camera overlays
+### Scene & Camera Assignment
+- Assign lights globally or per-camera using organized naming conventions.  
+- Automatically manage light visibility when switching between cameras.  
 
 ### Smart Controls
-- **Scroll Wheel Control**: Adjust distance, power, temperature, spread
-- **Modal Operators**: Context-sensitive tools
-- **Quick Actions** & **Batch Operations**
+- Control **Distance**, **Power**, **Size/Radius**, **Angle/Spread**, **Blend**, and **Temperature** with scroll gestures.  
+- **Modal Operators** — Context-aware interaction tools.  
+- **Quick Actions** — Perform fast, batch adjustments across multiple lights.  
+
+### Positioning Tools
+- Multiple positioning modes: **Highlight**, **Normal**, **Target**, **Orbit**, **Free**, and **Move**.  
+- **Flip Operations** — Mirror or rotate entire light setups with one click.  
+
+### Quick Light Linking
+- Create object groups and manage light linking instantly.  
+- Link lights to selected objects in one click.  
+
+### Template Library
+- **Studio & Commercial** — Perfect for product and portrait shots.  
+- **Dramatic & Cinematic** — For storytelling moods: film, horror, action, romance.  
+- **Environment & Realistic** — Includes daylight, golden hour, night, and weather-based setups.  
+- **Utilities & Single Lights** — Quick setups for rim, fill, or key lighting.  
+
+### Light Management
+- **Solo Light** mode to isolate and preview a single light.  
+- **Cycle Select** to iterate quickly through lights in your scene.  
+
+### Visual Feedback System
+- Real-time overlays for light position, direction, and intensity.  
+- Interactive visualization for power, distance, and spread.  
+- Smart cursor feedback and camera-based overlays.  
 
 ---
 
@@ -71,22 +83,30 @@ Free, open-source, and community-powered.
 
 1. Enable LumiFlow from the **Sidebar Panel** in 3D View (N key → LumiFlow tab)  
 2. Choose assignment mode (**Scene** or **Camera**)  
-3. Add smart lights with **Shift+Q** pie menu  
+3. Add smart lights with **Ctrl+Shift+A** pie menu  
 4. Apply templates for quick setups  
 5. Position lights interactively using tools or scroll controls  
 
-### Key Shortcuts
-- **Shift+Q**: Smart Light Pie Menu  
-- **Scroll Wheel**: Adjust light properties  
-- **G / R**: Move & Rotate lights (smart constraints)  
-- **ESC**: Cancel operation  
+### 🧭 Key Shortcuts
+
+| Shortcut | Action |
+|-----------|---------|
+| **L** | Toggle LumiFlow Addon |
+| **P** | Toggle Positioning Mode |
+| **D** | Cycle Through Lights |
+| **Modifier + MMB Drag** | Smart Control (adjust light properties) |
+| **Modifier + LMB Drag** | Positioning Mode (move or align lights) |
+| **Ctrl + Shift + A** | Add smart lights |
+| **Ctrl + Shift + C** | Open Flip Menu |
+| **Ctrl + Shift + X** | Quick Link to Target |
+| **Ctrl + Shift + D** | Quick Solo Light | 
 
 ---
 
 ## 🤝 Community & Support
 
 Join the LumiFlow community:  
-- [Discord Server]([https://discord.gg/yourlink](https://discord.gg/zqrSFctH5s)) – Real-time chat & Q&A  
+- [Discord Server](https://discord.gg/zqrSFctH5s) – Real-time chat & Q&A  
 - [GitHub Discussions](https://github.com/ProductViz/LumiFlow/discussions) – Feature requests & bug reports  
 - [Blender Artists Forum](https://blenderartists.org/) – Showcase & discussions  
 
@@ -94,18 +114,24 @@ We also run **monthly lighting challenges**, **community showcases**, and **Q&A 
 
 ---
 
-## 💖 Support Development
+## 💖 Support LumiFlow
 
-LumiFlow is free and open-source, but development takes time and effort.  
-If LumiFlow helps your work, consider supporting its growth:
+LumiFlow is free and open-source — if you find it helpful, you can support ongoing development through any of the platforms below:
 
-- [GitHub Sponsors](https://github.com/sponsors/ProductViz)  
-- [Ko-fi](https://ko-fi.com/username)  
-- [PayPal](https://paypal.me/username)  
-- [Gumroad (Pay-What-You-Want)](https://gumroad.com/lumiflow)  
-- [Patreon](https://patreon.com/username)  
+| Platform | Link | Description |
+|-----------|------|-------------|
+| 💜 **GitHub Sponsors** | [ProductViz](https://github.com/sponsors/ProductViz) | Official and most transparent way to support. |
+| ☕ **Ko-fi** | [ko-fi.com/lumiflow](https://ko-fi.com/lumiflow) | One-time or monthly donation. |
+| 🎨 **Patreon** | [patreon.com/lumiflow](https://patreon.com/productviz) | Exclusive early builds and behind-the-scenes updates. |
+| 💰 **PayPal** | [paypal.me/productviz](https://paypal.me/productviz) | Simple one-time contribution. |
+| 📦 **Gumroad** | [gumroad.com/lumiflow](https://gumroad.com/lumiflow) | Pay-what-you-want downloads and supporter bundles. |
 
-**Sponsors get recognition, early access builds, and exclusive content.**
+**Sponsors receive:**
+- Early access to development builds  
+- Recognition in documentation (if they opt in)  
+- Access to the community feedback channel on Discord  
+
+See all supporters → [Supporters List](docs/donate.md)
 
 ---
 
@@ -120,14 +146,18 @@ If LumiFlow helps your work, consider supporting its growth:
 ```
 LumiFlow/
 ├── __init__.py
-├── core/
-├── operators/
-├── panels/
-├── menus/
-├── overlay/
-├── templates/
-├── assets/
-└── docs/
+├── base_modal.py
+├── preferences.py
+├── registration.py
+│
+├── core/          # Core systems and state management
+├── operators/     # Operator classes for interactive lighting tools
+├── ui/            # Panels, pie menus, and interface layouts
+├── utils/         # Utility functions and light calculation helpers
+├── assets/        # Icons, logos, and other assets
+│
+├── LICENSE
+└── README.md
 ```
 
 ### Contributing
@@ -161,18 +191,6 @@ GPL v3.0 – see [LICENSE](LICENSE)
 
 ---
 
-## ❤️ Supporters (Simple List)
-
-Thanks to everyone who has supported LumiFlow development:
-
-- Alice
-- Bob
-- Charlie
-- Your Name Here ✨
-
-Want to join the list? [Support LumiFlow](https://github.com/sponsors/ProductViz)
-
-
 ## 🙏 Acknowledgments
 - Blender Foundation for Blender  
 - Community contributors & testers  
@@ -180,4 +198,5 @@ Want to join the list? [Support LumiFlow](https://github.com/sponsors/ProductViz
 
 ---
 
-**LumiFlow – Making professional lighting accessible to everyone.**  
+**LumiFlow – Making professional lighting accessible to everyone.**
+

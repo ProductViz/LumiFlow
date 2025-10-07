@@ -63,7 +63,7 @@ from .ui.main_panel import (
 )
 
 # Import update checker operators
-from .operators.panels_ops import LUMI_OT_check_update, LUMI_OT_update_addon
+from .operators.panels_ops import LUMI_OT_check_update, LUMI_OT_update_addon, LUMI_OT_toggle_donate_panel, LUMI_OT_toggle_positioning_mode
 
 # Template settings panel classes have been deleted
 
@@ -158,6 +158,10 @@ from .utils.properties import (
 def show_update_panel_update(self, context):
     """Update function for show_update_panel property"""
     if self.show_update_panel:
+        # Close donate panel if update panel is opened
+        if hasattr(context.scene, 'show_donate_panel') and context.scene.show_donate_panel:
+            context.scene.show_donate_panel = False
+
         # Clear previous update info and trigger check when panel is shown
         context.window_manager.lumiflow_update_info = ""
         try:
@@ -167,6 +171,14 @@ def show_update_panel_update(self, context):
             context.window_manager.lumiflow_update_info = "ERROR|Update system not available yet"
         except Exception as e:
             context.window_manager.lumiflow_update_info = f"ERROR|Failed to start update check: {str(e)}"
+
+
+def show_donate_panel_update(self, context):
+    """Update function for show_donate_panel property"""
+    if self.show_donate_panel:
+        # Close update panel if donate panel is opened
+        if hasattr(context.scene, 'show_update_panel') and context.scene.show_update_panel:
+            context.scene.show_update_panel = False
 
 # Import new Light Mixer classes
 # light_mixer file has been deleted
@@ -252,7 +264,7 @@ panel_classes = [
 # Template browser classes have been deleted
 
 
-# AI-Powered Template Recommendation classes  
+# AI-Powered Template Recommendation classes
 from .operators.menus_ops import (
     LUMI_OT_studio_commercial_menu,
     LUMI_OT_dramatic_cinematic_menu,
@@ -261,7 +273,9 @@ from .operators.menus_ops import (
     LUMI_OT_template_category_browser,
     LUMI_OT_smart_template_light_pie_call,
     LUMI_OT_template_favorites,
-    LUMI_OT_background_light_setup
+    LUMI_OT_background_light_setup,
+    LUMI_OT_quick_assign_light,
+    LUMI_OT_assign_light_to_target
 )
 # Pie Menu classes
 pie_menu_classes = [
@@ -279,6 +293,8 @@ pie_menu_classes = [
 update_classes = [
     LUMI_OT_check_update,
     LUMI_OT_update_addon,
+    LUMI_OT_toggle_donate_panel,
+    LUMI_OT_toggle_positioning_mode,
 ]
 
 classes = get_classes() + tuple(update_classes) + tuple(linking_ui_classes) + tuple(panel_classes) + tuple(pie_menu_classes)
@@ -343,6 +359,12 @@ def register_properties() -> None:
         ("lumi_smart_template_expanded", bpy.props.BoolProperty(name="Show Smart Template Tips", default=True)),
         ("light_target_face_location", bpy.props.FloatVectorProperty(name="Target Face Location", size=3)),
         ("lumi_overlay_info_enabled", bpy.props.BoolProperty(name="Overlay Info Enabled", default=True, description="Show/hide LumiFlow overlay info")),
+        ("lumi_positioning_mode_enabled", bpy.props.BoolProperty(
+            name="Positioning Mode Enabled",
+            description="Enable/disable positioning mode. When disabled, modifier+LMB drag uses default Blender behavior",
+            default=True,
+            update=lumi_positioning_mode_enabled_update
+        )),
         ("lumi_status_angle_active", bpy.props.BoolProperty(default=False)),        
         ("lumi_enable_pending", bpy.props.BoolProperty(default=False)),
         ("lumi_scroll_control_enabled", bpy.props.BoolProperty(name="Smart Control Enabled", default=False)),
@@ -415,6 +437,12 @@ def register_properties() -> None:
             description="Adjust lighting based on material analysis",
             default=True
         )),
+        ("show_donate_panel", bpy.props.BoolProperty(
+            name="Show Donate Panel",
+            description="Show/hide the donation panel",
+            default=False,
+            update=show_donate_panel_update
+        )),
         ("lumi_object_groups_index", bpy.props.IntProperty(default=0, update=object_group_index_update)),
         ("lumi_light_index", bpy.props.IntProperty(
             name="Light Index",
@@ -450,6 +478,12 @@ def register_properties() -> None:
             description="Show/hide the addon update panel",
             default=False,
             update=show_update_panel_update
+        )),
+        ("show_donate_panel", bpy.props.BoolProperty(
+            name="Show Donate Panel",
+            description="Show/hide the donation panel",
+            default=False,
+            update=show_donate_panel_update
         )),
     ]    
     for prop_name, prop_def in props:
@@ -506,6 +540,7 @@ def unregister_properties() -> None:
         "lumi_template_view_mode", "lumi_template_favorites", "lumi_template_auto_scale",
         "lumi_template_camera_relative", "lumi_template_intensity_multiplier", "lumi_template_size_multiplier",
         "lumi_template_manual_distance", "lumi_template_preserve_existing", "lumi_template_use_material_adaptation",
+        "show_donate_panel",
         # Template Settings Properties (legacy - for backward compatibility)
         "lumi_template_auto_position", "lumi_template_default_scale", "lumi_template_default_intensity",
         "lumi_template_collection", "lumi_template_auto_organize", "lumi_template_auto_save",
@@ -525,87 +560,139 @@ def unregister_properties() -> None:
             except Exception:
                 pass
 
+def register_positioning_keymaps():
+    """Register positioning mode keymaps if toggle is enabled"""
+    try:
+        wm = bpy.context.window_manager
+        if not wm:
+            return
+
+        kc = wm.keyconfigs.addon
+        if not kc:
+            return
+
+        km = kc.keymaps.new(name='3D View', space_type='VIEW_3D')
+
+        # Direct positioning mode shortcuts - replace pie menu with direct operator calls
+        # Highlight Positioning: Ctrl + LMB drag
+        kmi = km.keymap_items.new('lumi.highlight_positioning', 'LEFTMOUSE', 'PRESS', ctrl=True, shift=False, alt=False)
+        addon_keymaps.append((km, kmi))
+
+        # Normal Positioning: Shift + LMB drag
+        kmi = km.keymap_items.new('lumi.normal_positioning', 'LEFTMOUSE', 'PRESS', ctrl=False, shift=True, alt=False)
+        addon_keymaps.append((km, kmi))
+
+        # Orbit Positioning: Alt + LMB drag
+        kmi = km.keymap_items.new('lumi.orbit_positioning', 'LEFTMOUSE', 'PRESS', ctrl=False, shift=False, alt=True)
+        addon_keymaps.append((km, kmi))
+
+        # Target Positioning: Ctrl+Alt + LMB drag
+        kmi = km.keymap_items.new('lumi.target_positioning', 'LEFTMOUSE', 'PRESS', ctrl=True, shift=False, alt=True)
+        addon_keymaps.append((km, kmi))
+
+        # Free Positioning: Ctrl+Shift + LMB drag
+        kmi = km.keymap_items.new('lumi.free_positioning', 'LEFTMOUSE', 'PRESS', ctrl=True, shift=True, alt=False)
+        addon_keymaps.append((km, kmi))
+
+        # Move Positioning: Shift+Alt + LMB drag
+        kmi = km.keymap_items.new('lumi.move_positioning', 'LEFTMOUSE', 'PRESS', ctrl=False, shift=True, alt=True)
+        addon_keymaps.append((km, kmi))
+
+    except (AttributeError, RuntimeError):
+        pass
+
+
+def unregister_positioning_keymaps():
+    """Unregister positioning mode keymaps"""
+    try:
+        # Remove positioning keymaps from addon_keymaps list
+        global addon_keymaps
+        positioning_keymaps = []
+        remaining_keymaps = []
+
+        for km, kmi in addon_keymaps:
+            # Check if this is a positioning keymap by checking the operator name
+            if hasattr(kmi, 'idname') and kmi.idname and 'positioning' in kmi.idname:
+                positioning_keymaps.append((km, kmi))
+            else:
+                remaining_keymaps.append((km, kmi))
+
+        # Remove positioning keymaps
+        for km, kmi in positioning_keymaps:
+            if km and kmi:
+                try:
+                    km.keymap_items.remove(kmi)
+                except:
+                    pass
+
+        # Update the global list
+        addon_keymaps = remaining_keymaps
+
+    except Exception:
+        pass
+
+
 def register_keymaps() -> None:
     """Register all keymaps for LumiFlow"""
     try:
         wm = bpy.context.window_manager
         if not wm:
             return  # Window manager not available
-            
+
         kc = wm.keyconfigs.addon
         if not kc:
             return  # Addon keyconfig not available
-            
+
         km = kc.keymaps.new(name='3D View', space_type='VIEW_3D')
         shortcuts = [
-           
+
             ('lumi.template_menu_call', 'A', 'PRESS', True, True, False),
             ('lumi.flip_menu_call', 'C', 'PRESS', True, True, False),
             ('lumi.quick_link_to_target', 'X', 'PRESS', True, True, False),
-            ('lumi.toggle_addon', 'D', 'PRESS', True, True, True),
+            ('lumi.quick_assign_light', 'Q', 'PRESS', True, True, False),
+            ('lumi.toggle_addon', 'L', 'PRESS', False, False, False),
             ('lumi.cycle_lights_modal', 'D', 'PRESS', False, False, False),
             ('lumi.quick_solo_light', 'D', 'PRESS', True, True, False),
+            ('lumi.toggle_positioning_mode', 'P', 'PRESS', False, False, False),
         ]
         for op, key, action, ctrl, shift, alt in shortcuts:
             kmi = km.keymap_items.new(op, key, action, ctrl=ctrl, shift=shift, alt=alt)
             addon_keymaps.append((km, kmi))
 
-        # Direct positioning mode shortcuts - replace pie menu with direct operator calls
-        # Highlight Positioning: Ctrl + LMB drag
-        kmi = km.keymap_items.new('lumi.highlight_positioning', 'LEFTMOUSE', 'PRESS', ctrl=True, shift=False, alt=False)
-        addon_keymaps.append((km, kmi))
-        
-        # Normal Positioning: Shift + LMB drag
-        kmi = km.keymap_items.new('lumi.normal_positioning', 'LEFTMOUSE', 'PRESS', ctrl=False, shift=True, alt=False)
-        addon_keymaps.append((km, kmi))
-        
-        # Orbit Positioning: Alt + LMB drag
-        kmi = km.keymap_items.new('lumi.orbit_positioning', 'LEFTMOUSE', 'PRESS', ctrl=False, shift=False, alt=True)
-        addon_keymaps.append((km, kmi))
-        
-        # Target Positioning: Ctrl+Alt + LMB drag
-        kmi = km.keymap_items.new('lumi.target_positioning', 'LEFTMOUSE', 'PRESS', ctrl=True, shift=False, alt=True)
-        addon_keymaps.append((km, kmi))
-        
-        # Free Positioning: Ctrl+Shift + LMB drag
-        kmi = km.keymap_items.new('lumi.free_positioning', 'LEFTMOUSE', 'PRESS', ctrl=True, shift=True, alt=False)
-        addon_keymaps.append((km, kmi))
-        
-        # Move Positioning: Shift+Alt + LMB drag
-        kmi = km.keymap_items.new('lumi.move_positioning', 'LEFTMOUSE', 'PRESS', ctrl=False, shift=True, alt=True)
-        addon_keymaps.append((km, kmi))
+        # Always register positioning keymaps - operators will check the toggle in poll()
+        register_positioning_keymaps()
 
         # Smart control shortcuts - using consolidated operator
         # Main toggle: Ctrl+Shift+Alt+MIDDLEMOUSE
         kmi = km.keymap_items.new('lumi.smart_control', 'MIDDLEMOUSE', 'PRESS', ctrl=True, shift=True, alt=True)
         addon_keymaps.append((km, kmi))
-        
+
         # Mode-specific smart control with preset mode
         # Distance mode: Ctrl+MIDDLEMOUSE
         kmi = km.keymap_items.new('lumi.smart_control', 'MIDDLEMOUSE', 'PRESS', ctrl=True)
         kmi.properties.mode = 'DISTANCE'
         addon_keymaps.append((km, kmi))
-        
+
         # Power mode: Shift+MIDDLEMOUSE
         kmi = km.keymap_items.new('lumi.smart_control', 'MIDDLEMOUSE', 'PRESS', shift=True)
         kmi.properties.mode = 'POWER'
         addon_keymaps.append((km, kmi))
-        
+
         # Scale mode: Alt+MIDDLEMOUSE
         kmi = km.keymap_items.new('lumi.smart_control', 'MIDDLEMOUSE', 'PRESS', alt=True)
         kmi.properties.mode = 'SCALE'
         addon_keymaps.append((km, kmi))
-        
+
         # Angle mode: Ctrl+Shift+MIDDLEMOUSE
         kmi = km.keymap_items.new('lumi.smart_control', 'MIDDLEMOUSE', 'PRESS', ctrl=True, shift=True)
         kmi.properties.mode = 'ANGLE'
         addon_keymaps.append((km, kmi))
-        
+
         # Temperature mode: Ctrl+Alt+MIDDLEMOUSE
         kmi = km.keymap_items.new('lumi.smart_control', 'MIDDLEMOUSE', 'PRESS', ctrl=True, alt=True)
         kmi.properties.mode = 'TEMPERATURE'
         addon_keymaps.append((km, kmi))
-        
+
         # Blend mode: Shift+Alt+MIDDLEMOUSE
         kmi = km.keymap_items.new('lumi.smart_control', 'MIDDLEMOUSE', 'PRESS', shift=True, alt=True)
         kmi.properties.mode = 'BLEND'
@@ -617,12 +704,16 @@ def register_keymaps() -> None:
 def unregister_keymaps() -> None:
     """Unregister all LumiFlow keymaps"""
     try:
-        for km, kmi in addon_keymaps:
+        # Unregister positioning keymaps first
+        unregister_positioning_keymaps()
+        # Unregister remaining keymaps
+        for km, kmi in addon_keymaps[:]:  # Use slice copy to avoid modification during iteration
             if km and kmi:
                 km.keymap_items.remove(kmi)
         addon_keymaps.clear()
     except Exception:
-        addon_keymaps.clear()
+        pass
+
 
 def register_handlers() -> None:
     if lumi_scene_update_handler not in bpy.app.handlers.depsgraph_update_post:
@@ -1108,4 +1199,3 @@ def unregister() -> None:
     unregister_file_detection_system()
     
     # Unregistration completed successfully
-

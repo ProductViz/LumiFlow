@@ -48,7 +48,9 @@ class LUMI_OT_free_positioning(bpy.types.Operator, BaseModalOperator):
     # # Method to determine when operator/panel is active
     def poll(cls, context):
         # # Get selected objects in scene
-        return lumi_is_addon_enabled() and any(obj.type == 'LIGHT' for obj in context.selected_objects)
+        return (lumi_is_addon_enabled() and
+                getattr(context.scene, 'lumi_positioning_mode_enabled', True) and
+                any(obj.type == 'LIGHT' for obj in context.selected_objects))
 
     def validate_context(self, context):
         """Validate context for free positioning operations"""

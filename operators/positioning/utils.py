@@ -28,28 +28,32 @@ def lumi_disable_all_positioning_ops(scene: bpy.types.Scene):
 
 def lumi_is_valid_positioning_context(context: bpy.types.Context, check_event=False, check_mode=None, required_mode=None) -> bool:
     """Centralized validation for all positioning operations
-    
+
     Args:
         context: Blender context
         check_event: Whether to check for event presence
         check_mode: Whether to check positioning mode
         required_mode: Specific mode to check against
-    
+
     Returns:
         bool: True if context is valid
     """
     # Basic context validation
     if not context or not context.scene:
         return False
-    
+
     # Event validation (for modal operations)
     if check_event and not hasattr(context, 'event'):
         return False
-    
+
     # Addon validation
     if not lumi_is_addon_enabled():
         return False
-    
+
+    # POSITIONING MODE TOGGLE CHECK - Prevent operators from working when positioning mode is disabled
+    if not getattr(context.scene, 'lumi_positioning_mode_enabled', True):
+        return False
+
     # Mode validation
     if check_mode and required_mode:
         if context.scene.light_props.positioning_mode != required_mode:
@@ -165,5 +169,3 @@ __all__ = [
     'detect_positioning_mode',
     'get_modifier_keys_for_mode'
 ]
-
-

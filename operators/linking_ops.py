@@ -7,9 +7,32 @@ Linking Operations
 Operators for light linking and group management functionality.
 """
 import bpy
+import traceback
 from bpy.props import CollectionProperty, StringProperty, BoolProperty
 from mathutils import Vector
 from ..utils import lumi_is_addon_enabled, lumi_get_light_collection
+
+# Robust logger import with fallback
+try:
+    from ..lib.logger import logger  # project logger
+except Exception:
+    import logging
+    logger = logging.getLogger(__name__)
+
+# Import Performance Management system
+try:
+    from ..lib.performance import debounce, cache_result
+except ImportError:
+    # Fallback if performance module not available
+    def debounce(wait_time=0.1, key=None):
+        def decorator(func):
+            return func
+        return decorator
+
+    def cache_result(ttl=1.0, cache_key=None):
+        def decorator(func):
+            return func
+        return decorator
 
 LUMIFLOW_COLLECTION_NAME = "LumiFlow Lights"
 DEFAULT_GROUP_NAME = "Default"
@@ -21,9 +44,150 @@ _dynamic_menu_classes = []
 _FLAG_UPDATING = "_lumi_updating_light_links"
 _FLAG_GROUP_UPDATE = "_lumi_group_update_in_progress"
 
+def update_linking_from_marked(scene, light_item):
+    """Update actual Blender light linking when marked property changes"""
+    try:
+        # Debug logging
+        print(f"update_linking_from_marked called: light={light_item.name}, marked={light_item.marked}")
+
+        # Prevent recursion during updates
+        if scene.get(_FLAG_UPDATING, False):
+            print("Skipping update - recursion prevention flag set")
+            return
+
+        # Get current object group
+        obj_groups = scene.lumi_object_groups
+        obj_index = scene.lumi_object_groups_index
+
+        print(f"Object groups count: {len(obj_groups)}, current index: {obj_index}")
+
+        if obj_index < 0 or obj_index >= len(obj_groups):
+            print("No valid object group selected")
+            return
+
+        current_obj_group = obj_groups[obj_index]
+        print(f"Current object group: {current_obj_group.name}")
+
+        # Get light object
+        light_obj = bpy.data.objects.get(light_item.name)
+        if not light_obj or light_obj.type != 'LIGHT':
+            print(f"Light object not found or not LIGHT type: {light_item.name}")
+            return
+
+        print(f"Light object found: {light_obj.name}")
+
+        # Get receiver objects from current group
+        receiver_objects = []
+        for item in current_obj_group.objects:
+            obj = bpy.data.objects.get(item.name)
+            if obj and obj.type == 'MESH':
+                receiver_objects.append(obj)
+
+        print(f"Found {len(receiver_objects)} receiver objects")
+
+        if not receiver_objects:
+            print("No valid receiver objects found")
+            return
+
+        # Update link status in collection
+        links = scene.lumi_object_group_link_status
+
+        # Find or create link status entry
+        link_status = next((l for l in links
+            if l.object_group_name == current_obj_group.name and l.light_name == light_item.name), None)
+
+        if not link_status:
+            link_status = links.add()
+            link_status.object_group_name = current_obj_group.name
+            link_status.light_name = light_item.name
+            print("Created new link status entry")
+        else:
+            print("Found existing link status entry")
+
+        # Update link status
+        link_status.is_linked = light_item.marked
+        print(f"Updated link status: is_linked={link_status.is_linked}")
+
+        # Apply actual Blender light linking - Use scene parameter instead of bpy.context.scene
+        if hasattr(scene, 'light_linking') and scene.light_linking:
+            print("Applying Blender light linking...")
+            try:
+                if light_item.marked:
+                    # Include - link light to receiver objects
+                    print(f"Including light {light_obj.name} to {len(receiver_objects)} objects")
+                    for receiver in receiver_objects:
+                        try:
+                            scene.light_linking.link_new(light_obj, receiver, 'INCLUDE')
+                            print(f"INCLUDED {light_obj.name} → {receiver.name}")
+                        except Exception as e:
+                            print(f"Failed to INCLUDE {light_obj.name} → {receiver.name}: {e}")
+                else:
+                    # Exclude - explicitly exclude light from receiver objects
+                    print(f"Excluding light {light_obj.name} from {len(receiver_objects)} objects")
+                    for receiver in receiver_objects:
+                        try:
+                            # CRITICAL FIX: Use EXCLUDE link_new instead of unlink
+                            scene.light_linking.link_new(light_obj, receiver, 'EXCLUDE')
+                            print(f"EXCLUDED {light_obj.name} ← {receiver.name}")
+                        except Exception as e:
+                            print(f"Failed to EXCLUDE {light_obj.name} ← {receiver.name}: {e}")
+                            # Fallback: try unlink method
+                            try:
+                                scene.light_linking.unlink(light_obj, receiver)
+                                print(f"UNLINKED {light_obj.name} ← {receiver.name} (fallback)")
+                            except Exception as e2:
+                                print(f"Fallback unlink also failed: {e2}")
+            except Exception as e:
+                print(f"Light linking error: {e}")
+        else:
+            # Rate-limited warning to avoid console spam
+            print("Light linking not available on scene - trying operator fallback")
+
+            # Fallback: Use operators for light linking
+            try:
+                # Store current selection
+                original_selection = list(bpy.context.selected_objects)
+                original_active = bpy.context.view_layer.objects.active
+
+                # Clear selection and select light + receivers
+                bpy.ops.object.select_all(action='DESELECT')
+                light_obj.select_set(True)
+                bpy.context.view_layer.objects.active = light_obj
+
+                for receiver in receiver_objects:
+                    receiver.select_set(True)
+
+                if light_item.marked:
+                    # Include linking
+                    if hasattr(bpy.ops.object, 'light_linking_receivers_link'):
+                        bpy.ops.object.light_linking_receivers_link(link_state='INCLUDE')
+                        print(f"Operator INCLUDED {light_obj.name} to receivers")
+                    else:
+                        print("light_linking_receivers_link operator not available")
+                else:
+                    # Exclude linking - USE SAME OPERATOR but with EXCLUDE state
+                    if hasattr(bpy.ops.object, 'light_linking_receivers_link'):
+                        bpy.ops.object.light_linking_receivers_link(link_state='EXCLUDE')
+                        print(f"Operator EXCLUDED {light_obj.name} from receivers")
+                    else:
+                        print("light_linking_receivers_link operator not available for EXCLUDE")
+
+                # Restore original selection
+                bpy.ops.object.select_all(action='DESELECT')
+                for obj in original_selection:
+                    obj.select_set(True)
+                bpy.context.view_layer.objects.active = original_active
+
+            except Exception as e:
+                print(f"Operator fallback failed: {e}")
+
+    except Exception as e:
+        print(f"Error in update_linking_from_marked: {e}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
+
 def light_item_marked_update(self, context):
-    """Handle per-light checkbox changes; guard against recursion using
-    scene-scoped flags stored on the active scene object."""
+    """Handle per-light checkbox changes with improved linking logic"""
     scene = getattr(context, "scene", None) or bpy.context.scene
 
     # If any update is already in progress on this scene, skip to avoid recursion.
@@ -34,75 +198,12 @@ def light_item_marked_update(self, context):
     # is a programmatic/update-in-progress operation and should early-return.
     scene[_FLAG_UPDATING] = True
     scene[_FLAG_GROUP_UPDATE] = True
-    
+
     try:
-        scene = context.scene
-        light_name = self.name
-        lamp = bpy.data.objects.get(light_name)
-        if not lamp or lamp.type != 'LIGHT':
-            return
+        # Use the improved linking function
+        update_linking_from_marked(scene, self)
+        redraw_3d_areas()
 
-        # Determine receivers: use current object group if available, else all MESH
-        receivers = []
-        idx = getattr(scene, "lumi_object_groups_index", -1)
-        
-        if idx >= 0 and idx < len(scene.lumi_object_groups):
-            grp = scene.lumi_object_groups[idx]
-            for it in grp.objects:
-                o = bpy.data.objects.get(it.name)
-                if o and o.type == 'MESH':
-                    receivers.append(o)
-        else:
-            receivers = [o for o in bpy.data.objects if o.type == 'MESH']
-
-        if not receivers:
-            return
-
-        # Determine link_action from the checkbox value
-        do_include = bool(self.marked)
-
-        # Save selection/active
-        original_active = context.view_layer.objects.active
-        original_selected = list(context.selected_objects)
-
-        try:
-            bpy.ops.object.select_all(action='DESELECT')
-            for o in receivers:
-                o.select_set(True)
-            lamp.select_set(True)
-            context.view_layer.objects.active = lamp
-
-            if do_include:
-                bpy.ops.object.light_linking_receivers_link(link_state='INCLUDE')
-            else:
-                bpy.ops.object.light_linking_receivers_link(link_state='EXCLUDE')
-
-            # Update internal link-status table for current group -> light
-            links = scene.lumi_object_group_link_status
-            grp_name = scene.lumi_object_groups[idx].name if (idx >= 0 and idx < len(scene.lumi_object_groups)) else ""
-            # remove existing
-            to_remove = [i for i,l in enumerate(links) if l.object_group_name == grp_name and l.light_name == light_name]
-            for i in reversed(to_remove):
-                links.remove(i)
-            entry = links.add()
-            entry.object_group_name = grp_name
-            entry.light_name = light_name
-            # Set link status
-            entry.is_linked = bool(do_include)
-
-        except Exception as e:
-            pass
-
-        finally:
-            # restore selection
-            bpy.ops.object.select_all(action='DESELECT')
-            for o in original_selected:
-                try: o.select_set(True)
-                except Exception: pass
-            context.view_layer.objects.active = original_active
-
-            redraw_3d_areas()
-            
     finally:
         scene[_FLAG_UPDATING] = False
         scene[_FLAG_GROUP_UPDATE] = False
@@ -256,51 +357,148 @@ def get_grouped_light_names(context):
         grouped_names.update(obj.name for obj in group.objects)
     return grouped_names
 
+@cache_result(ttl=0.5, cache_key="light_groups_sync")
+@debounce(wait_time=0.1, key="light_groups_sync")
 def sync_light_groups_with_collections(scene):
-    """Optimized sync for read-only light groups - only updates display data"""
-    # Store current marked states before clearing
-    marked_dict = {}
-    for group in scene.lumi_light_groups:
-        for item in group.lights:
-            marked_dict[item.name] = item.marked
+    """Optimized sync for read-only light groups with performance enhancements"""
 
-    scene.lumi_light_groups.clear()
-    
-    # Prevent recursion when setting marked states - this is system sync, not user action
-    scene[_FLAG_UPDATING] = True
-    scene[_FLAG_GROUP_UPDATE] = True  # Mark as system update
+    # CRITICAL: Check if caching should be bypassed
     try:
-        # Optimized: Only create groups for display, don't modify collections
-        root_collection = lumi_get_light_collection(scene)
-        
-        # Default group - all lights in root collection
-        all_lights_in_root = [obj for obj in root_collection.objects if obj.type == 'LIGHT']
-        
-        if all_lights_in_root:
-            default_group = scene.lumi_light_groups.add()
-            default_group.name = DEFAULT_GROUP_NAME
-            default_group.show_objects = True
-            
-            # Add lights to display group
-            for light in all_lights_in_root:
-                light_item = default_group.lights.add()
-                light_item.name = light.name
-                light_item.marked = marked_dict.get(light.name, False)
-        
-        # Sub-collection groups - read-only display
-        for collection in root_collection.children:
-            group = scene.lumi_light_groups.add()
-            group.name = collection.name
-            group.show_objects = True
-            
-            for obj in collection.objects:
-                if obj.type == 'LIGHT':
-                    light_item = group.lights.add()
-                    light_item.name = obj.name
-                    light_item.marked = marked_dict.get(obj.name, False)
-    finally:
-        scene[_FLAG_UPDATING] = False
-        scene[_FLAG_GROUP_UPDATE] = False
+        from ..core.global_cache_manager import get_global_cache_manager
+        global_cache_manager = get_global_cache_manager()
+        cache_enabled = global_cache_manager.is_cache_enabled('performance')
+    except (ImportError, AttributeError):
+        # Fallback: check scene-level setting
+        cache_enabled = not getattr(scene, 'lumi_disable_cache', False)
+
+    # If cache is disabled, clear any existing cache for this function
+    if not cache_enabled:
+        try:
+            from ..lib.performance import get_performance_manager
+            perf_manager = get_performance_manager()
+            if "light_groups_sync" in perf_manager._caches:
+                perf_manager._caches["light_groups_sync"].clear()
+                logger.debug("Cache cleared for light_groups_sync (cache disabled)", 'core')
+        except Exception:
+            pass  # Ignore cache clear errors
+
+    # Validate scene is still valid
+    try:
+        # Test scene access to catch StructRNA removal
+        _ = scene.name
+        if not hasattr(scene, 'lumi_light_groups'):
+            logger.debug("Scene missing lumi_light_groups, skipping sync", 'core')
+            return
+    except (AttributeError, ReferenceError, RuntimeError) as scene_error:
+        # Scene is no longer valid, skip sync
+        logger.debug("Scene no longer valid, skipping sync: {}", 'core', scene_error)
+        return
+
+    # SAFETY: Prevent concurrent sync operations
+    if scene.get('_lumi_syncing_groups', False):
+        logger.debug("Sync already in progress, skipping duplicate", 'core')
+        return
+
+    try:
+        scene['_lumi_syncing_groups'] = True
+
+        # Store current marked states before clearing
+        marked_dict = {}
+        try:
+            for group in scene.lumi_light_groups:
+                for item in group.lights:
+                    marked_dict[item.name] = item.marked
+        except (AttributeError, RuntimeError):
+            # If we can't read current state, start fresh
+            marked_dict = {}
+
+        # First: Clean up any invalid references before rebuilding
+        invalid_groups = []
+        for i, group in enumerate(scene.lumi_light_groups):
+            invalid_lights = []
+            for j, light_item in enumerate(group.lights):
+                # Check if light still exists in scene
+                if light_item.name not in [obj.name for obj in scene.objects if obj.type == 'LIGHT']:
+                    invalid_lights.append(j)
+
+            # Remove invalid lights (reverse order)
+            for j in reversed(invalid_lights):
+                group.lights.remove(j)
+
+            # Mark group for removal if empty after cleanup
+            if len(group.lights) == 0 and len([obj for obj in scene.objects if obj.type == 'LIGHT']) > 0:
+                invalid_groups.append(i)
+
+        # Remove empty groups (reverse order)
+        for i in reversed(invalid_groups):
+            scene.lumi_light_groups.remove(i)
+
+        # Clear and rebuild to ensure fresh sync
+        scene.lumi_light_groups.clear()
+
+        # Prevent recursion when setting marked states - this is system sync, not user action
+        scene[_FLAG_UPDATING] = True
+        scene[_FLAG_GROUP_UPDATE] = True  # Mark as system update
+        try:
+            # Optimized: Only create groups for display, don't modify collections
+            root_collection = lumi_get_light_collection(scene)
+
+            if not root_collection:
+                return
+
+            # Default group - all lights in root collection
+            all_lights_in_root = [obj for obj in root_collection.objects if obj.type == 'LIGHT']
+
+            if all_lights_in_root:
+                default_group = scene.lumi_light_groups.add()
+                default_group.name = DEFAULT_GROUP_NAME
+                default_group.show_objects = True
+
+                # Add lights to display group
+                for light in all_lights_in_root:
+                    light_item = default_group.lights.add()
+                    light_item.name = light.name
+                    light_item.marked = marked_dict.get(light.name, False)
+
+            # Sub-collection groups - read-only display
+            for collection in root_collection.children:
+                group = scene.lumi_light_groups.add()
+                group.name = collection.name
+                group.show_objects = True
+
+                for obj in collection.objects:
+                    if obj.type == 'LIGHT':
+                        light_item = group.lights.add()
+                        light_item.name = obj.name
+                        light_item.marked = marked_dict.get(obj.name, False)
+        finally:
+            scene[_FLAG_UPDATING] = False
+            scene[_FLAG_GROUP_UPDATE] = False
+            # Always cleanup sync flag
+            scene['_lumi_syncing_groups'] = False
+    except Exception as e:
+        logger.error("Sync failed with error: {}", e)
+        # If sync fails, at least try to create a basic structure
+        try:
+            # Fallback: Create default group with all scene lights
+            scene.lumi_light_groups.clear()
+            all_scene_lights = [obj for obj in scene.objects if obj.type == 'LIGHT']
+
+            if all_scene_lights:
+                logger.debug("Creating fallback default group with {} lights", 'core', len(all_scene_lights))
+                default_group = scene.lumi_light_groups.add()
+                default_group.name = DEFAULT_GROUP_NAME
+                default_group.show_objects = True
+
+                for light in all_scene_lights:
+                    light_item = default_group.lights.add()
+                    light_item.name = light.name
+                    light_item.marked = False
+        except Exception as fallback_error:
+            logger.error("Fallback sync also failed: {}", fallback_error)
+        finally:
+            # Ensure cleanup even in fallback
+            scene['_lumi_syncing_groups'] = False
 
 def ensure_default_object_group(scene):
     default_group = next((g for g in scene.lumi_object_groups if g.name == DEFAULT_GROUP_NAME), None)
@@ -352,32 +550,65 @@ def remove_objects_from_all_groups(scene, object_names, exclude_group=None):
     
     return removed_count
 
+@cache_result(ttl=0.3, cache_key="ungrouped_lights_sync")
+@debounce(wait_time=0.1, key="ungrouped_lights_sync")
 def sync_ungrouped_lights(scene):
-    """Optimized sync for ungrouped lights - read-only display"""
-    # Use scene-scoped flags (avoid module-level globals)
-    
-    # Create context object for function calls
-    context = bpy.context
-    
-    grouped_names = get_grouped_light_names(context)
-    marked_dict = {item.name: item.marked for item in scene.lumi_un_grouped_lights}
-    valid_light_objects = get_valid_light_objects(context)
-    valid_lights = {obj.name for obj in valid_light_objects if obj.name not in grouped_names}
-    
-    ungrouped_lights = scene.lumi_un_grouped_lights
-    ungrouped_lights.clear()
-    
-    # Prevent recursion when setting marked states - mark as a system/group update
-    scene[_FLAG_UPDATING] = True
-    scene[_FLAG_GROUP_UPDATE] = True
+    """Optimized sync for ungrouped lights with performance enhancements"""
+
+    # CRITICAL: Check if caching should be bypassed
     try:
-        for name in valid_lights:
-            item = ungrouped_lights.add()
-            item.name = name
-            item.marked = marked_dict.get(name, False)
-    finally:
-        scene[_FLAG_UPDATING] = False
-        scene[_FLAG_GROUP_UPDATE] = False
+        from ..core.global_cache_manager import get_global_cache_manager
+        global_cache_manager = get_global_cache_manager()
+        cache_enabled = global_cache_manager.is_cache_enabled('performance')
+    except (ImportError, AttributeError):
+        # Fallback: check scene-level setting
+        cache_enabled = not getattr(scene, 'lumi_disable_cache', False)
+
+    # If cache is disabled, clear any existing cache for this function
+    if not cache_enabled:
+        try:
+            from ..lib.performance import get_performance_manager
+            perf_manager = get_performance_manager()
+            if "ungrouped_lights_sync" in perf_manager._caches:
+                perf_manager._caches["ungrouped_lights_sync"].clear()
+                logger.debug("Cache cleared for ungrouped_lights_sync (cache disabled)", 'core')
+        except Exception:
+            pass  # Ignore cache clear errors
+
+    # Validate scene is still valid
+    try:
+        # Test scene access to catch StructRNA removal
+        _ = scene.name
+        if not scene.lumi_un_grouped_lights:
+            return
+    except (AttributeError, ReferenceError, RuntimeError):
+        # Scene is no longer valid, skip sync
+        return
+
+    # Use scene-scoped flags (avoid module-level globals)
+    try:
+        grouped_names = get_grouped_light_names(scene)
+        marked_dict = {item.name: item.marked for item in scene.lumi_un_grouped_lights}
+        valid_light_objects = get_valid_light_objects(scene)
+        valid_lights = {obj.name for obj in valid_light_objects if obj.name not in grouped_names}
+
+        ungrouped_lights = scene.lumi_un_grouped_lights
+        ungrouped_lights.clear()
+
+        # Prevent recursion when setting marked states - mark as a system/group update
+        scene[_FLAG_UPDATING] = True
+        scene[_FLAG_GROUP_UPDATE] = True
+        try:
+            for name in valid_lights:
+                item = ungrouped_lights.add()
+                item.name = name
+                item.marked = marked_dict.get(name, False)
+        finally:
+            scene[_FLAG_UPDATING] = False
+            scene[_FLAG_GROUP_UPDATE] = False
+    except (AttributeError, ReferenceError, RuntimeError):
+        # Scene became invalid during operation
+        return
 
 def sync_marked_with_links(scene):
     """Essential function for syncing marked states with link status"""
@@ -410,19 +641,117 @@ def object_group_index_update(self, context):
     sync_marked_with_links(context.scene)
     redraw_3d_areas()
 
+@bpy.app.handlers.persistent
+@debounce(wait_time=0.1, key="light_groups_update_handler")
 def lumi_light_groups_update_handler(scene, depsgraph):
     """
-    Optimized handler for light group updates in read-only mode
-    - Only syncs display data when collections change
-    - Minimal processing for performance
+    Enhanced handler for both light linking and light mixer updates
+    - Detects add/delete/modify of lights and collections
+    - Syncs light groups when collections change
+    - Auto-updates light mixer collection
+    - Optimized for performance with smart change detection
     """
     try:
-        # Only sync if there are actual changes to avoid unnecessary updates
-        if hasattr(scene, 'lumi_light_groups'):
-            sync_light_groups_with_collections(scene)
-            sync_ungrouped_lights(scene)
-    except (AttributeError, RuntimeError):
-        # Ignore context errors during batch operations
+        # CRITICAL FIX: Check if scene is still valid
+        if scene is None:
+            logger.debug("Scene is None, skipping handler", 'core')
+            return
+
+        # Validate scene is still valid (catch StructRNA removal)
+        try:
+            _ = scene.name
+            if not hasattr(scene, 'objects'):
+                logger.debug("Scene has no objects attribute, skipping handler", 'core')
+                return
+        except (AttributeError, ReferenceError, RuntimeError):
+            logger.debug("Scene is invalid or removed, skipping handler", 'core')
+            return
+
+        # Additional safety check for bpy.context
+        if bpy.context.scene is None:
+            logger.debug("bpy.context.scene is None, skipping handler", 'core')
+            return
+
+        # Check if we have any light-related changes in depsgraph
+        has_light_changes = False
+        has_collection_changes = False
+
+        # Get current counts for comparison
+        current_lights = [obj for obj in scene.objects if obj.type == 'LIGHT']
+        current_light_count = len(current_lights)
+
+        # Enhanced detection for object add/delete/modify
+        if depsgraph.id_type_updated('OBJECT'):
+            has_light_changes = True
+
+        # Check for collection changes
+        if depsgraph.id_type_updated('COLLECTION'):
+            has_collection_changes = True
+
+        # Check for light groups count mismatch (similar to light mixer logic)
+        if hasattr(scene, 'lumi_light_groups') and scene.lumi_light_groups:
+            # Count lights in all groups
+            total_lights_in_groups = 0
+            for group in scene.lumi_light_groups:
+                total_lights_in_groups += len(group.lights)
+
+            # If scene has different light count than groups, trigger update
+            if current_light_count != total_lights_in_groups:
+                has_light_changes = True
+
+        # Also check specific updates for fine-grained control
+        for update in depsgraph.updates:
+            if hasattr(update, 'id') and update.id:
+                try:
+                    # Light data updates
+                    if hasattr(update.id, 'bl_rna') and update.id.bl_rna.identifier == 'Light':
+                        has_light_changes = True
+                        break
+                    # Light object updates (includes add/delete/modify)
+                    elif hasattr(update.id, 'type') and update.id.type == 'LIGHT':
+                        has_light_changes = True
+                        break
+                    # Collection changes (might affect light groups)
+                    elif hasattr(update.id, 'bl_rna') and update.id.bl_rna.identifier == 'Collection':
+                        has_collection_changes = True
+                        # Don't break - continue checking for light changes
+                except (AttributeError, ReferenceError):
+                    continue
+
+        # Only update if there are actual relevant changes or first run
+        if has_light_changes or has_collection_changes or not hasattr(scene, 'lumi_light_groups'):
+            # Update light linking system first
+            if hasattr(scene, 'lumi_light_groups'):
+                sync_light_groups_with_collections(scene)
+                sync_ungrouped_lights(scene)
+                # CRITICAL FIX: Sync marked states with linking status
+                sync_marked_with_links(scene)
+
+            # Update light mixer system automatically - use consolidated function
+            try:
+                from ..ui.panels.light_mixer import auto_refresh_light_mixer_enhanced
+                auto_refresh_light_mixer_enhanced(scene)
+            except ImportError:
+                # Light mixer not available - that's ok
+                pass
+
+            # Trigger cache invalidation for auto-update system (if available)
+            try:
+                from ..core.state import trigger_cache_invalidation
+                trigger_cache_invalidation('light_change', scene=scene,
+                                         has_light_changes=has_light_changes,
+                                         has_collection_changes=has_collection_changes)
+            except ImportError:
+                # State system not available - direct updates already done above
+                pass
+
+    except (AttributeError, RuntimeError, ReferenceError) as e:
+        # ENHANCED ERROR HANDLING: Handle context errors during batch operations
+        logger.debug(f"Handler error (safe to ignore): {type(e).__name__}: {e}")
+        pass
+    except Exception as e:
+        # CRITICAL: Log unexpected errors but don't crash Blender
+        logger.error(f"Unexpected error in light_groups_update_handler: {e}")
         pass
 
 def depsgraph_update_default_group(scene, depsgraph=None):
@@ -1065,7 +1394,7 @@ class LUMI_OT_update_light_linking(bpy.types.Operator):
         description="Force include/exclude (INCLUDE/EXCLUDE) or empty for toggle",
         default=""
     )
-# ...existing code...
+
     def execute(self, context):
         scene = context.scene
         obj_groups = scene.lumi_object_groups
@@ -1172,10 +1501,10 @@ class LUMI_OT_update_light_linking(bpy.types.Operator):
                 try:
                     bpy.ops.object.light_linking_receivers_link(link_state=link_state)
                     updated_count += 1
-                    print(f"✅ {action_text} {light_obj.name} {'to' if is_linked else 'from'} {len(receiver_objects)} objects in group '{current_obj_group.name}'")
+                    logger.debug("✅ {} {} {} {} objects in group '{}'", 'linking', action_text, light_obj.name, 'to' if is_linked else 'from', len(receiver_objects), current_obj_group.name)
                 except Exception as e:
                     self.report({'WARNING'}, f"Failed to {action_text.lower()} {light_obj.name}: {e}")
-                    print(f"❌ Error {action_text.lower()} {light_obj.name}: {e}")
+                    logger.warning("❌ Error {} {}: {}", action_text.lower(), light_obj.name, e)
 
         finally:
             # Restore selection
@@ -1190,74 +1519,98 @@ class LUMI_OT_update_light_linking(bpy.types.Operator):
         return {'FINISHED'}
 
 # Class definition for Operator
-class LUMI_OT_quick_link_to_target(bpy.types.Operator): 
+class LUMI_OT_quick_link_to_target(bpy.types.Operator):
     """Quick Link: Select light/mesh, press keymap - if light: toggle linking mode, if mesh: show group menu"""
     bl_idname = "lumi.quick_link_to_target"
     bl_label = "Quick Link to Target Object"
     bl_options = {'REGISTER', 'UNDO'}
 
     target_object_name: StringProperty(default="")
-    selected_lights: CollectionProperty(type=bpy.types.PropertyGroup)
-    
+    # Fixed: Use StringProperty instead of CollectionProperty untuk avoid data-block error
+    selected_light_names: StringProperty(default="")
+
     @classmethod
     def poll(cls, context):
         return lumi_is_addon_enabled()
 
     def invoke(self, context, event):
-        """Start operation based on selected object type"""
-        
-        # 1. Check if LumiFlow addon is enabled
+        """Start operation berdasarkan tipe objek yang terseleksi"""
+
+        # 1. Periksa apakah addon LumiFlow sudah enable
         if not lumi_is_addon_enabled():
             self.report({'ERROR'}, "LumiFlow addon is not enabled")
             return {'CANCELLED'}
-        
-        # 2. Check what is selected
+
+        # 2. Validate current viewport context
+        if not (hasattr(context, 'area') and context.area and context.area.type == 'VIEW_3D'):
+            self.report({'ERROR'}, "Quick Link must be invoked from a 3D viewport")
+            return {'CANCELLED'}
+
+        if not (hasattr(context, 'region') and context.region and context.region.type == 'WINDOW'):
+            self.report({'ERROR'}, "Quick Link requires a valid 3D viewport window region")
+            return {'CANCELLED'}
+
+        # 3. Periksa apa yang terseleksi
         selected_lights = [obj for obj in context.selected_objects if obj.type == 'LIGHT']
         selected_meshes = [obj for obj in context.selected_objects if obj.type == 'MESH']
-        
-        # 3. Ensure only one type of object is selected (not both)
+
+        # 4. Pastikan hanya satu jenis objek yang dipilih (tidak keduanya)
         if selected_lights and selected_meshes:
             self.report({'WARNING'}, "Please select only lights OR mesh objects, not both")
             return {'CANCELLED'}
-        
-        # 4. If lights are selected, enter modal mode directly
+
+        # 5. Jika light terseleksi, langsung masuk ke modal mode
         if selected_lights:
-            # Store selected lights for modal mode
-            self.selected_lights.clear()
-            for light in selected_lights:
-                item = self.selected_lights.add()
-                item.name = light.name
-            
-            # Start modal for target selection
+            # Store selected lights untuk modal mode as comma-separated string
+            light_names = ",".join([light.name for light in selected_lights])
+            self.selected_light_names = light_names
+
+            # Debug logging with centralized error handling
+            try:
+                logger.debug("Quick Link: Starting modal mode for {} light(s): {}", len(selected_lights), light_names)
+                logger.debug("Quick Link: Viewport area at ({}, {}) with size {}x{}",
+                           context.area.x, context.area.y, context.area.width, context.area.height)
+            except Exception:
+                # Fallback: use module-level logger without re-import to avoid shadowing
+                try:
+                    logger.debug("Debug utils not available - using standard logging")
+                except Exception:
+                    pass
+
+            logger.info(f"Quick Link: Starting modal mode for {len(selected_lights)} light(s): {light_names}")
+            logger.info(f"Quick Link: Using viewport area at {context.area.x}, {context.area.y} with size {context.area.width}x{context.area.height}")
+
+            # Langsung start modal untuk target selection
             context.window_manager.modal_handler_add(self)
             self.report({'INFO'}, f"Quick Link Mode Active: Click mesh objects to toggle linking for {len(selected_lights)} light(s). Press X to exit, ESC to cancel.")
             return {'RUNNING_MODAL'}
-        
-        # 5. If meshes are selected, show group menu for meshes
+
+        # 6. Jika mesh terseleksi, tampilkan menu group untuk mesh
         elif selected_meshes:
             return self.show_object_group_menu(context)
+
         else:
             self.report({'WARNING'}, "Select lights for linking mode or mesh objects for group assignment")
             return {'CANCELLED'}
-    
+
     def show_object_group_menu(self, context):
-        """Show menu to select object group"""
+        """Tampilkan menu untuk memilih group objek"""
         def draw_menu(self, context):
             layout = self.layout
             scene = context.scene
-            
+
             # Option 1: Create new group
-            # Use INVOKE_DEFAULT to force dialog to appear
+            # Gunakan INVOKE_DEFAULT untuk memaksa dialog muncul
             layout.operator_context = 'INVOKE_DEFAULT'
             layout.operator("lumi.add_group", text="Create New Group", icon='ADD')
-            
+
             # Separator
             layout.separator()
-            
+
             # Option 2: Add to existing groups (exclude default)
-            existing_groups = [group for group in scene.lumi_object_groups 
+            existing_groups = [group for group in scene.lumi_object_groups
                              if group.name != DEFAULT_GROUP_NAME]
-            
+
             if existing_groups:
                 layout.separator()
                 for group in existing_groups:
@@ -1265,13 +1618,13 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
                     row.operator("lumi.add_object_to_group", text=f"• {group.name}", icon='GROUP')
             else:
                 layout.label(text="No existing groups available", icon='INFO')
-        
-        # Show popup menu
+
+        # Tampilkan popup menu
         context.window_manager.popup_menu(draw_menu, title="Add Objects to Group", icon='GROUP')
         return {'FINISHED'}
-    
+
     def show_object_light_menu(self, context):
-        """Show menu to select object group"""
+        """Tampilkan menu untuk memilih group objek"""
         def draw_menu(menu_self, context):
             layout = menu_self.layout
             scene = context.scene
@@ -1296,17 +1649,17 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
 
                     # Create unique menu class for each group to avoid race condition
                     menu_id = f"LUMI_MT_group_actions_{group.name.replace(' ', '_')}"
-                    
+
                     # Create menu class dynamically for this specific group
                     if not hasattr(bpy.types, menu_id):
                         # Create new menu class with captured group name
                         group_name_captured = group.name  # Capture current value
-                        
+
                         def create_menu_class(captured_name):
                             class DynamicGroupMenu(bpy.types.Menu):
                                 bl_label = "Group Actions"
                                 bl_idname = menu_id
-                                
+
                                 def draw(self, context):
                                     layout = self.layout
                                     col = layout.column(align=True)
@@ -1317,12 +1670,12 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
                                     op_exc.group_name = captured_name
                                     op_exc.force_state = 'EXCLUDE'
                             return DynamicGroupMenu
-                        
+
                         # Register the new menu class and track it
                         menu_class = create_menu_class(group_name_captured)
                         bpy.utils.register_class(menu_class)
                         _dynamic_menu_classes.append(menu_class)
-                    
+
                     # Use the unique menu for this group
                     col.menu(menu_id, text=f"{group.name}", icon='GROUP')
 
@@ -1332,13 +1685,12 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
         context.window_manager.popup_menu(draw_menu, title="Select Reciver Group")
         return {'FINISHED'}
 
-
     def modal(self, context, event):
-        """Handle mouse click for target selection"""
+        """Handle mouse click untuk target selection"""
         if event.type == 'LEFTMOUSE' and event.value == 'PRESS':
             # Get object under mouse
             target_obj = self.get_object_under_mouse(context, event)
-            
+
             if target_obj and target_obj.type == 'MESH':
                 self.target_object_name = target_obj.name
                 result = self.execute_quick_link(context)
@@ -1346,86 +1698,141 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
                 self.report({'INFO'}, f"Quick Link applied to '{target_obj.name}'. Click another object or press X to exit.")
                 return {'RUNNING_MODAL'}
             else:
-                self.report({'WARNING'}, "Click on a mesh object to create/toggle linking")
+                if target_obj:
+                    self.report({'WARNING'}, f"Object '{target_obj.name}' is not a mesh. Click on a mesh object to create/toggle linking")
+                    logger.warning(f"Quick Link: Non-mesh object clicked - {target_obj.name} (type: {target_obj.type})")
+                else:
+                    self.report({'WARNING'}, "No object detected under cursor. Click on a mesh object to create/toggle linking")
+                    logger.warning("Quick Link: No object detected under cursor")
                 return {'RUNNING_MODAL'}
-            
+
         elif event.type == 'RIGHTMOUSE' and event.value == 'PRESS':
-            # Right click works without needing to be on mesh object
+            # Klik kanan berfungsi tanpa harus pada mesh object
             return self.show_object_light_menu(context)
-        
+
         elif event.type == 'ESC' and event.value == 'PRESS':
             self.report({'INFO'}, "Quick link mode cancelled")
             return {'CANCELLED'}
-        elif event.type == 'X' and event.value == 'RELEASE':
+        elif (event.type in {'LEFT_SHIFT', 'RIGHT_SHIFT', 'LEFT_CTRL', 'RIGHT_CTRL'}) and event.value == 'RELEASE':
             self.report({'INFO'}, "Quick link mode exited")
             return {'FINISHED'}
-            
+
         return {'RUNNING_MODAL'}
 
     def get_object_under_mouse(self, context, event):
-        """Get object under mouse cursor"""
+        """Get object under mouse cursor with improved viewport detection"""
         # Convert mouse coordinates to region coordinates
         coord = (event.mouse_region_x, event.mouse_region_y)
-        
+
         # Perform ray casting
         try:
-            # Get 3D viewport region
+            # Method 1: Use current context if it's valid
             region = None
             region_3d = None
-            for area in context.screen.areas:
-                if area.type == 'VIEW_3D':
-                    for reg in area.regions:
-                        if reg.type == 'WINDOW':
-                            region = reg
+
+            if (hasattr(context, 'region') and context.region and
+                hasattr(context, 'area') and context.area and
+                context.area.type == 'VIEW_3D' and context.region.type == 'WINDOW'):
+
+                for space in context.area.spaces:
+                    if space.type == 'VIEW_3D' and space.region_3d:
+                        region = context.region
+                        region_3d = space.region_3d
+                        break
+
+            # Method 2: Find active viewport (fallback)
+            if not region or not region_3d:
+                for area in context.screen.areas:
+                    if area.type == 'VIEW_3D':
+                        # Check if area has valid regions and spaces
+                        has_window_region = any(r.type == 'WINDOW' for r in area.regions)
+                        has_view3d_space = any(s.type == 'VIEW_3D' and s.region_3d for s in area.spaces)
+
+                        if has_window_region and has_view3d_space:
+                            for reg in area.regions:
+                                if reg.type == 'WINDOW':
+                                    region = reg
+                                    break
                             for space in area.spaces:
-                                if space.type == 'VIEW_3D':
+                                if space.type == 'VIEW_3D' and space.region_3d:
                                     region_3d = space.region_3d
                                     break
                             break
-                    break
-            
+
             if not region or not region_3d:
+                logger.warning("No valid 3D viewport found for ray casting")
                 return None
-                
+
+            # Validate and clamp mouse coordinates within region bounds
+            original_coord = coord
+            coord = (
+                max(0, min(coord[0], region.width - 1)),
+                max(0, min(coord[1], region.height - 1))
+            )
+
+            if original_coord != coord:
+                logger.debug(f"Mouse coordinates adjusted to viewport bounds: ({coord[0]}, {coord[1]})")
+
             # Get mouse position in 3D space
             from bpy_extras import view3d_utils
-            
+
             # Get ray direction and origin
             view_vector = view3d_utils.region_2d_to_vector_3d(region, region_3d, coord)
             ray_origin = view3d_utils.region_2d_to_origin_3d(region, region_3d, coord)
-            
+
+            logger.debug(f"Ray casting from {ray_origin}")
+
             # Perform ray cast
             depsgraph = context.evaluated_depsgraph_get()
             result, location, normal, index, obj, matrix = context.scene.ray_cast(depsgraph, ray_origin, view_vector)
-            
-            return obj if result else None
-            
+
+            if result and obj:
+                logger.debug(f"Ray cast hit object: {obj.name} at {location}")
+                return obj
+            else:
+                logger.debug("Ray cast did not hit any object", 'core')
+                return None
+
         except Exception as e:
-            print(f"Ray casting error: {e}")
+            logger.error(f"Ray casting error: {e}")
             # Fallback: return active object if it's a mesh
             if context.active_object and context.active_object.type == 'MESH':
+                logger.debug(f"Fallback to active object: {context.active_object.name}")
                 return context.active_object
             return None
-    
+
     def execute_quick_link(self, context):
         """Execute the quick linking process"""
         if not self.target_object_name:
+            logger.error("Quick Link: No target object name specified")
             return {'CANCELLED'}
-            
+
         scene = context.scene
         target_obj_name = self.target_object_name
-        
+
+        # Verify target object exists and is a mesh
+        target_obj = bpy.data.objects.get(target_obj_name)
+        if not target_obj:
+            logger.error(f"Quick Link: Target object '{target_obj_name}' not found in scene")
+            self.report({'ERROR'}, f"Target object '{target_obj_name}' not found")
+            return {'CANCELLED'}
+
+        if target_obj.type != 'MESH':
+            logger.error(f"Quick Link: Target object '{target_obj_name}' is not a mesh (type: {target_obj.type})")
+            self.report({'ERROR'}, f"Target object '{target_obj_name}' is not a mesh")
+            return {'CANCELLED'}
+
         # 1. Check/Create object group with target object name
         target_group = None
         group_index = -1
-        
+
         # Find existing group with same name
         for i, group in enumerate(scene.lumi_object_groups):
             if group.name == target_obj_name:
                 target_group = group
                 group_index = i
                 break
-        
+
         # Create new group if not found
         if not target_group:
             # Ensure object is removed from any existing group first
@@ -1439,6 +1846,7 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
             obj_item = target_group.objects.add()
             obj_item.name = target_obj_name
 
+            logger.info(f"Quick Link: Created new group '{target_obj_name}' with index {group_index}")
             self.report({'INFO'}, f"Created new group '{target_obj_name}'")
         else:
             # Check if target object is in the group
@@ -1449,35 +1857,78 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
 
                 obj_item = target_group.objects.add()
                 obj_item.name = target_obj_name
-        
+
         # Set as current group
         scene.lumi_object_groups_index = group_index
-        
-        # 2. Toggle mark status for selected lights
+
+        # 2. Toggle mark status for selected lights (BATCH OPERATION)
         toggled_lights = []
-        
-        for light_info in self.selected_lights:
-            light_name = light_info.name
-            found = False
-            
-            # Find light in light groups and toggle marked status
+
+        # Parse light names dari comma-separated string
+        light_names = [name.strip() for name in self.selected_light_names.split(",") if name.strip()]
+
+        # Determine the target marked state by checking existing state of first light
+        target_marked_state = None
+        first_light_name = light_names[0] if light_names else None
+
+        if first_light_name:
             for light_group in scene.lumi_light_groups:
                 for light_item in light_group.lights:
-                    if light_item.name == light_name:
-                        # Toggle marked status
-                        light_item.marked = not light_item.marked
-                        status = "linked" if light_item.marked else "excluded"
-                        toggled_lights.append(f"{light_name} ({status})")
-                        found = True
+                    if light_item.name == first_light_name:
+                        target_marked_state = not light_item.marked  # Toggle from current state
                         break
-                if found:
+                if target_marked_state is not None:
                     break
-        
+
+        if target_marked_state is None:
+            self.report({'WARNING'}, "No lights found in light groups")
+            return {'CANCELLED'}
+
+        # Batch update: Update all lights without triggering individual callbacks
+        scene[_FLAG_UPDATING] = True
+        scene[_FLAG_GROUP_UPDATE] = True
+
+        try:
+            for light_name in light_names:
+                found = False
+
+                # Find light in light groups and update marked status
+                for light_group in scene.lumi_light_groups:
+                    for light_item in light_group.lights:
+                        if light_item.name == light_name:
+                            # Update marked status (batch operation)
+                            light_item.marked = target_marked_state
+                            status = "linked" if light_item.marked else "excluded"
+                            toggled_lights.append(f"{light_name} ({status})")
+                            found = True
+                            break
+                    if found:
+                        break
+        finally:
+            scene[_FLAG_UPDATING] = False
+            scene[_FLAG_GROUP_UPDATE] = False
+
+        # Trigger batch linking application for all updated lights
+        if toggled_lights:
+            try:
+                # Apply linking for all lights that were toggled
+                for light_name in light_names:
+                    for light_group in scene.lumi_light_groups:
+                        for light_item in light_group.lights:
+                            if light_item.name == light_name:
+                                update_linking_from_marked(scene, light_item)
+                                break
+                        else:
+                            continue
+                        break
+            except Exception as e:
+                logger.warning(f"Error applying batch linking: {e}")
+
         if not toggled_lights:
             self.report({'WARNING'}, "No lights found in light groups")
             return {'CANCELLED'}
-        
-        # 3. Update light linking only for selected lights
+
+        # 3. Update light linking untuk selected lights (BATCH OPERATION)
         receiver_objects = []
         for item in target_group.objects:
             obj = bpy.data.objects.get(item.name)
@@ -1488,10 +1939,12 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
             self.report({'WARNING'}, "No valid mesh objects found in the group.")
             return {'CANCELLED'}
 
-        # Clear old links for this group, but only for selected lights
+        # Clear old links untuk group ini, tapi hanya untuk selected lights
         links = scene.lumi_object_group_link_status
-        selected_light_names = {light_info.name for light_info in self.selected_lights}
-        old_links = [i for i, l in enumerate(links) 
+        # Parse selected light names dari comma-separated string
+        light_names = [name.strip() for name in self.selected_light_names.split(',') if name.strip()]
+        selected_light_names = set(light_names)
+        old_links = [i for i, l in enumerate(links)
                     if l.object_group_name == target_group.name and l.light_name in selected_light_names]
         for i in reversed(old_links):
             links.remove(i)
@@ -1503,47 +1956,97 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
         updated_count = 0
 
         try:
-            # Process only lights that are in selected_lights
-            for light_info in self.selected_lights:
-                light_name = light_info.name
-                light_obj = bpy.data.objects.get(light_name)
-                
-                if not light_obj or light_obj.type != 'LIGHT':
-                    continue
+            # Parse light names dari comma-separated string
+            light_names = [name.strip() for name in self.selected_light_names.split(",") if name.strip()]
 
-                # Find marked status from light groups
-                light_marked = False
-                for light_group in scene.lumi_light_groups:
-                    for light_item in light_group.lights:
-                        if light_item.name == light_name:
-                            light_marked = light_item.marked
+            if not light_names:
+                logger.warning("Quick Link: No light names to process")
+                return {'CANCELLED'}
+
+            # Group lights by their link state (INCLUDE/EXCLUDE) - BATCH OPERATION
+            lights_to_include = []
+            lights_to_exclude = []
+
+            # First pass: categorize lights and create internal links (without triggering callbacks)
+            scene[_FLAG_UPDATING] = True
+            try:
+                for light_name in light_names:
+                    light_obj = bpy.data.objects.get(light_name)
+
+                    if not light_obj or light_obj.type != 'LIGHT':
+                        continue
+
+                    # Find marked status dari light groups
+                    light_marked = False
+                    for light_group in scene.lumi_light_groups:
+                        for light_item in light_group.lights:
+                            if light_item.name == light_name:
+                                light_marked = light_item.marked
+                                break
+                        if light_marked:
                             break
+
+                    # Add to internal links jika marked
                     if light_marked:
-                        break
+                        link = links.add()
+                        link.object_group_name = target_group.name
+                        link.light_name = light_name
+                        link.is_linked = True
+                        lights_to_include.append(light_obj)
+                    else:
+                        lights_to_exclude.append(light_obj)
+            finally:
+                scene[_FLAG_UPDATING] = False
 
-                link_state = 'INCLUDE' if light_marked else 'EXCLUDE'
-
-                # Add to internal links if marked
-                if light_marked:
-                    link = links.add()
-                    link.object_group_name = target_group.name
-                    link.light_name = light_name
-                    link.is_linked = True
-
-                # Perform linking/unlinking for this light
+            # Process INCLUDE lights as SINGLE BATCH operation
+            if lights_to_include:
+                # Clear selection
                 bpy.ops.object.select_all(action='DESELECT')
 
+                # Select all receiver objects
                 for obj in receiver_objects:
                     obj.select_set(True)
 
-                light_obj.select_set(True)
-                context.view_layer.objects.active = light_obj
+                # Select ALL lights to include in one operation
+                for light_obj in lights_to_include:
+                    light_obj.select_set(True)
+
+                # Set first light as active
+                if lights_to_include:
+                    context.view_layer.objects.active = lights_to_include[0]
 
                 try:
-                    bpy.ops.object.light_linking_receivers_link(link_state=link_state)
-                    updated_count += 1
+                    bpy.ops.object.light_linking_receivers_link(link_state='INCLUDE')
+                    updated_count += len(lights_to_include)
+                    logger.info(f"✓ Linked {len(lights_to_include)} lights to '{target_obj_name}'")
                 except Exception as e:
-                    self.report({'WARNING'}, f"Failed {link_state} {light_obj.name}: {e}")
+                    logger.error(f"✗ Failed linking lights: {e}")
+                    self.report({'WARNING'}, f"Failed linking lights: {e}")
+
+            # Process EXCLUDE lights as SINGLE BATCH operation
+            if lights_to_exclude:
+                # Clear selection
+                bpy.ops.object.select_all(action='DESELECT')
+
+                # Select all receiver objects
+                for obj in receiver_objects:
+                    obj.select_set(True)
+
+                # Select ALL lights to exclude in one operation
+                for light_obj in lights_to_exclude:
+                    light_obj.select_set(True)
+
+                # Set first light as active
+                if lights_to_exclude:
+                    context.view_layer.objects.active = lights_to_exclude[0]
+
+                try:
+                    bpy.ops.object.light_linking_receivers_link(link_state='EXCLUDE')
+                    updated_count += len(lights_to_exclude)
+                    logger.info(f"✓ Excluded {len(lights_to_exclude)} lights from '{target_obj_name}'")
+                except Exception as e:
+                    logger.error(f"✗ Failed excluding lights: {e}")
+                    self.report({'WARNING'}, f"Failed excluding lights: {e}")
 
         finally:
             # Restore selection
@@ -1561,7 +2064,7 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
         # Report results
         light_list = ", ".join(toggled_lights)
         self.report({'INFO'}, f"Quick Link: {light_list} → '{target_obj_name}' group")
-        
+
         return {'FINISHED'}
 
     def execute(self, context):
@@ -1569,7 +2072,7 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
         if not self.target_object_name:
             self.report({'WARNING'}, "Use Ctrl+Shift+Z to start quick link mode")
             return {'CANCELLED'}
-        return self.execute_quick_link(context)   
+        return self.execute_quick_link(context)
 
 # Class definition for Operator
 class LUMI_OT_clear_light_linking(bpy.types.Operator):

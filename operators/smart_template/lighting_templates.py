@@ -19,6 +19,7 @@ from bpy.props import StringProperty, BoolProperty, FloatProperty, EnumProperty
 from ...utils.common import lumi_is_addon_enabled, lumi_get_light_collection, lumi_move_to_collection
 from ...utils.light import lumi_calculate_light_intensity, lumi_calculate_light_size, lumi_set_light_pivot
 from ...utils.operators import lumi_ray_cast_between_points, lumi_check_line_of_sight_with_sampling
+from ...utils.obstruction_detector import analyze_scene_for_obstructions, get_smart_obstruction_detector
 from ...core.state import get_state
 from .template_analyzer import analyze_subject, SubjectAnalysis, analyze_materials_advanced, apply_material_adjustments
 from .template_library import get_template, list_templates
@@ -182,16 +183,22 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                 
                 # 2. Get selected objects
                 scene = context.scene
+                print(f"[DEBUG] Template Application: Starting for template '{self.template_id}'")
+
                 # Check if we have stored selected object data (from template menu)
-                if (hasattr(scene, 'lumi_temp_selected_obj') and 
-                    scene.lumi_temp_selected_obj is not None and 
+                if (hasattr(scene, 'lumi_temp_selected_obj') and
+                    scene.lumi_temp_selected_obj is not None and
                     scene.lumi_temp_selected_obj.type == 'MESH'):
                     # Use stored selected object data
                     selected_objects = [scene.lumi_temp_selected_obj]
+                    print(f"[DEBUG] Using stored selected object: {scene.lumi_temp_selected_obj.name}")
                 else:
                     # Fallback to current selection
-                    selected_objects = [obj for obj in context.selected_objects 
+                    selected_objects = [obj for obj in context.selected_objects
                                       if obj.type == 'MESH']
+                    print(f"[DEBUG] Using current selection: {len(selected_objects)} objects")
+                    for obj in selected_objects:
+                        print(f"[DEBUG]   - Selected: {obj.name}")
                 
                 # 3. Get/cache analysis and template
                 analysis = self._get_cached_analysis(selected_objects, context)
@@ -202,17 +209,22 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                     self.clear_existing_lights(context)
                 
                 # 5. PLACE: Calculate initial positions (tanpa obstruction)
-                # Calculating initial light positions...
+                print(f"[DEBUG] === PHASE 1: PLACE - Calculating initial light positions ===")
                 initial_positions = self.calculate_initial_light_positions(analysis, template, context)
-                
+                print(f"[DEBUG]   Calculated {len(initial_positions)} initial light positions")
+
                 # 6. PLACE: Create lights di posisi awal
-                # Creating lights...
+                print(f"[DEBUG] === PHASE 2: PLACE - Creating lights at initial positions ===")
                 lights_created = self.create_lights_at_positions(initial_positions, context)
-                
+                print(f"[DEBUG]   Created {len(lights_created)} lights in scene")
+
                 # 7. CHECK → ADJUST: Cek dan adjust lights yang sudah ada
                 if self.enable_obstruction_detection:
-                    # Adjusting lights for obstructions...
+                    print(f"[DEBUG] === PHASE 3: CHECK → ADJUST - Obstruction detection enabled ===")
+                    print(f"[DEBUG]   Obstruction detection strategy: {self.obstruction_fallback_strategy}")
                     self.adjust_lights_for_obstruction(lights_created, analysis, context)
+                else:
+                    print(f"[DEBUG] === PHASE 3: CHECK → ADJUST - Obstruction detection DISABLED ===")
                 
                 # Track created lights for recovery
                 if lights_created:
@@ -231,17 +243,33 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                 
                 # 8. Apply material adjustments
                 if self.use_material_adaptation:
+                    print(f"[DEBUG] === PHASE 4: MATERIAL ADAPTATION - Applying material-based adjustments ===")
                     self.apply_material_adjustments(lights_created, analysis, selected_objects)
-                
+                    print(f"[DEBUG]   Material adaptations applied to {len(lights_created)} lights")
+                else:
+                    print(f"[DEBUG] === PHASE 4: MATERIAL ADAPTATION - DISABLED ===")
+
                 # 9. Organize lights
+                print(f"[DEBUG] === PHASE 5: ORGANIZE - Organizing lights in collection ===")
                 self._organize_created_lights(lights_created, context)
-                
+                print(f"[DEBUG]   Lights organized in LumiFlow collection")
+
                 # 10. Final setup
+                print(f"[DEBUG] === PHASE 6: FINALIZE - Final template setup ===")
                 self._finalize_template_application(lights_created, context)
+                print(f"[DEBUG]   Template application completed successfully")
                 
                 # Success message
                 success_msg = f"Applied '{self.template_id}' template: {len(lights_created)} lights created"
-                
+
+                print(f"[DEBUG] === TEMPLATE APPLICATION COMPLETED ===")
+                print(f"[DEBUG]   Template: {self.template_id}")
+                print(f"[DEBUG]   Lights created: {len(lights_created)}")
+                print(f"[DEBUG]   Obstruction detection: {'ENABLED' if self.enable_obstruction_detection else 'DISABLED'}")
+                print(f"[DEBUG]   Material adaptation: {'ENABLED' if self.use_material_adaptation else 'DISABLED'}")
+                print(f"[DEBUG]   Camera relative: {'ENABLED' if self.use_camera_relative else 'DISABLED'}")
+                print(f"[DEBUG] === END TEMPLATE APPLICATION ===\n")
+
                 self.report({'INFO'}, success_msg)
                 return {'FINISHED'}
                 
@@ -488,183 +516,302 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
             # Ultimate fallback to object's world location
             return target_obj.matrix_world.translation
     
-    def _check_and_handle_obstruction(self, world_position: Vector, target_objects: List[bpy.types.Object], 
-                                    context: bpy.types.Context, light_name: str) -> Dict[str, Any]:
-        """Check if light has clear line-of-sight to target objects"""
+    def _check_and_handle_obstruction(self, world_position: Vector, target_objects: List[bpy.types.Object],
+                                     context: bpy.types.Context, light_name: str) -> Dict[str, Any]:
+        """Check if light has clear line-of-sight to target objects, avoiding only background objects"""
         obstruction_result = {
             'has_obstruction': False,
             'hit_object': None,
             'hit_location': None,
             'distance': 0.0
         }
-        
+
         try:
+            # Get background objects that should be considered obstructions
+            from ...utils.obstruction_detector import analyze_scene_for_obstructions
+            classifications = analyze_scene_for_obstructions(context, context.selected_objects)
+            detector = get_smart_obstruction_detector()
+
+            # Get background objects (these are the real obstructions)
+            background_objects = []
+            for obj_type, obj_list in classifications.items():
+                if obj_type.lower() == 'background':
+                    # obj_list contains ObjectClassification objects, extract the actual objects
+                    background_objects.extend([cls.object for cls in obj_list])
+
+            print(f"[DEBUG]   Checking LOS: {len(target_objects)} targets, {len(background_objects)} background objects to avoid")
+
             # Check line-of-sight to each target object
             for target_obj in target_objects:
                 # Use the object's center as target point with safe fallback
                 target_position = self._get_safe_target_position(target_obj)
-                
+
+                # Exclude only lighting objects, NOT target objects
+                # Target objects should be visible to lights, background objects should block LOS
+                exclude_objects = detector.get_lighting_objects()
+
                 # Perform raycast with multi-point sampling for robust detection
                 has_clear_path, sample_results = lumi_check_line_of_sight_with_sampling(
-                    context, world_position, target_position, 
-                    exclude_objects=[target_obj],  # Exclude the target itself
+                    context, world_position, target_position,
+                    exclude_objects=exclude_objects,  # Only exclude lighting objects
                     sample_radius=0.1,
                     sample_count=5
                 )
-                
+
+                print(f"[DEBUG]     Raycast to {target_obj.name}: clear_path={has_clear_path}")
+                print(f"[DEBUG]   Light position: {world_position}")
+                print(f"[DEBUG]   Target position: {target_position}")
+                print(f"[DEBUG]   Background objects: {[obj.name for obj in background_objects]}")
+
+                # Check if light is positioned below background plane (potential issue)
+                light_z = world_position.z
+                target_z = target_position.z
+                background_z_range = []
+                for bg_obj in background_objects:
+                    if hasattr(bg_obj, 'bound_box') and bg_obj.bound_box:
+                        bg_z_min = min(corner[2] for corner in bg_obj.bound_box)
+                        bg_z_max = max(corner[2] for corner in bg_obj.bound_box)
+                        background_z_range.append((bg_z_min, bg_z_max))
+
+                if background_z_range:
+                    min_bg_z = min(r[0] for r in background_z_range)
+                    max_bg_z = max(r[1] for r in background_z_range)
+                    print(f"[DEBUG]   Background Z-range: {min_bg_z:.3f} to {max_bg_z:.3f}")
+                    print(f"[DEBUG]   Light Z: {light_z:.3f}, Target Z: {target_z:.3f}")
+
+                    # Check if light is below background and target is above
+                    if light_z < min_bg_z and target_z > min_bg_z:
+                        print(f"[DEBUG]   ⚠️  POTENTIAL ISSUE: Light below background plane, may shoot through floor!")
+
                 if not has_clear_path:
-                    obstruction_result['has_obstruction'] = True
-                    # Find the closest obstruction from sample results
-                    for sample in sample_results:
-                        if sample['has_obstruction'] and sample['hit_object']:
-                            obstruction_result['hit_object'] = sample['hit_object']
-                            obstruction_result['hit_location'] = sample['hit_location']
-                            obstruction_result['distance'] = sample['distance']
-                            break
-                    break  # Found obstruction, no need to check other targets
-                    
+                    # Analyze each sample that had obstruction
+                    obstructed_samples = [s for s in sample_results if s['has_obstruction']]
+                    print(f"[DEBUG]       Obstructed samples: {len(obstructed_samples)}")
+
+                    for i, sample in enumerate(obstructed_samples):
+                        hit_obj = sample['hit_object']
+                        is_background = hit_obj in background_objects
+                        print(f"[DEBUG]         Sample {i+1}: hit {hit_obj.name}, is_background={is_background}")
+
+                    # Check if any obstruction is a background object (real obstruction)
+                    has_real_obstruction = any(sample['has_obstruction'] and sample['hit_object'] in background_objects
+                                             for sample in sample_results)
+
+                    if has_real_obstruction:
+                        # Find the first background obstruction
+                        background_sample = next((s for s in sample_results
+                                                if s['has_obstruction'] and s['hit_object'] in background_objects), None)
+                        if background_sample:
+                            obstruction_result['has_obstruction'] = True
+                            obstruction_result['hit_object'] = background_sample['hit_object']
+                            obstruction_result['hit_location'] = background_sample['hit_location']
+                            obstruction_result['distance'] = background_sample['distance']
+                            print(f"[DEBUG]     ❌ REAL OBSTRUCTION: {background_sample['hit_object'].name} at distance {background_sample['distance']:.3f}")
+                            break  # Found real obstruction
+                    else:
+                        print(f"[DEBUG]     ✅ No real obstructions (only target/lighting objects hit)")
+
         except Exception as e:
+            print(f"[DEBUG]   Exception in obstruction check: {e}")
             # If raycast fails, assume no obstruction to avoid breaking the flow
             pass
-            
+
         return obstruction_result
     
-    def _find_alternative_position(self, original_position: Vector, target_objects: List[bpy.types.Object], 
-                                 context: bpy.types.Context) -> Optional[Vector]:
+    def _find_alternative_position(self, original_position: Vector, target_objects: List[bpy.types.Object],
+                                  context: bpy.types.Context) -> Optional[Vector]:
         """Find alternative position with clear line-of-sight to targets using new logic"""
+        print(f"[DEBUG] _find_alternative_position: Starting search from {original_position}")
         try:
             # Calculate average target position and bounds
             avg_target = Vector((0, 0, 0))
             max_z = float('-inf')
             min_z = float('inf')
-            
+
             for target_obj in target_objects:
                 target_pos = self._get_safe_target_position(target_obj)
                 avg_target += target_pos
                 max_z = max(max_z, target_pos.z)
                 min_z = min(min_z, target_pos.z)
-            
+
             avg_target /= len(target_objects)
             target_height = max_z - min_z
             target_top_z = max_z
-            
+            print(f"[DEBUG] Target analysis: avg_target={avg_target}, target_top_z={target_top_z}")
+
             # Determine light position relative to target
             light_z = original_position.z
-            
+            print(f"[DEBUG] Light Z: {light_z}, target_top_z: {target_top_z}")
+
             # Strategy 1: Light is above or at same level as target
             if light_z >= target_top_z - 0.1:  # Allow small tolerance
+                print(f"[DEBUG] Strategy 1: Light above/at target level, trying closer adjustment")
                 # Try moving closer to target (obstruction point + 1 unit)
                 alternative_pos = self._try_closer_position_adjustment(
                     original_position, avg_target, target_objects, context
                 )
                 if alternative_pos:
+                    print(f"[DEBUG] Strategy 1 succeeded: {alternative_pos}")
                     return alternative_pos
-            
+                else:
+                    print(f"[DEBUG] Strategy 1 failed: no closer position found")
+
             # Strategy 2: Light is below target
             else:
+                print(f"[DEBUG] Strategy 2: Light below target level")
                 # First: Lift light to target level
                 lifted_position = original_position.copy()
-                lifted_position.z = target_top_z + 0.5  # Lift slightly above target top
-                
+                lifted_position.z = target_top_z + 0.01  # Lift slightly above target top for alignment
+                print(f"[DEBUG] Trying lifted position: {lifted_position}")
+
                 # Check if lifted position has clear line-of-sight
                 if self._has_clear_line_of_sight_to_all_targets(lifted_position, target_objects, context):
+                    print(f"[DEBUG] Lifted position has clear LOS, using it")
                     return lifted_position
-                
+
+                print(f"[DEBUG] Lifted position obstructed, trying closer adjustment")
                 # If still obstructed, try moving closer
                 alternative_pos = self._try_closer_position_adjustment(
                     lifted_position, avg_target, target_objects, context
                 )
                 if alternative_pos:
+                    print(f"[DEBUG] Closer adjustment from lifted position succeeded: {alternative_pos}")
                     return alternative_pos
-            
+                else:
+                    print(f"[DEBUG] Closer adjustment from lifted position failed")
+
+            print(f"[DEBUG] All strategies failed, no alternative position found")
             # No fallback to old strategies - use new logic only
-                    
+
         except Exception as e:
+            print(f"[DEBUG] Exception in _find_alternative_position: {e}")
             pass
-            
+
         return None
     
-    def _try_closer_position_adjustment(self, original_position: Vector, avg_target: Vector, 
-                                      target_objects: List[bpy.types.Object], context: bpy.types.Context) -> Optional[Vector]:
+    def _try_closer_position_adjustment(self, original_position: Vector, avg_target: Vector,
+                                       target_objects: List[bpy.types.Object], context: bpy.types.Context) -> Optional[Vector]:
         """Try moving closer to target using obstruction point + 1 unit logic"""
+        print(f"[DEBUG] _try_closer_position_adjustment: original_pos={original_position}, avg_target={avg_target}")
         try:
             # Type checking and validation
             if not isinstance(original_position, Vector):
-                print(f"Error: original_position is not Vector: {type(original_position)}")
+                print(f"[DEBUG] Error: original_position is not Vector: {type(original_position)}")
                 return None
             if not isinstance(avg_target, Vector):
-                print(f"Error: avg_target is not Vector: {type(avg_target)}")
+                print(f"[DEBUG] Error: avg_target is not Vector: {type(avg_target)}")
                 return None
-            
+
             # Find the closest obstruction point
             closest_obstruction = None
             min_distance = float('inf')
-            
+            print(f"[DEBUG] Finding closest obstruction from {len(target_objects)} targets")
+
             for target_obj in target_objects:
                 target_pos = self._get_safe_target_position(target_obj)
-                
+
                 # Validate target_pos
                 if not isinstance(target_pos, Vector):
-                    print(f"Error: target_pos is not Vector: {type(target_pos)}")
+                    print(f"[DEBUG] Error: target_pos is not Vector: {type(target_pos)}")
                     continue
-                
-                # Cast ray to find obstruction point
+
+                # Get lighting objects to exclude from obstruction detection
+                detector = get_smart_obstruction_detector()
+                lighting_objects = detector.get_lighting_objects()
+
+                # Cast ray to find obstruction point - only exclude lighting objects
+                # Target objects should be hittable (they're what we want to light)
                 has_obstruction, hit_object, hit_location, distance = lumi_ray_cast_between_points(
-                    context, original_position, target_pos, exclude_objects=[target_obj]
+                    context, original_position, target_pos, exclude_objects=lighting_objects
                 )
-                
+
+                print(f"[DEBUG] Raycast to {target_obj.name}: has_obstruction={has_obstruction}, distance={distance}")
+
                 if has_obstruction and hit_location and distance < min_distance:
                     # Validate hit_location
                     if isinstance(hit_location, Vector):
                         closest_obstruction = hit_location
                         min_distance = distance
+                        print(f"[DEBUG] New closest obstruction: {hit_location}, distance={distance}")
                     else:
-                        print(f"Error: hit_location is not Vector: {type(hit_location)}")
-            
+                        print(f"[DEBUG] Error: hit_location is not Vector: {type(hit_location)}")
+
             if closest_obstruction and isinstance(closest_obstruction, Vector):
+                print(f"[DEBUG] Using closest obstruction: {closest_obstruction}")
                 # Calculate direction from obstruction to target
                 to_target = (avg_target - closest_obstruction).normalized()
-                
+                print(f"[DEBUG] Direction to target: {to_target}")
+
                 # Move 1 unit beyond obstruction point towards target
                 new_position = closest_obstruction + to_target * 1.0
-                
+                print(f"[DEBUG] Trying position 1.0 units beyond: {new_position}")
+
                 # Check if this position has clear line-of-sight
                 if self._has_clear_line_of_sight_to_all_targets(new_position, target_objects, context):
+                    print(f"[DEBUG] Position 1.0 units beyond has clear LOS")
                     return new_position
-                
+
                 # Try multiple steps if single step doesn't work
                 for step in [0.5, 1.5, 2.0]:
                     new_position = closest_obstruction + to_target * step
+                    print(f"[DEBUG] Trying step {step}: {new_position}")
                     if self._has_clear_line_of_sight_to_all_targets(new_position, target_objects, context):
+                        print(f"[DEBUG] Step {step} has clear LOS")
                         return new_position
+                print(f"[DEBUG] All steps failed")
             else:
-                print(f"Error: closest_obstruction is not valid: {closest_obstruction}")
-            
+                print(f"[DEBUG] Error: closest_obstruction is not valid: {closest_obstruction}")
+
         except Exception as e:
-            pass
-            
+            print(f"[DEBUG] Exception in _try_closer_position_adjustment: {e}")
+
+        print(f"[DEBUG] _try_closer_position_adjustment failed")
         return None
     
-    def _has_clear_line_of_sight_to_all_targets(self, position: Vector, target_objects: List[bpy.types.Object], 
-                                             context: bpy.types.Context) -> bool:
-        """Check if position has clear line-of-sight to all target objects"""
+    def _has_clear_line_of_sight_to_all_targets(self, position: Vector, target_objects: List[bpy.types.Object],
+                                              context: bpy.types.Context) -> bool:
+        """Check if position has clear line-of-sight to all target objects (avoiding only background objects)"""
         try:
+            # Get background objects that are real obstructions
+            from ...utils.obstruction_detector import analyze_scene_for_obstructions
+            classifications = analyze_scene_for_obstructions(context, context.selected_objects)
+            detector = get_smart_obstruction_detector()
+
+            background_objects = []
+            for obj_type, obj_list in classifications.items():
+                if obj_type.lower() == 'background':
+                    background_objects.extend(obj_list)
+
+            # Get lighting objects to exclude
+            lighting_objects = detector.get_lighting_objects()
+
             for target_obj in target_objects:
                 target_pos = self._get_safe_target_position(target_obj)
-                
+
+                # Exclude only lighting objects, NOT target objects
+                exclude_objects = lighting_objects
+
                 # Use multi-point sampling for robust detection
-                has_clear_path, _ = lumi_check_line_of_sight_with_sampling(
+                has_clear_path, sample_results = lumi_check_line_of_sight_with_sampling(
                     context, position, target_pos,
-                    exclude_objects=[target_obj],
+                    exclude_objects=exclude_objects,
                     sample_radius=0.1,
                     sample_count=3  # Reduced for performance
                 )
-                
+
                 if not has_clear_path:
-                    return False
-            
-            return True
-            
+                    # Check if any obstruction is a background object
+                    has_real_obstruction = False
+                    for sample in sample_results:
+                        if sample['has_obstruction'] and sample['hit_object'] in background_objects:
+                            has_real_obstruction = True
+                            break
+
+                    if has_real_obstruction:
+                        return False  # Real obstruction found
+
+            return True  # No real obstructions
+
         except Exception as e:
             return False
     
@@ -748,38 +895,45 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                     # Set up light orientation
                     rotation_data = light_template.get('rotation', {})
                     rotation_method = rotation_data.get('method', 'target')
-                    
+
                     if rotation_method == 'euler':
                         # Direct euler angles - check both 'euler' and 'rotation' parameter names
-                        euler_angles = (rotation_data.get('params', {}).get('euler') or 
-                                      rotation_data.get('params', {}).get('rotation') or 
-                                      (0, 0, 0))
-                        
+                        euler_angles = (rotation_data.get('params', {}).get('euler') or
+                                       rotation_data.get('params', {}).get('rotation') or
+                                       (0, 0, 0))
+
                         # Apply camera relative transformation to euler angles if enabled
                         if self.use_camera_relative and context.scene.camera:
                             # Convert euler to quaternion for transformation
                             from mathutils import Euler
                             base_euler = Euler(euler_angles, 'XYZ')
                             base_rotation = base_euler.to_quaternion()
-                            
+
                             # Get camera rotation
                             camera_rotation = context.scene.camera.rotation_euler.to_quaternion()
-                            
+
                             # Combine rotations: camera rotation + base euler rotation
                             final_rotation = camera_rotation @ base_rotation
-                            
+
                             light_obj.rotation_euler = final_rotation.to_euler()
                         else:
                             light_obj.rotation_euler = euler_angles
+
+                        # For euler rotation (fixed orientation), set pivot in the direction the light is facing
+                        # Calculate pivot position 3 meters in front of the light in its facing direction
+                        light_direction = Vector((0, 0, -1))  # Default forward direction in Blender
+                        light_direction.rotate(light_obj.rotation_euler)
+                        pivot_position = world_pos + light_direction * 3.0
+                        lumi_set_light_pivot(light_obj, pivot_position)
+
                     elif target_pos and rotation_method in ['target_subject', 'target']:
                         # Point towards target
                         direction = (target_pos - world_pos).normalized()
                         if direction.length > 0.001:  # Avoid zero-length vectors
                             rot_quat = direction.to_track_quat('-Z', 'Y')
                             light_obj.rotation_euler = rot_quat.to_euler()
-                    
-                    # Set pivot point for LumiFlow positioning system (if target exists)
-                    if target_pos:
+
+                        # Set pivot point for LumiFlow positioning system (target exists)
                         lumi_set_light_pivot(light_obj, target_pos)
 
                     # Add to scene
@@ -803,28 +957,89 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
 
     def adjust_lights_for_obstruction(self, lights: List[bpy.types.Object], analysis: SubjectAnalysis, context: bpy.types.Context):
         """Check obstruction pada lights yang sudah ada dan adjust posisinya"""
+        print(f"[DEBUG] Starting obstruction adjustment for {len(lights)} lights")
         state = get_state()
-        target_objects = [obj for obj in context.selected_objects if obj.type == 'MESH']
-        
-        # If no selected objects, use the analysis subject (if available)
+
+        # Use smart obstruction detector to classify scene objects
+        print(f"[DEBUG] Obstruction Adjustment: Starting smart scene analysis")
+        classifications = analyze_scene_for_obstructions(context, context.selected_objects)
+
+        # Get target objects (PRODUCT classified objects)
+        detector = get_smart_obstruction_detector()
+        target_objects = detector.get_target_objects(classifications)
+
+        # Get lighting objects to exclude from obstruction detection
+        lighting_objects = detector.get_lighting_objects(classifications)
+        # Ensure lighting_objects contains actual Blender objects, not classifications
+        if lighting_objects and hasattr(lighting_objects[0], 'object'):
+            lighting_objects = [cls.object for cls in lighting_objects]
+
+        print(f"[DEBUG] Smart classification results:")
+        print(f"[DEBUG]   - Target objects (PRODUCT): {len(target_objects)}")
+        for obj in target_objects:
+            print(f"[DEBUG]     * {obj.name}")
+
+        print(f"[DEBUG]   - Lighting objects (excluded): {len(lighting_objects)}")
+        for obj in lighting_objects:
+            print(f"[DEBUG]     * {obj.name}")
+
+        # Show all classifications summary with details
+        print(f"[DEBUG]   - Full classification breakdown:")
+        for obj_type, cls_list in classifications.items():
+            if cls_list:
+                print(f"[DEBUG]     {obj_type.upper()}: {len(cls_list)} objects")
+                # Show top 3 with details
+                for i, cls in enumerate(cls_list[:3]):
+                    try:
+                        obj_name = cls.object.name if hasattr(cls, 'object') else str(cls)
+                        confidence = cls.confidence if hasattr(cls, 'confidence') else 0.0
+                        reasons = cls.reasons[:2] if hasattr(cls, 'reasons') else []
+                        print(f"[DEBUG]       {i+1}. {obj_name} (conf: {confidence:.2f}) - {', '.join(reasons)}")
+                    except:
+                        print(f"[DEBUG]       {i+1}. {str(cls)}")
+                if len(cls_list) > 3:
+                    print(f"[DEBUG]       ... and {len(cls_list) - 3} more")
+
+        # If no smart-detected targets, fallback to selected objects
+        if not target_objects:
+            target_objects = [obj for obj in context.selected_objects if obj.type == 'MESH']
+            print(f"[DEBUG] No smart-detected targets, fallback to selected objects: {len(target_objects)}")
+            for obj in target_objects:
+                print(f"[DEBUG]   * {obj.name}")
+
+        # If still no targets, use the analysis subject (if available)
         if not target_objects and hasattr(analysis, 'subject_object') and analysis.subject_object:
             target_objects = [analysis.subject_object]
-        
+            print(f"[DEBUG] No selected objects, fallback to analysis subject: {analysis.subject_object.name}")
+
         # Make a copy of lights list since we might modify it
         lights_to_process = lights.copy()
-        
+        print(f"[DEBUG] Processing {len(lights_to_process)} lights with {len(target_objects)} target objects")
+
         for light in lights_to_process:
             # Skip if light was already removed
             if light.name not in bpy.data.objects:
+                print(f"[DEBUG] Light {light.name} already removed, skipping")
                 continue
-                
+
             light_name = light.name
-            
+            original_position = light.location.copy()
+            print(f"[DEBUG] === Checking obstruction for light: {light_name} ===")
+            print(f"[DEBUG]   Original position: {original_position}")
+
             # Check obstruction
             obstruction_result = self._check_and_handle_obstruction_object_level(
                 light, target_objects, context
             )
-            
+
+            print(f"[DEBUG]   Obstruction check result:")
+            print(f"[DEBUG]     - Has obstruction: {obstruction_result['has_obstruction']}")
+            if obstruction_result['hit_object']:
+                print(f"[DEBUG]     - Hit object: {obstruction_result['hit_object'].name}")
+                print(f"[DEBUG]     - Hit location: {obstruction_result['hit_location']}")
+                print(f"[DEBUG]     - Distance: {obstruction_result['distance']:.3f}")
+            print(f"[DEBUG]   Fallback strategy: {self.obstruction_fallback_strategy}")
+
             if obstruction_result['has_obstruction']:
                 # Record obstruction
                 if obstruction_result['hit_object']:
@@ -837,21 +1052,29 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                 # Handle berdasarkan strategy
                 if self.obstruction_fallback_strategy == 'SKIP_LIGHT':
                     # Hapus light yang terhalang
+                    print(f"[DEBUG]   Strategy SKIP_LIGHT: Removing obstructed light {light_name}")
+                    print(f"[DEBUG]   Reason: Obstruction detected with {obstruction_result['hit_object'].name if obstruction_result['hit_object'] else 'unknown object'}")
                     bpy.data.objects.remove(light, do_unlink=True)
                     if light in lights:  # Remove dari original list
                         lights.remove(light)
                     state.add_skipped_light(light_name, "Obstruction detected, fallback strategy: SKIP_LIGHT")
-                    
+                    print(f"[DEBUG]   Result: Light {light_name} removed from scene")
+
                 elif self.obstruction_fallback_strategy == 'ADJUST_POSITION':
                     # Cari alternative position
+                    print(f"[DEBUG]   Strategy ADJUST_POSITION: Searching for alternative position")
                     alternative_pos = self._find_alternative_position(
                         light.location, target_objects, context
                     )
-                    
+
                     if alternative_pos:
-                        original_position = light.location.copy()
+                        print(f"[DEBUG]   Success: Alternative position found")
+                        print(f"[DEBUG]     - From: {original_position}")
+                        print(f"[DEBUG]     - To: {alternative_pos}")
+                        print(f"[DEBUG]     - Distance moved: {(alternative_pos - original_position).length:.3f}")
+
                         light.location = alternative_pos  # Adjust object langsung
-                        
+
                         # Re-orient light to face target after position adjustment
                         if target_objects and len(target_objects) > 0:
                             # Calculate target position (center of target objects)
@@ -859,74 +1082,194 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                             for obj in target_objects:
                                 target_center += obj.location
                             target_center /= len(target_objects)
-                            
+
                             # Point light towards target
                             direction = (target_center - light.location).normalized()
                             if direction.length > 0.001:  # Avoid zero-length vectors
                                 rot_quat = direction.to_track_quat('-Z', 'Y')
                                 light.rotation_euler = rot_quat.to_euler()
-                                
+                                print(f"[DEBUG]     - Re-oriented light to face target center: {target_center}")
+
                                 # Update pivot point for LumiFlow system
                                 if hasattr(light, "Lumi_pivot_world"):
                                     lumi_set_light_pivot(light, target_center)
-                        
+
                         state.add_adjusted_light(light_name, original_position, light.location)
-                        
+
                         if self.show_obstruction_warnings:
                             self.report({'WARNING'}, f"Adjusted {light_name} position to avoid obstruction")
-                            
+
                         # Store original position di custom properties
                         light["lumi_original_position"] = original_position
                         light["lumi_position_adjusted"] = True
                         light["lumi_adjustment_reason"] = "obstruction_detected"
+                        print(f"[DEBUG]   Result: Light {light_name} successfully repositioned")
                     else:
-                        # Hapus jika tidak ada alternative
-                        bpy.data.objects.remove(light, do_unlink=True)
-                        if light in lights:  # Remove dari original list
-                            lights.remove(light)
-                        state.add_skipped_light(light_name, "No clear position found, fallback strategy: ADJUST_POSITION")
-                        
+                        # Terapkan posisi default - biarkan di posisi awal
+                        print(f"[DEBUG]   Failed: No alternative position found, keeping at current position")
+                        if self.show_obstruction_warnings:
+                            self.report({'WARNING'}, f"{light_name} kept at default position due to obstruction")
+
+                        # Store obstruction info in custom properties
+                        light["lumi_obstruction_detected"] = True
+                        light["lumi_position_adjusted"] = False
+                        light["lumi_adjustment_reason"] = "obstruction_no_alternative"
+                        if obstruction_result['hit_object']:
+                            light["lumi_obstruction_object"] = obstruction_result['hit_object'].name
+                        print(f"[DEBUG]   Result: Light {light_name} kept at original position with obstruction warning")
+
                 elif self.obstruction_fallback_strategy == 'WARN_ONLY':
+                    print(f"[DEBUG]   Strategy WARN_ONLY: Keeping light with obstruction warning")
                     if self.show_obstruction_warnings:
                         self.report({'WARNING'}, f"{light_name} has line-of-sight obstruction")
-                        
+
                         # Store obstruction info in custom properties
                         light["lumi_obstruction_detected"] = True
                         light["lumi_obstruction_timestamp"] = context.scene.frame_current
                         if obstruction_result['hit_object']:
                             light["lumi_obstruction_object"] = obstruction_result['hit_object'].name
+                    print(f"[DEBUG]   Result: Light {light_name} kept with warning (no position change)")
+
+        print(f"[DEBUG] === Obstruction Adjustment Summary ===")
+        print(f"[DEBUG]   Total lights processed: {len(lights_to_process)}")
+        print(f"[DEBUG]   Lights remaining after adjustment: {len(lights)}")
+        print(f"[DEBUG]   Lights removed/skipped: {len(lights_to_process) - len(lights)}")
+        print(f"[DEBUG]   Strategy used: {self.obstruction_fallback_strategy}")
+
+        # Show final light positions
+        print(f"[DEBUG] Final light positions:")
+        for i, light in enumerate(lights):
+            if light.name in bpy.data.objects:
+                print(f"[DEBUG]   {i+1}. {light.name}: {light.location}")
+            else:
+                print(f"[DEBUG]   {i+1}. {light.name}: REMOVED")
+
+        print(f"[DEBUG] === End Obstruction Adjustment ===\n")
 
     def _check_and_handle_obstruction_object_level(self, light_object: bpy.types.Object, target_objects: List[bpy.types.Object], context: bpy.types.Context) -> Dict[str, Any]:
-        """Check obstruction for an existing light object"""
-        obstruction_result = {
-            'has_obstruction': False,
-            'hit_object': None,
-            'hit_location': None,
-            'distance': 0.0
-        }
-        
-        if not target_objects:
+        """Check obstruction for an existing light object - only background objects are real obstructions"""
+        try:
+            print(f"[DEBUG]   Checking LOS for light: {light_object.name}")
+            print(f"[DEBUG]   Light position: {light_object.location}")
+
+            obstruction_result = {
+                'has_obstruction': False,
+                'hit_object': None,
+                'hit_location': None,
+                'distance': 0.0
+            }
+
+            if not target_objects:
+                print(f"[DEBUG]   No target objects to check")
+                return obstruction_result
+
+            light_pos = light_object.location
+
+            # Get background objects that should be considered obstructions
+            try:
+                from ...utils.obstruction_detector import analyze_scene_for_obstructions
+                classifications = analyze_scene_for_obstructions(context, context.selected_objects)
+                detector = get_smart_obstruction_detector()
+
+                background_objects = []
+                for obj_type, obj_list in classifications.items():
+                    if obj_type.lower() == 'background':
+                        # obj_list contains ObjectClassification objects, extract the actual objects
+                        background_objects.extend([cls.object for cls in obj_list])
+
+                print(f"[DEBUG]   Background objects: {[obj.name for obj in background_objects]}")
+
+                # Get lighting objects to exclude
+                lighting_objects = detector.get_lighting_objects()
+                # Ensure lighting_objects contains actual Blender objects
+                if lighting_objects and hasattr(lighting_objects[0], 'object'):
+                    lighting_objects = [cls.object for cls in lighting_objects]
+                print(f"[DEBUG]   Lighting objects to exclude: {[obj.name for obj in lighting_objects]}")
+            except Exception as e:
+                print(f"[DEBUG]   Error in scene analysis: {e}")
+                background_objects = []
+                lighting_objects = []
+
+            # Background position checking removed - all positions may be obstructed by background
+            light_z = light_pos.z
+            print(f"[DEBUG]   Light Z coordinate: {light_z:.3f}")
+
+            # Check line-of-sight to all target objects
+            print(f"[DEBUG]   === LINE-OF-SIGHT VALIDATION ===")
+            print(f"[DEBUG]   Light position: {light_pos}")
+            print(f"[DEBUG]   Target objects to check: {[obj.name for obj in target_objects]}")
+            print(f"[DEBUG]   Lighting objects excluded: {[obj.name for obj in lighting_objects] if lighting_objects else []}")
+            print(f"[DEBUG]   Background objects (real obstructions): {[obj.name for obj in background_objects] if background_objects else []}")
+
+            for target_obj in target_objects:
+                try:
+                    target_pos = self._get_safe_target_position(target_obj)
+                    print(f"[DEBUG]     ── Target: {target_obj.name}")
+                    print(f"[DEBUG]       Target position: {target_pos}")
+                    print(f"[DEBUG]       Distance to target: {(target_pos - light_pos).length:.3f}")
+
+                    # Exclude only lighting objects, NOT target objects
+                    exclude_objects = lighting_objects
+                    print(f"[DEBUG]       Exclude objects: {[obj.name for obj in exclude_objects]}")
+                    print(f"[DEBUG]       Target {target_obj.name} is {'EXCLUDED' if target_obj in exclude_objects else 'INCLUDED (OK for lighting)'}")
+
+                    # Cast ray from light to target
+                    print(f"[DEBUG]       Casting ray: {light_pos} → {target_pos}")
+                    has_obstruction, hit_object, hit_location, distance = lumi_ray_cast_between_points(
+                        context, light_pos, target_pos, exclude_objects=exclude_objects
+                    )
+
+                    print(f"[DEBUG]       Raycast result:")
+                    print(f"[DEBUG]         - Has obstruction: {has_obstruction}")
+                    print(f"[DEBUG]         - Hit object: {hit_object.name if hit_object else 'None'}")
+                    print(f"[DEBUG]         - Hit location: {hit_location}")
+                    print(f"[DEBUG]         - Distance: {distance:.3f}")
+
+                    if has_obstruction and hit_object:
+                        # Check if this is a real obstruction (background object)
+                        is_background = hit_object in background_objects
+                        is_target = hit_object in target_objects
+                        is_lighting = hit_object in lighting_objects
+
+                        print(f"[DEBUG]         - Hit analysis:")
+                        print(f"[DEBUG]           * Is background object: {is_background}")
+                        print(f"[DEBUG]           * Is target object: {is_target}")
+                        print(f"[DEBUG]           * Is lighting object: {is_lighting}")
+
+                        if hit_object in background_objects:
+                            print(f"[DEBUG]       ❌ REAL OBSTRUCTION: Hit background object {hit_object.name} at distance {distance:.3f}")
+                            obstruction_result['has_obstruction'] = True
+                            obstruction_result['hit_object'] = hit_object
+                            obstruction_result['hit_location'] = hit_location
+                            obstruction_result['distance'] = distance
+                            break  # Found real obstruction
+                        elif hit_object in target_objects:
+                            print(f"[DEBUG]       ✅ ACCEPTABLE: Hit target object {hit_object.name} (normal for lighting)")
+                            # If hit target object, that's OK - lights should illuminate targets
+                        elif hit_object in lighting_objects:
+                            print(f"[DEBUG]       ⚠️  UNEXPECTED: Hit lighting object {hit_object.name} (should be excluded)")
+                        else:
+                            print(f"[DEBUG]       ❓ UNKNOWN: Hit unexpected object {hit_object.name}")
+                    else:
+                        print(f"[DEBUG]       ✅ CLEAR: No obstruction between light and {target_obj.name}")
+
+                except Exception as e:
+                    print(f"[DEBUG]     ❌ ERROR checking target {target_obj.name}: {e}")
+
+            print(f"[DEBUG]   === END LINE-OF-SIGHT VALIDATION ===")
+
+            print(f"[DEBUG]   Final result: obstruction={obstruction_result['has_obstruction']}")
             return obstruction_result
-        
-        light_pos = light_object.location
-        
-        # Check line-of-sight to all target objects
-        for target_obj in target_objects:
-            target_pos = self._get_safe_target_position(target_obj)
-            
-            # Cast ray from light to target
-            has_obstruction, hit_object, hit_location, distance = lumi_ray_cast_between_points(
-                context, light_pos, target_pos, exclude_objects=[target_obj]
-            )
-            
-            if has_obstruction and hit_object:
-                obstruction_result['has_obstruction'] = True
-                obstruction_result['hit_object'] = hit_object
-                obstruction_result['hit_location'] = hit_location
-                obstruction_result['distance'] = distance
-                break  # Found obstruction, no need to check other targets
-        
-        return obstruction_result
+
+        except Exception as e:
+            print(f"[DEBUG]   CRITICAL ERROR in obstruction check: {e}")
+            # Return safe default
+            return {
+                'has_obstruction': False,
+                'hit_object': None,
+                'hit_location': None,
+                'distance': 0.0
+            }
 
     def _get_safe_target_position(self, target_obj: bpy.types.Object) -> Vector:
         """Get safe target position for ray casting"""
