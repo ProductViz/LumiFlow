@@ -283,3 +283,56 @@ class LUMI_OT_toggle_addon(bpy.types.Operator):
         status = "ENABLED" if scene.lumi_enabled else "DISABLED"
         self.report({'INFO'}, f"LumiFlow {status}")
         return {'FINISHED'}
+
+
+class LUMI_OT_toggle_viewport_overlay(bpy.types.Operator):
+    """Toggle overlay visibility for specific viewport"""
+    bl_idname = "lumi.toggle_viewport_overlay"
+    bl_label = "Toggle Viewport Overlay"
+    bl_description = "Toggle overlay visibility for current viewport"
+    bl_options = {'REGISTER'}
+
+    overlay_type: bpy.props.StringProperty(
+        name="Overlay Type",
+        description="Type of overlay to toggle",
+        default=""
+    )
+
+    viewport_id: bpy.props.StringProperty(
+        name="Viewport ID",
+        description="ID of the viewport to toggle overlay for",
+        default=""
+    )
+
+    def execute(self, context):
+        if not self.overlay_type:
+            self.report({'ERROR'}, "No overlay type specified")
+            return {'CANCELLED'}
+
+        # Import here to avoid circular imports
+        from ..ui.overlay.config import viewport_overlay_manager
+
+        # Get current viewport context
+        current_viewport_id = viewport_overlay_manager.get_viewport_id(context)
+
+        # Use provided viewport_id if available, otherwise use current
+        target_viewport_id = self.viewport_id or current_viewport_id
+
+        if target_viewport_id is None:
+            self.report({'ERROR'}, "No viewport context available")
+            return {'CANCELLED'}
+
+        # Toggle the overlay state for this viewport
+        current_state = viewport_overlay_manager.get_overlay_state(context, self.overlay_type)
+        new_state = not current_state
+
+        viewport_overlay_manager.set_overlay_state(context, self.overlay_type, new_state)
+
+        # Force redraw of all 3D viewports to update the overlay
+        for window in context.window_manager.windows:
+            for area in window.screen.areas:
+                if area.type == 'VIEW_3D':
+                    area.tag_redraw()
+
+        status = "ENABLED" if new_state else "DISABLED"
+        return {'FINISHED'}

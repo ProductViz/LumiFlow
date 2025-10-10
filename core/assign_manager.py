@@ -17,7 +17,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-Camera Manager Module
+Assign Manager Module
 Manages camera-light relationships and visibility control for LumiFlow.
 Provides singleton pattern implementation for camera-based light management.
 """
@@ -27,16 +27,16 @@ from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
 # Global singleton instance
-_camera_light_manager_instance = None
+_assign_light_manager_instance = None
 
-def get_camera_light_manager():
-    """Get singleton instance of CameraLightManager"""
-    global _camera_light_manager_instance
-    if _camera_light_manager_instance is None:
-        _camera_light_manager_instance = CameraLightManager()
-    return _camera_light_manager_instance
+def get_assign_light_manager():
+    """Get singleton instance of AssignLightManager"""
+    global _assign_light_manager_instance
+    if _assign_light_manager_instance is None:
+        _assign_light_manager_instance = AssignLightManager()
+    return _assign_light_manager_instance
 
-class CameraLightManager:
+class AssignLightManager:
     """Manager for camera-based light visibility system"""
 
     def __init__(self):
@@ -45,46 +45,46 @@ class CameraLightManager:
         self.active_camera_name = None  # Track currently active camera
         self.is_initialized = False
         self.light_assignments = {}  # {light_name: assignment_type} where assignment_type is 'SCENE' or camera_name
-    
+
     def initialize_system(self, context):
         """Initialize camera-light system when addon is enabled"""
         if self.is_initialized:
             return
-            
+
 
         # CONTEXT VALIDATION: Ensure context is valid and has scene
         if not self._is_context_valid(context):
             print("⚠️  Context not ready, scheduling delayed initialization")
             self._schedule_delayed_initialization()
             return
-        
+
         # Backup original state of all lights
         self.backup_original_light_states(context)
-        
+
         # Load camera-light assignments using naming system
         success = self._load_assignments_from_properties()
-        
+
         # Camera-light assignments loaded
 
         # Set initial active camera
         if context.scene.camera:
             self.active_camera_name = context.scene.camera.name
-        
+
         # Update visibility for active camera
         if self.active_camera_name:
             self.update_light_visibility_for_camera(context, self.active_camera_name)
-        
+
         # Register scene update handler
         self.register_scene_update_handler()
-        
+
         self.is_initialized = True
-    
-    
+
+
     def cleanup_system(self, context):
         """Cleanup camera-light system when addon is disabled"""
         if not self.is_initialized:
             return
-            
+
         # Restore original state of all lights
         self.restore_original_light_states(context)
 
@@ -96,18 +96,18 @@ class CameraLightManager:
         # self.camera_light_assignments.clear()  # Don't clear user assignments!
         self.original_light_states.clear()
         self.is_initialized = False
-    
+
     def backup_original_light_states(self, context):
         """Backup original state of all lights in scene"""
         self.original_light_states.clear()
-        
+
         for obj in context.scene.objects:
             if obj.type == 'LIGHT':
                 self.original_light_states[obj.name] = {
                     'hide_viewport': obj.hide_viewport,
                     'hide_render': obj.hide_render
                 }
-    
+
     def restore_original_light_states(self, context):
         """Restore original state of all lights"""
         for obj in context.scene.objects:
@@ -115,7 +115,7 @@ class CameraLightManager:
                 original_state = self.original_light_states[obj.name]
                 obj.hide_viewport = original_state['hide_viewport']
                 obj.hide_render = original_state['hide_render']
-    
+
     def assign_light_to_camera(self, camera_name: str, light_name: str):
         """Assign light to specific camera"""
         # Find the light object
@@ -131,7 +131,7 @@ class CameraLightManager:
 
         # Rebuild camera assignments
         self._rebuild_camera_assignments()
-    
+
     def remove_light_from_camera(self, camera_name: str, light_name: str):
         """Remove light from specific camera"""
         # Find the light object
@@ -145,7 +145,7 @@ class CameraLightManager:
 
         # Rebuild camera assignments
         self._rebuild_camera_assignments()
-    
+
     def get_camera_assigned_lights(self, camera_name: str) -> List[str]:
         """Get list of lights assigned to camera"""
         # Rebuild assignments if needed
@@ -163,7 +163,7 @@ class CameraLightManager:
                     self.camera_light_assignments[assignment] = []
                 self.camera_light_assignments[assignment].append(obj.name)
                 self.light_assignments[obj.name] = assignment
-    
+
     def update_light_visibility_for_camera(self, context, camera_name: str):
         """Update light visibility for specific camera"""
         if not camera_name:
@@ -190,14 +190,14 @@ class CameraLightManager:
                 # Hide unassigned lights
                 light.hide_viewport = True
                 light.hide_render = True
-    
+
     def check_camera_change(self, context):
         """Check if active camera changed and update visibility"""
         if not context.scene.camera:
             return
-            
+
         current_camera_name = context.scene.camera.name
-        
+
         if current_camera_name != self.active_camera_name:
             # Update active camera
             self.active_camera_name = current_camera_name
@@ -211,51 +211,51 @@ class CameraLightManager:
             # Force viewport update
             if context.area:
                 context.area.tag_redraw()
-    
+
     def register_scene_update_handler(self):
         """Register scene update handler for camera change detection"""
         # Remove existing handler if any
         self.unregister_scene_update_handler()
-        
+
         # Add new handler
         if on_scene_update not in bpy.app.handlers.depsgraph_update_post:
             bpy.app.handlers.depsgraph_update_post.append(on_scene_update)
-    
+
     def unregister_scene_update_handler(self):
         """Unregister scene update handler"""
         if on_scene_update in bpy.app.handlers.depsgraph_update_post:
             bpy.app.handlers.depsgraph_update_post.remove(on_scene_update)
-    
+
     def _is_context_valid(self, context):
         """Validate context to ensure scene access"""
         try:
             # Check if context exists and has scene
             if context is None:
                 return False
-            
+
             # Check if context has scene attribute
             if not hasattr(context, 'scene'):
                 return False
-            
+
             # Check if scene is valid
             if context.scene is None:
                 return False
-            
+
             # Check if this is _RestrictContext (problematic)
             context_type = type(context).__name__
             if context_type == '_RestrictContext':
                 return False
-            
+
             # Check if can access scene objects
             try:
                 _ = context.scene.objects
                 return True
             except (AttributeError, RuntimeError):
                 return False
-                
+
         except Exception:
             return False
-    
+
     def _schedule_delayed_initialization(self):
         """Schedule delayed initialization using Blender timer"""
         try:
@@ -263,7 +263,7 @@ class CameraLightManager:
             if hasattr(bpy.app, 'timers') and hasattr(self, '_delayed_init_timer'):
                 if self._delayed_init_timer in bpy.app.timers:
                     bpy.app.timers.remove(self._delayed_init_timer)
-            
+
             # Schedule new timer
             self._delayed_init_timer = bpy.app.timers.register(
                 self._delayed_initialize,
@@ -272,7 +272,7 @@ class CameraLightManager:
 
         except Exception as e:
             print(f"❌ Failed to schedule delayed initialization: {e}")
-    
+
     def _delayed_initialize(self):
         """Delayed initialization called by timer"""
         try:
@@ -285,14 +285,14 @@ class CameraLightManager:
             # Remove timer reference if completed
             if hasattr(self, '_delayed_init_timer'):
                 delattr(self, '_delayed_init_timer')
-        
+
         return None  # Remove timer
-    
+
     def _save_assignments_to_properties(self):
         """Save camera-light assignments using naming system (no PropertyGroup needed)"""
         # Nothing needs to be saved to PropertyGroup because the system already uses
         # persistent naming convention in Blender objects
-    
+
     def _load_assignments_from_properties(self):
         """Load camera-light assignments from light custom properties (new system) or naming system (legacy)"""
         try:
@@ -362,7 +362,7 @@ class CameraLightManager:
             import traceback
             traceback.print_exc()
             return False
-    
+
     def _extract_camera_number(self, camera_name):
         """Extract camera number from camera name"""
         try:
@@ -393,15 +393,15 @@ class CameraLightManager:
                 return match.group(0).zfill(2) if match else None
         except Exception as e:
             return None
-    
+
 
 # Global handler function
 def on_scene_update(depsgraph):
     """Handler for depsgraph update events"""
     try:
         # Get manager instance
-        manager = get_camera_light_manager()
-        
+        manager = get_assign_light_manager()
+
         # Check camera change
         if manager.is_initialized:
             manager.check_camera_change(bpy.context)
@@ -419,7 +419,7 @@ def generate_organized_light_name(base_name: str, assignment_mode: str, camera_n
             if clean_name.startswith(prefix):
                 clean_name = clean_name[len(prefix):].lstrip('_')
                 break
-        
+
         if assignment_mode == 'SCENE':
             # Global mode: Add G_ prefix
             return f"G_{clean_name}"
@@ -451,7 +451,7 @@ def generate_organized_light_name(base_name: str, assignment_mode: str, camera_n
                     # Extract number from camera name or use default
                     match = re.search(r'\d+', camera_name)
                     camera_num = match.group(0).zfill(2) if match else '00'
-                
+
                 return f"C_{camera_num}_{clean_name}"
             else:
                 # No camera specified, use default
@@ -463,17 +463,26 @@ def assign_light_to_active_camera(light_obj):
     """Assign new light to active camera or all cameras depending on mode"""
     try:
         context = bpy.context
-        
+
         # Validate context before accessing scene
         if context is None or not hasattr(context, 'scene') or context.scene is None:
             print("⚠️  Cannot assign light to camera: Context not available")
             return
-        
+
         scene = context.scene
         assignment_mode = getattr(scene, 'lumi_light_assignment_mode', 'SCENE')
-        
-        manager = get_camera_light_manager()
-        
+
+        # Ensure assignment mode has a valid default
+        if assignment_mode not in ['SCENE', 'CAMERA']:
+            assignment_mode = 'SCENE'
+
+
+        manager = get_assign_light_manager()
+
+        # Ensure manager is initialized
+        if not manager.is_initialized:
+            manager.initialize_system(context)
+
         # Generate organized name and rename the light
         original_name = light_obj.name
         if assignment_mode == 'SCENE':
@@ -482,7 +491,7 @@ def assign_light_to_active_camera(light_obj):
             active_camera = scene.camera
             camera_name = active_camera.name if active_camera else None
             organized_name = generate_organized_light_name(original_name, 'CAMERA', camera_name)
-        
+
         # Rename the light if name is different
         if organized_name != original_name:
             # Check if name already exists, add suffix if needed
@@ -491,7 +500,7 @@ def assign_light_to_active_camera(light_obj):
             while final_name in bpy.data.objects:
                 final_name = f"{organized_name}.{counter:03d}"
                 counter += 1
-            
+
             light_obj.name = final_name
 
         if assignment_mode == 'SCENE':
@@ -513,10 +522,10 @@ def assign_light_to_active_camera(light_obj):
                 manager.update_light_visibility_for_camera(context, active_camera.name)
             else:
                 print(f"⚠️  No active camera found for light assignment")
-        
+
         # Force viewport update
         if context.area:
             context.area.tag_redraw()
-            
+
     except Exception as e:
         print(f"❌ Failed to assign light to camera: {e}")

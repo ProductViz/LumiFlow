@@ -8,6 +8,7 @@ Defines the main UI panel and all UI drawing logic for LumiFlow Blender addon.
 """
 import bpy
 from ..utils import lumi_is_addon_enabled
+from .overlay.config import viewport_overlay_manager
 
 # Import UIList classes for template lists
 try:
@@ -213,13 +214,34 @@ class LUMI_PT_light_control(bpy.types.Panel):
             axis_right.prop(scene, "lumi_scale_axis", text="")
 
     def _draw_overlay_controls(self, layout: bpy.types.UILayout, scene: bpy.types.Scene):
-        """Overlay controls at bottom"""
+        """Overlay controls at bottom with viewport-specific management"""
+        context = bpy.context
+
+        # Set current context area for viewport-specific state management
+        viewport_overlay_manager.set_current_context_area(context)
+
+        # Get current viewport ID for state management
+        viewport_id = viewport_overlay_manager.get_viewport_id(context)
+
+        # Initialize viewport states if needed
+        viewport_overlay_manager.initialize_viewport_states(context)
+
         row = layout.row(align=True)
         row.scale_y = 1.1
+
+        # Tips overlay toggle with viewport-specific state
         if hasattr(scene, 'lumi_show_overlay_tips'):
-            row.prop(scene, "lumi_show_overlay_tips", text="", icon='QUESTION')
+            tips_enabled = viewport_overlay_manager.get_overlay_state(context, 'overlay_tips')
+            tips_prop = row.operator("lumi.toggle_viewport_overlay", text="", icon='QUESTION', depress=tips_enabled)
+            tips_prop.overlay_type = 'overlay_tips'
+            tips_prop.viewport_id = viewport_id or ""
+
+        # Info overlay toggle with viewport-specific state
         if hasattr(scene, 'lumi_show_overlay_info'):
-            row.prop(scene, "lumi_show_overlay_info", text="", icon='INFO')
+            info_enabled = viewport_overlay_manager.get_overlay_state(context, 'overlay_info')
+            info_prop = row.operator("lumi.toggle_viewport_overlay", text="", icon='INFO', depress=info_enabled)
+            info_prop.overlay_type = 'overlay_info'
+            info_prop.viewport_id = viewport_id or ""
 
         # Update panel toggle
         row.prop(scene, "show_update_panel", text="Check updates", icon='FILE_REFRESH')

@@ -66,15 +66,15 @@ def get_config_colors(context: bpy.types.Context) -> dict:
 def get_overlay_positions(context: bpy.types.Context, region) -> tuple:
     """Get overlay panel positions with info on right and tips on left."""
     margin = 20
-    
+
     # Info panel - always on the right side
     info_x = region.width - 270 - margin  # Right side with margin
     info_y = margin
-    
-    # Tips panel - always on the left side  
+
+    # Tips panel - always on the left side
     tips_x = margin  # Left side with margin
-    tips_y = margin
-    
+    tips_y = margin + 60  # Lift tips slightly upwards
+
     return (info_x, info_y), (tips_x, tips_y)
 
 def draw_text(
@@ -86,22 +86,7 @@ def draw_text(
     is_tips: bool = False,
     alignment: str = 'left'  # 'left' or 'right'
 ) -> None:
-    """
-    Single function to draw text, replacing draw_overlay_text and draw_overlay_tips.
-    Uses centralized configuration from OverlayConfig.
     
-    Args:
-        lines: List of tuples with format:
-               - Legacy: (label, value, color) or (label, value, color, spacing)
-               - New: (label, value, color, spacing_before, spacing_after) or 
-                     (label, value, color, spacing_before, spacing_after, font_scale)
-        position: (x, y) starting position
-        font_scale: Font size multiplier
-        line_spacing: Line spacing multiplier
-        font_id: Font ID to use
-        is_tips: If True, uses tips styling (smaller font, different spacing)
-        alignment: Text alignment ('left' or 'right')
-    """
     base_font_size = OverlayConfig.get_drawing_setting(
         'font_size_tips' if is_tips else 'font_size_default'
     )
@@ -324,10 +309,4 @@ def draw_text(
         
         # Skip spacing_after row (this is only for spacing, not for drawing)
         row_idx += 1
-
-# get_info_lines() moved to overlay_info.py - only used by overlay_info module
-
-
-# Mode management functions moved to utils.mode_manager for centralized system
-# Import from there: from ...utils.mode_manager import ModeManager
 

@@ -51,14 +51,135 @@ def lumi_set_light_pivot(light_obj: bpy.types.Object, pivot_location: Vector):
         if not isinstance(pivot_location, Vector):
             print(f"❌ Error: pivot_location is not Vector: {type(pivot_location)}")
             return
-            
+
         relative_position = pivot_location - light_obj.location
-        
+
         light_obj["Lumi_pivot_relative"] = (relative_position.x, relative_position.y, relative_position.z)
         light_obj["Lumi_pivot_world"] = (pivot_location.x, pivot_location.y, pivot_location.z)
-        
+
     except Exception as e:
         print(f"❌ Error in lumi_set_light_pivot: {e}")
+
+
+def lumi_initialize_pivot_for_existing_light(light_obj: bpy.types.Object, context: bpy.types.Context) -> bool:
+    """Initialize pivot for existing light that doesn't have pivot data"""
+    try:
+        # Skip if light already has pivot data
+        if "Lumi_pivot_world" in light_obj:
+            return True
+
+        # Get light facing direction based on type
+        light_direction = lumi_get_light_facing_direction(light_obj)
+
+        if light_direction is None:
+            print(f"⚠️ Could not determine facing direction for {light_obj.name}")
+            return False
+
+        # Perform raycast from light position in the direction the light is shining
+        # For pivot placement, we want to raycast in the direction the light is facing/emitting
+        ray_start = light_obj.location
+        ray_end = ray_start + light_direction * 100.0  # Long ray to find surfaces
+
+        # Use scene raycast to find intersection
+        result, location, normal, index, obj, matrix = context.scene.ray_cast(
+            context.view_layer.depsgraph, ray_start, light_direction
+        )
+
+        if result and obj and obj.type == 'MESH':
+            # Found mesh surface - place pivot at hit location
+            lumi_set_light_pivot(light_obj, location)
+            return True
+        else:
+            # No mesh found - place pivot 5 meters in facing direction
+            fallback_pivot = ray_start + light_direction * 5.0
+            lumi_set_light_pivot(light_obj, fallback_pivot)
+            print(f"✅ Initialized pivot for {light_obj.name} at 5m distance (no mesh found)")
+            return True
+
+    except Exception as e:
+        print(f"❌ Error initializing pivot for {light_obj.name}: {e}")
+        return False
+
+
+def lumi_get_light_facing_direction(light_obj: bpy.types.Object) -> Vector | None:
+    """Get the direction a light is facing based on its type and rotation.
+
+    Args:
+        light_obj: The light object
+
+    Returns:
+        Vector: Direction vector the light is facing, or None if cannot determine
+    """
+    try:
+        if light_obj.data.type == 'SUN':
+            # Sun lights: direction sun is shining FROM (opposite to where it's pointing)
+            # The sun's "forward" direction is actually the direction it's shining from
+            forward_vec = Vector((0, 0, -1))  # Negative Z = direction light comes from
+            transformed_vec = light_obj.matrix_world @ forward_vec
+            return (transformed_vec - light_obj.matrix_world.translation).normalized()
+
+        elif light_obj.data.type == 'SPOT':
+            # Spot lights: direction the spot is pointing (where light goes)
+            forward_vec = Vector((0, 0, -1))  # Negative Z = emission direction
+            transformed_vec = light_obj.matrix_world @ forward_vec
+            return (transformed_vec - light_obj.matrix_world.translation).normalized()
+
+        elif light_obj.data.type == 'AREA':
+            # Area lights: direction the area light is emitting
+            forward_vec = Vector((0, 0, -1))  # Negative Z = emission direction
+            transformed_vec = light_obj.matrix_world @ forward_vec
+            return (transformed_vec - light_obj.matrix_world.translation).normalized()
+
+        elif light_obj.data.type == 'POINT':
+            # Point lights: omnidirectional, but for pivot we use negative Z as default
+            forward_vec = Vector((0, 0, -1))  # Negative Z = emission direction
+            transformed_vec = light_obj.matrix_world @ forward_vec
+            return (transformed_vec - light_obj.matrix_world.translation).normalized()
+
+        else:
+            # Unknown light type - use negative Z as fallback
+            return Vector((0, 0, -1))
+
+    except Exception as e:
+        print(f"❌ Error getting light facing direction: {e}")
+        return None
+
+
+def lumi_initialize_pivots_for_all_existing_lights(context: bpy.types.Context) -> int:
+    """Initialize pivots for all existing lights in the scene that don't have pivot data.
+
+    Args:
+        context: Blender context (can be restricted context)
+
+    Returns:
+        int: Number of lights that had pivots initialized
+    """
+    initialized_count = 0
+
+    try:
+        # Check if context is restricted and get a proper context if needed
+        if not hasattr(context, 'scene') or not hasattr(context, 'view_layer'):
+            # Context is restricted, use bpy.context as fallback
+            proper_context = bpy.context
+            if not hasattr(proper_context, 'scene') or not hasattr(proper_context, 'view_layer'):
+                print(f"❌ Error: No valid Blender context available for pivot initialization")
+                return 0
+        else:
+            proper_context = context
+
+        # Find all light objects in the scene
+        all_lights = [obj for obj in bpy.data.objects if obj.type == 'LIGHT']
+
+        for light_obj in all_lights:
+            if lumi_initialize_pivot_for_existing_light(light_obj, proper_context):
+                initialized_count += 1
+
+        if initialized_count > 0:
+            return initialized_count
+
+    except Exception as e:
+        print(f"❌ Error initializing pivots for existing lights: {e}")
+        return 0
 
 
 def lumi_update_light_orientation(light_obj: bpy.types.Object):
@@ -209,12 +330,18 @@ def lumi_calculate_light_target_position(light_obj: bpy.types.Object, scene: bpy
         # Get light direction based on type
         if light_obj.data.type == 'SUN':
             # For sun lights, use rotation to determine direction
-            direction = -light_obj.matrix_world.to_3x3() @ Vector((0, 0, 1))
-            # Project far in the direction
+            # Transform the forward vector by the world matrix and negate it
+            forward_vec = Vector((0, 0, 1))
+            transformed_vec = light_obj.matrix_world @ forward_vec
+            direction = (transformed_vec - light_obj.matrix_world.translation).normalized()
+            # Project far in the direction (sun lights shine from infinity)
             return light_location + direction * 100.0
         elif light_obj.data.type == 'SPOT':
             # For spot lights, use rotation to determine direction
-            direction = -light_obj.matrix_world.to_3x3() @ Vector((0, 0, 1))
+            # Transform the forward vector by the world matrix and negate it
+            forward_vec = Vector((0, 0, 1))
+            transformed_vec = light_obj.matrix_world @ forward_vec
+            direction = (transformed_vec - light_obj.matrix_world.translation).normalized()
             # Use spot size to estimate reasonable distance
             distance = max(5.0, light_obj.data.energy * 0.5)
             return light_location + direction * distance
@@ -236,6 +363,9 @@ __all__ = [
     'lumi_get_light_pivot',
     'lumi_set_light_pivot',
     'lumi_update_light_orientation',
+    'lumi_initialize_pivot_for_existing_light',
+    'lumi_get_light_facing_direction',
+    'lumi_initialize_pivots_for_all_existing_lights',
     'lumi_calculate_light_intensity',
     'lumi_calculate_light_size',
     'lumi_get_viewport_camera_position',

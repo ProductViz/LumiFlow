@@ -21,7 +21,8 @@ class OverlayConfig:
         'dim': (0.6, 0.6, 0.6, 1.0),
         'scroll_text': (1.0, 1.0, 1.0, 1.0),
         'scroll_value': (1.0, 1.0, 0.0, 1.0),
-        'error': (1.0, 0.4, 0.4, 1.0)
+        'error': (1.0, 0.4, 0.4, 1.0),
+        'mesh_stroke': (0.8, 0.8, 0.8, 1.0)  # ADD THIS LINE
     }
     
     # Default positions for overlay panels
@@ -44,7 +45,7 @@ class OverlayConfig:
     DRAWING_SETTINGS = {
         'circle_segments': 32,
         'line_width': 1,
-        'font_size_default': 13,
+        'font_size_default': 12,
         'font_size_tips': 12,
         'line_height_default': 18,
         'line_spacing_multiplier': 1.3,
@@ -188,12 +189,8 @@ class DrawHandler:
             return False
     
     def disable(self) -> bool:
-        """
-        Disable the draw handler.
-        
-        Returns:
-            bool: True if successfully disabled, False otherwise
-        """
+        """ Disable the draw handler"""
+
         if not self.is_enabled or self.handler is None:
             return True
         
@@ -207,12 +204,8 @@ class DrawHandler:
             return False
     
     def toggle(self) -> bool:
-        """
-        Toggle the draw handler on/off.
-        
-        Returns:
-            bool: New state (True if enabled, False if disabled)
-        """
+        """Toggle the draw handler on/off"""
+
         if self.is_enabled:
             self.disable()
             return False
@@ -231,17 +224,8 @@ class OverlayManager:
         self.handlers = {}
     
     def register_handler(self, name: str, draw_func: callable, handler_type: str = 'POST_PIXEL') -> DrawHandler:
-        """
-        Register a new draw handler.
-        
-        Args:
-            name: Unique name for the handler
-            draw_func: Function to be called for drawing
-            handler_type: Type of handler ('POST_PIXEL', 'POST_VIEW', etc.)
-        
-        Returns:
-            DrawHandler: The created handler instance
-        """
+        """ Register a new draw handler"""
+
         if name in self.handlers:
             print(f"Handler '{name}' already exists. Cleaning up old handler...")
             old_handler = self.handlers[name]
@@ -287,3 +271,182 @@ class OverlayManager:
 
 # Global overlay manager instance
 overlay_manager = OverlayManager()
+
+
+class ViewportOverlayManager:
+    """Manager for viewport-specific overlay states."""
+
+    def __init__(self):
+        self.viewport_states = {}  # stable_id -> overlay_settings
+        self.active_viewport = None
+        self._current_context_area_id = None
+        self._viewport_id_map = {}  # context.area -> stable_id
+
+    def _get_stable_viewport_id(self, context):
+        """Get a stable identifier for the viewport based on area properties."""
+        if not hasattr(context, 'area') or not context.area:
+            return None
+
+        area = context.area
+        # Create a stable ID based on area position and size
+        stable_id = f"{area.x}_{area.y}_{area.width}_{area.height}"
+
+        # Map the area object to the stable ID
+        self._viewport_id_map[area] = stable_id
+        return stable_id
+
+    def get_viewport_id(self, context):
+        """Get unique identifier for current viewport area."""
+        return self._get_stable_viewport_id(context)
+
+    def set_current_context_area(self, context):
+        """Set the current context area ID for draw handlers to access."""
+        self._current_context_area_id = self._get_stable_viewport_id(context)
+
+    def get_current_context_area_id(self):
+        """Get the current context area ID."""
+        return self._current_context_area_id
+
+    def set_overlay_state(self, context, overlay_type, enabled):
+        """Set overlay state for specific viewport."""
+        viewport_id = self.get_viewport_id(context)
+        if viewport_id is None:
+            return
+
+        if viewport_id not in self.viewport_states:
+            self.viewport_states[viewport_id] = {}
+
+        self.viewport_states[viewport_id][overlay_type] = enabled
+        self.active_viewport = viewport_id
+
+    def get_overlay_state(self, context, overlay_type):
+        """Get overlay state for current viewport."""
+        viewport_id = self.get_viewport_id(context)
+        if viewport_id is None:
+            return True  # Default to enabled
+
+        return self.viewport_states.get(viewport_id, {}).get(overlay_type, True)  # Default to True
+
+    def get_overlay_state_by_area_id(self, area_id, overlay_type):
+        """Get overlay state by area ID (for draw handlers)."""
+        if area_id is None:
+            return True  # Default to enabled
+
+        return self.viewport_states.get(area_id, {}).get(overlay_type, True)  # Default to True
+
+    def is_overlay_enabled_for_viewport(self, context, overlay_type):
+        """Check if overlay should be drawn in current viewport."""
+        return self.get_overlay_state(context, overlay_type)
+
+    def is_overlay_enabled_for_area(self, area_id, overlay_type):
+        """Check if overlay should be drawn for specific area (for draw handlers)."""
+        return self.get_overlay_state_by_area_id(area_id, overlay_type)
+
+    def cleanup_viewport(self, viewport_id):
+        """Clean up state for removed viewport."""
+        if viewport_id in self.viewport_states:
+            del self.viewport_states[viewport_id]
+
+    def get_active_viewport_settings(self):
+        """Get overlay settings for active viewport."""
+        if self.active_viewport:
+            return self.viewport_states.get(self.active_viewport, {})
+        return {}
+
+    def initialize_viewport_states(self, context):
+        """Initialize viewport states for the current viewport if not already present."""
+        viewport_id = self.get_viewport_id(context)
+        if viewport_id is None:
+            return
+
+        if viewport_id not in self.viewport_states:
+            self.viewport_states[viewport_id] = {
+                'overlay_info': True,  # Default to enabled
+                'overlay_tips': True   # Default to enabled
+            }
+            self.active_viewport = viewport_id
+
+    def debug_print_all_states(self):
+        """Debug function to print all viewport states."""
+        print(f"ViewportOverlayManager States: {len(self.viewport_states)} viewports")
+        print(f"Active viewport: {self.active_viewport}")
+        print(f"Current context area: {self._current_context_area_id}")
+
+
+# Global viewport overlay manager instance
+viewport_overlay_manager = ViewportOverlayManager()
+
+
+def test_viewport_specific_overlays():
+    """Test function to verify viewport-specific overlay functionality."""
+    print("Testing viewport-specific overlay system...")
+
+    # Test viewport state management
+    class MockContext:
+        def __init__(self, area_id):
+            self.area = MockArea(area_id)
+
+    class MockArea:
+        def __init__(self, area_id):
+            self.area_id = area_id
+
+    # Create mock contexts for different viewports
+    ctx1 = MockContext(1)
+    ctx2 = MockContext(2)
+
+    # Test setting overlay states for different viewports
+    viewport_overlay_manager.set_overlay_state(ctx1, 'overlay_info', True)
+    viewport_overlay_manager.set_overlay_state(ctx1, 'overlay_tips', False)
+    viewport_overlay_manager.set_overlay_state(ctx2, 'overlay_info', False)
+    viewport_overlay_manager.set_overlay_state(ctx2, 'overlay_tips', True)
+
+    # Test getting overlay states
+    info_state_1 = viewport_overlay_manager.get_overlay_state(ctx1, 'overlay_info')
+    tips_state_1 = viewport_overlay_manager.get_overlay_state(ctx1, 'overlay_tips')
+    info_state_2 = viewport_overlay_manager.get_overlay_state(ctx2, 'overlay_info')
+    tips_state_2 = viewport_overlay_manager.get_overlay_state(ctx2, 'overlay_tips')
+
+    print(f"Viewport 1 - Info: {info_state_1}, Tips: {tips_state_1}")
+    print(f"Viewport 2 - Info: {info_state_2}, Tips: {tips_state_2}")
+
+    # Verify isolation between viewports
+    assert info_state_1 == True, "Viewport 1 info should be enabled"
+    assert tips_state_1 == False, "Viewport 1 tips should be disabled"
+    assert info_state_2 == False, "Viewport 2 info should be disabled"
+    assert tips_state_2 == True, "Viewport 2 tips should be enabled"
+
+    print("✅ Viewport-specific overlay system test passed!")
+
+
+# Standalone test (won't run in Blender environment due to imports)
+def simple_test():
+    """Simple test of the viewport overlay manager logic."""
+    print("Running simple viewport overlay manager test...")
+
+    # Test the viewport state management logic
+    manager = ViewportOverlayManager()
+
+    # Mock viewport IDs
+    vp1_id = 1001
+    vp2_id = 1002
+
+    # Test area ID based state management
+    info_state_1 = manager.get_overlay_state_by_area_id(vp1_id, 'overlay_info')
+    tips_state_1 = manager.get_overlay_state_by_area_id(vp1_id, 'overlay_tips')
+    info_state_2 = manager.get_overlay_state_by_area_id(vp2_id, 'overlay_info')
+    tips_state_2 = manager.get_overlay_state_by_area_id(vp2_id, 'overlay_tips')
+
+    print(f"Initial states - VP1 Info: {info_state_1}, VP1 Tips: {tips_state_1}")
+    print(f"Initial states - VP2 Info: {info_state_2}, VP2 Tips: {tips_state_2}")
+
+    # All should be False initially
+    assert info_state_1 == False, "Initial state should be False"
+    assert tips_state_1 == False, "Initial state should be False"
+    assert info_state_2 == False, "Initial state should be False"
+    assert tips_state_2 == False, "Initial state should be False"
+
+    print("✅ Simple viewport overlay manager test passed!")
+
+
+if __name__ == "__main__":
+    simple_test()

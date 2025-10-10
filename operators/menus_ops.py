@@ -11,7 +11,7 @@ from mathutils import Vector
 from ..utils.common import lumi_is_addon_enabled
 from ..utils.operators import lumi_raycast_at_mouse
 from ..utils.color import lumi_apply_kelvin_to_lights
-from ..core.camera_manager import assign_light_to_active_camera
+from ..core.assign_manager import assign_light_to_active_camera
 
 # Import advanced subject detection for AI analysis
 from .smart_template.template_analyzer import analyze_subject, AdvancedSubjectClassifier
@@ -834,7 +834,7 @@ class LUMI_OT_assign_light_to_target(bpy.types.Operator):
     camera_name: bpy.props.StringProperty()
 
     def execute(self, context):
-        from ..core.camera_manager import get_camera_light_manager
+        from ..core.assign_manager import get_assign_light_manager
 
         manager = get_camera_light_manager()
 

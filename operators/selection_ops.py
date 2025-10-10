@@ -146,7 +146,7 @@ class LUMI_OT_cycle_lights_modal(bpy.types.Operator):
     """Modal operator for cycling lights by pressing and holding D key"""
     bl_idname = "lumi.cycle_lights_modal"
     bl_label = "Cycle Lights Modal"
-    bl_description = "Hold D and scroll to cycle through lights"
+    bl_description = "Press D to cycle through lights"
     bl_options = {'REGISTER'}
     
     # Main method for modal operator
@@ -169,14 +169,6 @@ class LUMI_OT_cycle_lights_modal(bpy.types.Operator):
         # D key cycles forward
         if event.type == 'D' and event.value == 'PRESS':
             self.cycle_to_next_light(context, direction=1)
-            return {'RUNNING_MODAL'}
-
-        # Scroll wheel cycles too
-        if event.type == 'WHEELUPMOUSE':
-            self.cycle_to_next_light(context, direction=1)
-            return {'RUNNING_MODAL'}
-        elif event.type == 'WHEELDOWNMOUSE':
-            self.cycle_to_next_light(context, direction=-1)
             return {'RUNNING_MODAL'}
         
         # Handle ESC as alternative exit
@@ -245,7 +237,7 @@ class LUMI_OT_cycle_lights_modal(bpy.types.Operator):
 
         # Start modal operation
         context.window_manager.modal_handler_add(self)
-        self.report({'INFO'}, "Light cycling active - hold D and scroll to cycle lights")
+        self.report({'INFO'}, "Light cycling active - press D to cycle lights")
         # # Continue running modal operator
         return {'RUNNING_MODAL'}
     
@@ -551,7 +543,7 @@ def cleanup_camera_light_state():
     """Cleanup function to reset Camera Light state on unregister"""
     try:
         # Import and cleanup directly without global variable manipulation
-        from ..core.camera_manager import CameraLightManager
+        from ..core.assign_manager import AssignLightManager
         
         # Create a temporary manager for cleanup
         temp_manager = CameraLightManager()
@@ -559,9 +551,9 @@ def cleanup_camera_light_state():
         
         # Reset the global instance by directly accessing the module
         import sys
-        if 'LumiFlow.core.camera_manager' in sys.modules:
-            module = sys.modules['LumiFlow.core.camera_manager']
-            if hasattr(module, '_camera_light_manager_instance'):
+        if 'LumiFlow.core.assign_manager' in sys.modules:
+            module = sys.modules['LumiFlow.core.assign_manager']
+            if hasattr(module, '_assign_light_manager_instance'):
                 module._camera_light_manager_instance = None
     except Exception:
         pass

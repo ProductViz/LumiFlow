@@ -6,7 +6,6 @@ Contains all light-specific drawing and visualization functions.
 import bpy
 import gpu
 import bmesh
-from gpu_extras.batch import batch_for_shader
 import blf
 import math
 from mathutils import Vector, Quaternion
@@ -427,6 +426,8 @@ def draw_light_visualization(light, target_pos: Vector, cam_pos: Vector, region=
 
 def render_batches(shader, batch_lines, batch_shapes):
     """Render the accumulated line and shape batches."""
+    from gpu_extras.batch import batch_for_shader
+
     if batch_lines:
         shader.bind()
         shader.uniform_float("color", OverlayConfig.get_color('highlight'))

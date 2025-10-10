@@ -113,7 +113,6 @@ class SmartObstructionDetector:
         # Get all mesh objects in scene
         all_mesh_objects = [obj for obj in context.scene.objects if obj.type == 'MESH']
 
-        print(f"[DEBUG] Analyzing {len(all_mesh_objects)} mesh objects in scene")
 
         # Classify each object
         for obj in all_mesh_objects:
@@ -210,8 +209,6 @@ class SmartObstructionDetector:
             best_type = ObjectType.UNKNOWN
             confidence = 0.0
 
-        # Single line debug output per object
-        print(f"[DEBUG] {obj.name} -> {best_type.value.upper()} (conf: {confidence:.2f}) [{', '.join(reasons[:2])}]")
 
         return ObjectClassification(obj, best_type, confidence, reasons)
 

@@ -194,6 +194,35 @@ class ProfessionalLightingProperties(PropertyGroup):
     )
 
 
+def _assign_unassigned_lights_to_scene(context, assign_manager):
+    """Check for unassigned lights and assign them to scene when addon is enabled."""
+    try:
+        if not context or not hasattr(context, 'scene') or not context.scene:
+            return
+
+        # Get all lights in the scene
+        all_lights = [obj for obj in context.scene.objects if obj.type == 'LIGHT']
+        unassigned_lights = []
+
+        # Find lights that don't have lumi_camera_assignment property
+        for light in all_lights:
+            if "lumi_camera_assignment" not in light:
+                unassigned_lights.append(light.name)
+
+        # Assign unassigned lights to scene
+        if unassigned_lights:
+            for light_name in unassigned_lights:
+                try:
+                    assign_manager.assign_light_to_camera("SCENE", light_name)
+                except Exception as e:
+                    print(f"⚠️ Failed to assign light '{light_name}' to scene: {e}")
+        else:
+            print("✓ All lights are already assigned")
+
+    except Exception as e:
+        print(f"❌ Error checking unassigned lights: {e}")
+
+
 def lumi_enabled_update(self, context: bpy.types.Context):
     """Update callback when addon is enabled/disabled."""
     state = get_state()
@@ -222,25 +251,38 @@ def lumi_enabled_update(self, context: bpy.types.Context):
                 lumi_scene_update_handler(bpy.context.scene, bpy.context.evaluated_depsgraph_get())
                 # Scene update handler called directly
                 
-            # Initialize Camera Light system when addon is enabled
+            # Initialize Assign Light system when addon is enabled
             try:
-                from ..core.camera_manager import get_camera_light_manager
-                camera_manager = get_camera_light_manager()
-                
+                from ..core.assign_manager import get_assign_light_manager
+                assign_manager = get_assign_light_manager()
+
+                # Check for unassigned lights and assign them to scene before initializing
+                _assign_unassigned_lights_to_scene(context, assign_manager)
+
                 # Try to initialize with available context
-                # CameraLightManager already has internal context validation
-                camera_manager.initialize_system(context)
-                
+                # AssignLightManager already has internal context validation
+                assign_manager.initialize_system(context)
+
             except Exception as e:
                 # If failed, try delayed initialization through manager
                 try:
-                    from ..core.camera_manager import get_camera_light_manager
-                    camera_manager = get_camera_light_manager()
-                    camera_manager._schedule_delayed_initialization()
-                    print("📅 Camera Light System delayed initialization scheduled")
+                    from ..core.assign_manager import get_assign_light_manager
+                    assign_manager = get_assign_light_manager()
+                    # Also check for unassigned lights in delayed initialization
+                    _assign_unassigned_lights_to_scene(context, assign_manager)
+                    assign_manager._schedule_delayed_initialization()
+                    print("📅 Assign Light System delayed initialization scheduled")
                 except Exception as e2:
                     print(f"❌ Camera Light System initialization failed: {e2}")
-                
+
+            # Initialize pivots for existing lights when addon is enabled through UI
+            try:
+                from .light import lumi_initialize_pivots_for_all_existing_lights
+                lumi_initialize_pivots_for_all_existing_lights(context)
+            except Exception as e:
+                # Pivot initialization errors are now handled gracefully in the function itself
+                pass
+
         except Exception as e:
             # Error in overlay activation - pass silently
             pass
@@ -265,12 +307,12 @@ def lumi_enabled_update(self, context: bpy.types.Context):
             lumi_disable_tips_overlay_handler()
             lumi_disable_cursor_overlay_handler()
             
-            # Cleanup Camera Light system when addon is disabled
+            # Cleanup Assign Light system when addon is disabled
             try:
-                from ..core.camera_manager import get_camera_light_manager
-                camera_manager = get_camera_light_manager()
-                camera_manager.cleanup_system(context)
-                print("🔧 Camera Light System cleanup completed")
+                from ..core.assign_manager import get_assign_light_manager
+                assign_manager = get_assign_light_manager()
+                assign_manager.cleanup_system(context)
+                print("🔧 Assign Light System cleanup completed")
             except Exception as e:
                 print(f"❌ Camera Light System cleanup failed: {e}")
             

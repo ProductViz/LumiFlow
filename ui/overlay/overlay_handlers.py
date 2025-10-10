@@ -4,13 +4,14 @@ Contains draw handler management and scene update functions.
 """
 
 import bpy
-from .config import overlay_manager
+from .config import overlay_manager, viewport_overlay_manager
 
 # Global handlers (deprecated - using overlay_manager now)
 _lumi_draw_handler = None
 _lumi_overlay_draw_handler = None
 _lumi_stroke_overlay_handler = None
 _lumi_tips_overlay_handler = None
+_lumi_general_tips_overlay_handler = None
 _lumi_cursor_overlay_handler = None
 
 _overlay_needs_reinit = True
@@ -56,9 +57,13 @@ def lumi_disable_draw_handler():
 def lumi_enable_overlay_draw_handler():
     """Enable overlay info drawing handler using DrawHandler."""
     global _lumi_overlay_draw_handler
+
+    # Initialize viewport states for current context
+    viewport_overlay_manager.initialize_viewport_states(bpy.context)
+
     if _lumi_overlay_draw_handler is None:
         _lumi_overlay_draw_handler = overlay_manager.register_handler(
-            'overlay_info', draw_overlay_info, 'POST_PIXEL'
+            'overlay_info', _draw_overlay_info_viewport_aware, 'POST_PIXEL'
         )
         _lumi_overlay_draw_handler.enable()
     else:
@@ -92,9 +97,13 @@ def lumi_disable_stroke_overlay_handler():
 def lumi_enable_tips_overlay_handler():
     """Enable tips overlay drawing handler using DrawHandler."""
     global _lumi_tips_overlay_handler
+
+    # Initialize viewport states for current context
+    viewport_overlay_manager.initialize_viewport_states(bpy.context)
+
     if _lumi_tips_overlay_handler is None:
         _lumi_tips_overlay_handler = overlay_manager.register_handler(
-            'tips_overlay', lumi_draw_tips_overlay, 'POST_PIXEL'
+            'tips_overlay', _draw_tips_overlay_viewport_aware, 'POST_PIXEL'
         )
         _lumi_tips_overlay_handler.enable()
     else:
@@ -105,6 +114,23 @@ def lumi_disable_tips_overlay_handler():
     global _lumi_tips_overlay_handler
     if _lumi_tips_overlay_handler is not None:
         _lumi_tips_overlay_handler.disable()
+
+def lumi_enable_general_tips_overlay_handler():
+    """Enable general tips overlay drawing handler using DrawHandler."""
+    global _lumi_general_tips_overlay_handler
+    if _lumi_general_tips_overlay_handler is None:
+        _lumi_general_tips_overlay_handler = overlay_manager.register_handler(
+            'general_tips_overlay', lumi_draw_general_tips_overlay, 'POST_PIXEL'
+        )
+        _lumi_general_tips_overlay_handler.enable()
+    else:
+        _lumi_general_tips_overlay_handler.enable()
+
+def lumi_disable_general_tips_overlay_handler():
+    """Disable general tips overlay drawing handler."""
+    global _lumi_general_tips_overlay_handler
+    if _lumi_general_tips_overlay_handler is not None:
+        _lumi_general_tips_overlay_handler.disable()
 
 def lumi_enable_cursor_overlay_handler():
     """Enable cursor overlay drawing handler using DrawHandler."""
@@ -140,6 +166,7 @@ def lumi_scene_update_handler(scene, depsgraph):
         lumi_disable_overlay_draw_handler()
         lumi_disable_stroke_overlay_handler()
         lumi_disable_tips_overlay_handler()
+        lumi_disable_general_tips_overlay_handler()
         lumi_disable_cursor_overlay_handler()
         return
     
@@ -154,6 +181,7 @@ def lumi_scene_update_handler(scene, depsgraph):
         lumi_enable_overlay_draw_handler()
         lumi_enable_stroke_overlay_handler()
         lumi_enable_tips_overlay_handler()
+        lumi_enable_general_tips_overlay_handler()
         lumi_enable_cursor_overlay_handler()
         
         _overlay_needs_reinit = False
@@ -170,6 +198,7 @@ def lumi_scene_update_handler(scene, depsgraph):
         lumi_enable_overlay_draw_handler()
     
     lumi_enable_tips_overlay_handler()
+    lumi_enable_general_tips_overlay_handler()
     lumi_enable_cursor_overlay_handler()
     
     
@@ -184,7 +213,7 @@ def lumi_scene_update_handler(scene, depsgraph):
 
 # Import functions from other modules for handler compatibility
 from .overlay_light import lumi_draw_light_lines
-from .overlay_text import draw_overlay_info, draw_overlay_tips, draw_overlay_cursor
+from .overlay_text import draw_overlay_info, draw_overlay_tips, draw_overlay_cursor, draw_general_tips
 from .overlay_mesh import _draw_scene_object_strokes_if_no_lights
 
 def lumi_draw_stroke_overlay():
@@ -195,7 +224,29 @@ def lumi_draw_tips_overlay():
     """Wrapper function for tips overlay drawing."""
     draw_overlay_tips()
 
+def lumi_draw_general_tips_overlay():
+    """Wrapper function for general tips overlay drawing."""
+    draw_general_tips()
+
 def lumi_draw_cursor_overlay():
     """Wrapper function for cursor overlay drawing."""
     draw_overlay_cursor()
+
+
+# ============================================================================
+# VIEWPORT-AWARE DRAW WRAPPERS
+# ============================================================================
+
+def _draw_overlay_info_viewport_aware():
+    """Viewport-aware wrapper for overlay info drawing."""
+    # Set current context area before drawing
+    viewport_overlay_manager.set_current_context_area(bpy.context)
+    draw_overlay_info()
+
+
+def _draw_tips_overlay_viewport_aware():
+    """Viewport-aware wrapper for tips overlay drawing."""
+    # Set current context area before drawing
+    viewport_overlay_manager.set_current_context_area(bpy.context)
+    lumi_draw_tips_overlay()
 

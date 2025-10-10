@@ -63,7 +63,7 @@ from .ui.main_panel import (
 )
 
 # Import update checker operators
-from .operators.panels_ops import LUMI_OT_check_update, LUMI_OT_update_addon, LUMI_OT_toggle_donate_panel, LUMI_OT_toggle_positioning_mode
+from .operators.panels_ops import LUMI_OT_check_update, LUMI_OT_update_addon, LUMI_OT_toggle_donate_panel, LUMI_OT_toggle_positioning_mode, LUMI_OT_toggle_viewport_overlay
 
 # Template settings panel classes have been deleted
 
@@ -295,6 +295,7 @@ update_classes = [
     LUMI_OT_update_addon,
     LUMI_OT_toggle_donate_panel,
     LUMI_OT_toggle_positioning_mode,
+    LUMI_OT_toggle_viewport_overlay,
 ]
 
 classes = get_classes() + tuple(update_classes) + tuple(linking_ui_classes) + tuple(panel_classes) + tuple(pie_menu_classes)
@@ -362,7 +363,7 @@ def register_properties() -> None:
         ("lumi_positioning_mode_enabled", bpy.props.BoolProperty(
             name="Positioning Mode Enabled",
             description="Enable/disable positioning mode. When disabled, modifier+LMB drag uses default Blender behavior",
-            default=True,
+            default=False,
             update=lumi_positioning_mode_enabled_update
         )),
         ("lumi_status_angle_active", bpy.props.BoolProperty(default=False)),        
@@ -811,9 +812,9 @@ def lumiflow_save_pre_handler(dummy):
         # Save camera-light assignments to persistent properties before saving
         if hasattr(bpy.context, 'scene') and bpy.context.scene:
             try:
-                from .core.camera_manager import get_camera_light_manager
-                camera_manager = get_camera_light_manager()
-                camera_manager._save_assignments_to_properties()
+                from .core.assign_manager import get_assign_light_manager
+                assign_manager = get_assign_light_manager()
+                assign_manager._save_assignments_to_properties()
             except Exception as e:
                 pass
                 
@@ -843,9 +844,9 @@ def lumiflow_post_load_handler(dummy):
             
             # Load camera-light assignments from persistent properties
             try:
-                from .core.camera_manager import get_camera_light_manager
-                camera_manager = get_camera_light_manager()
-                camera_manager._load_assignments_from_properties()
+                from .core.assign_manager import get_assign_light_manager
+                assign_manager = get_assign_light_manager()
+                assign_manager._load_assignments_from_properties()
             except Exception as e:
                 pass
                 
@@ -1101,7 +1102,16 @@ def register() -> None:
     # Cleanup orphaned collections at startup
     from .utils.common import cleanup_lumiflow_collections
     cleanup_lumiflow_collections()
-    
+
+    # Initialize pivots for existing lights when addon is enabled
+    try:
+        from .utils.light import lumi_initialize_pivots_for_all_existing_lights
+        if bpy.context and bpy.context.scene:
+            lumi_initialize_pivots_for_all_existing_lights(bpy.context)
+    except Exception as e:
+        # Pivot initialization errors are now handled gracefully in the function itself
+        pass
+
     # Registration completed successfully
 
 # Function to unregister classes
