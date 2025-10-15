@@ -10,9 +10,11 @@ Error handling and recovery utilities for template operations.
 import bpy
 import time
 import traceback
+import logging
 from typing import List, Dict, Tuple, Optional, Any
 from contextlib import contextmanager
 
+logger = logging.getLogger(__name__)
 
 class TemplateError(Exception):
     """Base exception for template system"""
@@ -481,8 +483,8 @@ def get_template_error_context() -> Dict[str, Any]:
                 "scene_objects": len(context.scene.objects) if context.scene else 0,
                 "active_object": context.active_object.name if context.active_object else None,
             })
-    except:
-        pass
+    except Exception as e:
+        logger.debug(f"Cannot collect context info: {e}")
     
     return context_info
 

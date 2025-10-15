@@ -190,10 +190,10 @@ class LUMI_OT_apply_template_default(bpy.types.Operator):
 
 
 class LUMI_OT_apply_template(bpy.types.Operator):
-    """Apply template operator"""
+    """Apply template operator (smart: dialog for non-utility templates)"""
     bl_idname = "lumi.apply_template"
     bl_label = "Apply Template"
-    bl_description = "Apply lighting template"
+    bl_description = "Apply lighting template with automatic dialog behavior"
     bl_options = {'REGISTER', 'UNDO'}
     
     template_id: StringProperty(
@@ -201,6 +201,27 @@ class LUMI_OT_apply_template(bpy.types.Operator):
         description="Template to apply",
         default=""
     )
+    
+    def invoke(self, context, event):
+        """Smart invoke: skip dialog only for utilities/single lights"""
+        # Get template info to check category
+        try:
+            from .template_library import get_template
+            template = get_template(self.template_id)
+            
+            if template:
+                category = template.get('category', '').lower()
+                
+                # Skip dialog for utilities & single lights
+                if 'utilities' in category or 'single' in category:
+                    return self.execute(context)
+            
+            # For all other templates, call main operator with invoke
+            return bpy.ops.lumi.apply_lighting_template('INVOKE_DEFAULT', template_id=self.template_id)
+            
+        except Exception as e:
+            # Fallback: direct execute
+            return self.execute(context)
     
     def execute(self, context):
         result = bpy.ops.lumi.apply_lighting_template(

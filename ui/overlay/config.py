@@ -6,7 +6,9 @@ Centralized configuration for overlay system including colors, positions, and se
 from typing import Dict, Tuple, Any
 from mathutils import Vector
 import bpy
+import logging
 
+logger = logging.getLogger(__name__)
 
 class OverlayConfig:
     """Centralized configuration for LumiFlow overlay system."""
@@ -185,7 +187,7 @@ class DrawHandler:
             
             return True
         except Exception as e:
-            print(f"Error enabling draw handler: {e}")
+            logger.error(f"Error enabling draw handler: {e}")
             return False
     
     def disable(self) -> bool:
@@ -200,7 +202,7 @@ class DrawHandler:
             self.is_enabled = False
             return True
         except Exception as e:
-            print(f"Error disabling draw handler: {e}")
+            logger.error(f"Error disabling draw handler: {e}")
             return False
     
     def toggle(self) -> bool:
@@ -227,7 +229,7 @@ class OverlayManager:
         """ Register a new draw handler"""
 
         if name in self.handlers:
-            print(f"Handler '{name}' already exists. Cleaning up old handler...")
+            logger.debug(f"Handler '{name}' already exists. Cleaning up old handler")
             old_handler = self.handlers[name]
             old_handler.disable()  # Properly disable old handler
         
@@ -367,10 +369,10 @@ class ViewportOverlayManager:
             self.active_viewport = viewport_id
 
     def debug_print_all_states(self):
-        """Debug function to print all viewport states."""
-        print(f"ViewportOverlayManager States: {len(self.viewport_states)} viewports")
-        print(f"Active viewport: {self.active_viewport}")
-        print(f"Current context area: {self._current_context_area_id}")
+        """Debug function to log all viewport states."""
+        logger.debug(f"ViewportOverlayManager States: {len(self.viewport_states)} viewports")
+        logger.debug(f"Active viewport: {self.active_viewport}")
+        logger.debug(f"Current context area: {self._current_context_area_id}")
 
 
 # Global viewport overlay manager instance
@@ -379,7 +381,7 @@ viewport_overlay_manager = ViewportOverlayManager()
 
 def test_viewport_specific_overlays():
     """Test function to verify viewport-specific overlay functionality."""
-    print("Testing viewport-specific overlay system...")
+    logger.info("Testing viewport-specific overlay system...")
 
     # Test viewport state management
     class MockContext:
@@ -406,8 +408,8 @@ def test_viewport_specific_overlays():
     info_state_2 = viewport_overlay_manager.get_overlay_state(ctx2, 'overlay_info')
     tips_state_2 = viewport_overlay_manager.get_overlay_state(ctx2, 'overlay_tips')
 
-    print(f"Viewport 1 - Info: {info_state_1}, Tips: {tips_state_1}")
-    print(f"Viewport 2 - Info: {info_state_2}, Tips: {tips_state_2}")
+    logger.debug(f"Viewport 1 - Info: {info_state_1}, Tips: {tips_state_1}")
+    logger.debug(f"Viewport 2 - Info: {info_state_2}, Tips: {tips_state_2}")
 
     # Verify isolation between viewports
     assert info_state_1 == True, "Viewport 1 info should be enabled"
@@ -415,13 +417,13 @@ def test_viewport_specific_overlays():
     assert info_state_2 == False, "Viewport 2 info should be disabled"
     assert tips_state_2 == True, "Viewport 2 tips should be enabled"
 
-    print("✅ Viewport-specific overlay system test passed!")
+    logger.info("✅ Viewport-specific overlay system test passed!")
 
 
 # Standalone test (won't run in Blender environment due to imports)
 def simple_test():
     """Simple test of the viewport overlay manager logic."""
-    print("Running simple viewport overlay manager test...")
+    logger.info("Running simple viewport overlay manager test...")
 
     # Test the viewport state management logic
     manager = ViewportOverlayManager()
@@ -436,8 +438,8 @@ def simple_test():
     info_state_2 = manager.get_overlay_state_by_area_id(vp2_id, 'overlay_info')
     tips_state_2 = manager.get_overlay_state_by_area_id(vp2_id, 'overlay_tips')
 
-    print(f"Initial states - VP1 Info: {info_state_1}, VP1 Tips: {tips_state_1}")
-    print(f"Initial states - VP2 Info: {info_state_2}, VP2 Tips: {tips_state_2}")
+    logger.debug(f"Initial states - VP1 Info: {info_state_1}, VP1 Tips: {tips_state_1}")
+    logger.debug(f"Initial states - VP2 Info: {info_state_2}, VP2 Tips: {tips_state_2}")
 
     # All should be False initially
     assert info_state_1 == False, "Initial state should be False"
@@ -445,7 +447,7 @@ def simple_test():
     assert info_state_2 == False, "Initial state should be False"
     assert tips_state_2 == False, "Initial state should be False"
 
-    print("✅ Simple viewport overlay manager test passed!")
+    logger.info("✅ Simple viewport overlay manager test passed!")
 
 
 if __name__ == "__main__":

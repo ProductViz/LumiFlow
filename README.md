@@ -103,6 +103,28 @@ Free, open-source, and community-powered.
 
 ---
 
+## 📚 Documentation
+
+**Complete User Manual** available in the `user_manual/` folder:
+
+👉 **[Start Here: User Manual Index](user_manual/00_INDEX.md)**
+
+The manual includes:
+- **Part 1:** Installation & Setup
+- **Part 2:** Getting Started (5-minute Quick Start)
+- **Part 3:** 40+ Template Library
+- **Part 4:** Advanced Features (Positioning, Smart Controls, Light Linking)
+- **Part 5:** Reference, FAQ, Troubleshooting
+
+**Quick Links:**
+- [Installation Guide](user_manual/01_Introduction_Installation.md#installation)
+- [Quick Start (5 min)](user_manual/02_Getting_Started_Core_Features.md#quick-start-guide)
+- [All Templates](user_manual/03_Template_Library.md)
+- [Keyboard Shortcuts](user_manual/05_Reference_Support.md#complete-keyboard-shortcuts)
+- [FAQ](user_manual/05_Reference_Support.md#frequently-asked-questions)
+
+---
+
 ## 🤝 Community & Support
 
 Join the LumiFlow community:  

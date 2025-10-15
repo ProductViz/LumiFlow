@@ -21,7 +21,10 @@ LumiFlow Addon Registration Module
 Handles registration and unregistration of all classes, properties, handlers, and keymaps for the LumiFlow Blender addon.
 """
 import bpy
+import logging
 from bpy.props import CollectionProperty, IntProperty, StringProperty
+
+logger = logging.getLogger(__name__)
 
 # Import state and utility functions
 from .core.state import get_state
@@ -623,14 +626,14 @@ def unregister_positioning_keymaps():
             if km and kmi:
                 try:
                     km.keymap_items.remove(kmi)
-                except:
-                    pass
+                except Exception as e:
+                    logger.debug(f"Failed to remove keymap item: {e}")
 
         # Update the global list
         addon_keymaps = remaining_keymaps
 
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"Error clearing positioning keymaps: {e}")
 
 
 def register_keymaps() -> None:
@@ -839,8 +842,8 @@ def lumiflow_post_load_handler(dummy):
                 state = get_state()
                 if state:
                     state.cleanup()
-            except:
-                pass
+            except Exception as e:
+                logger.debug(f"State cleanup failed: {e}")
             
             # Load camera-light assignments from persistent properties
             try:
@@ -848,10 +851,10 @@ def lumiflow_post_load_handler(dummy):
                 assign_manager = get_assign_light_manager()
                 assign_manager._load_assignments_from_properties()
             except Exception as e:
-                pass
+                logger.debug(f"Failed to load assignments: {e}")
                 
     except Exception as e:
-        pass
+        logger.error(f"Depsgraph update handler error: {e}")
 
 def register_file_detection_system():
     """Register file detection handlers"""

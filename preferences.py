@@ -22,7 +22,9 @@ Contains the addon preferences class with all UI customization options.
 """
 # # Import modul utama Blender
 import bpy
+import logging
 
+logger = logging.getLogger(__name__)
 
 class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
     """Addon preferences for LumiFlow, allowing users to customize keymaps and UI options."""
@@ -62,8 +64,8 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
                 for area in window.screen.areas:
                     if area.type == 'VIEW_3D':
                         area.tag_redraw()
-        except:
-            pass
+        except Exception as e:
+            logger.debug(f"Cannot redraw viewports: {e}")
 
     def draw(self, context: bpy.types.Context) -> None:
         layout = self.layout

@@ -47,34 +47,24 @@ _FLAG_GROUP_UPDATE = "_lumi_group_update_in_progress"
 def update_linking_from_marked(scene, light_item):
     """Update actual Blender light linking when marked property changes"""
     try:
-        # Debug logging
-        print(f"update_linking_from_marked called: light={light_item.name}, marked={light_item.marked}")
-
         # Prevent recursion during updates
         if scene.get(_FLAG_UPDATING, False):
-            print("Skipping update - recursion prevention flag set")
             return
 
         # Get current object group
         obj_groups = scene.lumi_object_groups
         obj_index = scene.lumi_object_groups_index
 
-        print(f"Object groups count: {len(obj_groups)}, current index: {obj_index}")
-
         if obj_index < 0 or obj_index >= len(obj_groups):
-            print("No valid object group selected")
             return
 
         current_obj_group = obj_groups[obj_index]
-        print(f"Current object group: {current_obj_group.name}")
 
         # Get light object
         light_obj = bpy.data.objects.get(light_item.name)
         if not light_obj or light_obj.type != 'LIGHT':
-            print(f"Light object not found or not LIGHT type: {light_item.name}")
+            logger.debug(f"Light object not found or not LIGHT type: {light_item.name}")
             return
-
-        print(f"Light object found: {light_obj.name}")
 
         # Get receiver objects from current group
         receiver_objects = []
@@ -83,10 +73,7 @@ def update_linking_from_marked(scene, light_item):
             if obj and obj.type == 'MESH':
                 receiver_objects.append(obj)
 
-        print(f"Found {len(receiver_objects)} receiver objects")
-
         if not receiver_objects:
-            print("No valid receiver objects found")
             return
 
         # Update link status in collection
@@ -100,48 +87,37 @@ def update_linking_from_marked(scene, light_item):
             link_status = links.add()
             link_status.object_group_name = current_obj_group.name
             link_status.light_name = light_item.name
-            print("Created new link status entry")
-        else:
-            print("Found existing link status entry")
 
         # Update link status
         link_status.is_linked = light_item.marked
-        print(f"Updated link status: is_linked={link_status.is_linked}")
 
         # Apply actual Blender light linking - Use scene parameter instead of bpy.context.scene
         if hasattr(scene, 'light_linking') and scene.light_linking:
-            print("Applying Blender light linking...")
             try:
                 if light_item.marked:
                     # Include - link light to receiver objects
-                    print(f"Including light {light_obj.name} to {len(receiver_objects)} objects")
                     for receiver in receiver_objects:
                         try:
                             scene.light_linking.link_new(light_obj, receiver, 'INCLUDE')
-                            print(f"INCLUDED {light_obj.name} → {receiver.name}")
                         except Exception as e:
-                            print(f"Failed to INCLUDE {light_obj.name} → {receiver.name}: {e}")
+                            logger.debug(f"Failed to include {light_obj.name} → {receiver.name}: {e}")
                 else:
                     # Exclude - explicitly exclude light from receiver objects
-                    print(f"Excluding light {light_obj.name} from {len(receiver_objects)} objects")
                     for receiver in receiver_objects:
                         try:
                             # CRITICAL FIX: Use EXCLUDE link_new instead of unlink
                             scene.light_linking.link_new(light_obj, receiver, 'EXCLUDE')
-                            print(f"EXCLUDED {light_obj.name} ← {receiver.name}")
                         except Exception as e:
-                            print(f"Failed to EXCLUDE {light_obj.name} ← {receiver.name}: {e}")
+                            logger.debug(f"Failed to exclude {light_obj.name} ← {receiver.name}: {e}")
                             # Fallback: try unlink method
                             try:
                                 scene.light_linking.unlink(light_obj, receiver)
-                                print(f"UNLINKED {light_obj.name} ← {receiver.name} (fallback)")
                             except Exception as e2:
-                                print(f"Fallback unlink also failed: {e2}")
+                                logger.debug(f"Fallback unlink failed: {e2}")
             except Exception as e:
-                print(f"Light linking error: {e}")
+                logger.error(f"Light linking error: {e}")
         else:
-            # Rate-limited warning to avoid console spam
-            print("Light linking not available on scene - trying operator fallback")
+            # Fallback to operator method
 
             # Fallback: Use operators for light linking
             try:
@@ -161,16 +137,10 @@ def update_linking_from_marked(scene, light_item):
                     # Include linking
                     if hasattr(bpy.ops.object, 'light_linking_receivers_link'):
                         bpy.ops.object.light_linking_receivers_link(link_state='INCLUDE')
-                        print(f"Operator INCLUDED {light_obj.name} to receivers")
-                    else:
-                        print("light_linking_receivers_link operator not available")
                 else:
                     # Exclude linking - USE SAME OPERATOR but with EXCLUDE state
                     if hasattr(bpy.ops.object, 'light_linking_receivers_link'):
                         bpy.ops.object.light_linking_receivers_link(link_state='EXCLUDE')
-                        print(f"Operator EXCLUDED {light_obj.name} from receivers")
-                    else:
-                        print("light_linking_receivers_link operator not available for EXCLUDE")
 
                 # Restore original selection
                 bpy.ops.object.select_all(action='DESELECT')
@@ -179,12 +149,10 @@ def update_linking_from_marked(scene, light_item):
                 bpy.context.view_layer.objects.active = original_active
 
             except Exception as e:
-                print(f"Operator fallback failed: {e}")
+                logger.debug(f"Operator fallback failed: {e}")
 
     except Exception as e:
-        print(f"Error in update_linking_from_marked: {e}")
-        import traceback
-        print(f"Traceback: {traceback.format_exc()}")
+        logger.error(f"Error in update_linking_from_marked: {e}", exc_info=True)
 
 def light_item_marked_update(self, context):
     """Handle per-light checkbox changes with improved linking logic"""
@@ -1032,27 +1000,23 @@ class LUMI_OT_remove_group(bpy.types.Operator):
                             link_collection = bpy.data.collections.get(link_coll_name)
                             
                             if not link_collection:
-                                print(f"❌ Light Linking collection '{link_coll_name}' not found. Skipping.")
+                                logger.warning(f"Light Linking collection '{link_coll_name}' not found")
                                 continue
                             
-                           # # Check if object is a light from Light Linking Collection
+                            # Check if object is a light from Light Linking Collection
                             objects_removed = 0
                             for obj in objects_in_group:
                                 # Use object name for checking and unlinking
                                 if obj.name in [o.name for o in link_collection.objects]:
                                     link_collection.objects.unlink(obj)
                                     objects_removed += 1
-                                    print(f"✅ Object '{obj.name}' removed from '{link_coll_name}'.")
-                                else:
-                                    print(f"ℹ Object '{obj.name}' not in '{link_coll_name}'.")
                             
                             if objects_removed > 0:
                                 unlinked_count += 1
-                                print(f"Successfully unlinked {light_obj.name} from {objects_removed} object(s)")
                             
                         except Exception as e:
                             self.report({'WARNING'}, f"Failed to unlink {light_obj.name}: {e}")
-                            print(f"Error unlinking {light_obj.name}: {e}")
+                            logger.error(f"Error unlinking {light_obj.name}: {e}")
                                 
             finally:
                 # Restore original selection
@@ -2369,6 +2333,6 @@ def cleanup_dynamic_menu_classes():
     for menu_class in _dynamic_menu_classes:
         try:
             bpy.utils.unregister_class(menu_class)
-        except:
-            pass  # Ignore if already unregistered
+        except Exception as e:
+            logger.debug(f"Menu class already unregistered: {menu_class.__name__}")
     _dynamic_menu_classes.clear()

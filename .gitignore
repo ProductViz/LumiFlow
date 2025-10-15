@@ -208,3 +208,50 @@ __marimo__/
 LUMIFLOW_RELEASE_STRATEGY.md
 PERENCANAAN_SHORTCUT_SIMPLE.md
 TEMPLATE_ADDITION_GUIDE.md
+
+# ===== LumiFlow Specific =====
+
+# Backup and old files
+*_old.py
+*_backup.py
+*_bak.py
+*.bak
+*.old
+*.tmp
+
+# Development documentation (internal)
+*_INTERNAL.md
+*_DEV.md
+*_NOTES.md
+ROADMAP_INTERNAL.md
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows system files
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+
+# Blender temp files
+*.blend1
+*.blend2
+*.blend@
+
+# Release build artifacts
+LumiFlow_Release/
+releases/
+*.zip
+!assets/**/*.zip
+
+# Profiling output
+*.prof
+*.pstats
+
+# Testing artifacts
+test_results/
+.coverage.*

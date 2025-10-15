@@ -12,7 +12,9 @@ import colorsys
 from gpu_extras.batch import batch_for_shader
 from mathutils import Vector
 from .config import OverlayConfig
+import logging
 
+logger = logging.getLogger(__name__)
 
 class OutlineOverlay:
     """Class for managing mesh outline overlays with solid color rendering."""
@@ -60,8 +62,8 @@ class OutlineOverlay:
             if region_3d:
                 # Use the view distance as a proxy for zoom level
                 return region_3d.view_distance
-        except:
-            pass
+        except Exception as e:
+            logger.debug(f"Cannot get viewport distance: {e}")
         return 10.0  # Default fallback distance
 
     def _calculate_object_screen_size(self, obj, context, viewport_distance):
@@ -87,8 +89,9 @@ class OutlineOverlay:
             screen_size = size / max(distance, 0.1)
 
             return screen_size
-        except:
-            return 1.0  # Default to visible if calculation fails
+        except Exception as e:
+            logger.debug(f"Cannot calculate object screen size: {e}")
+        return 1.0  # Default to visible if calculation fails
 
     def _get_lod_level(self, distance):
         """Get level of detail based on distance with 4 levels for smoother transitions."""
@@ -110,8 +113,8 @@ class OutlineOverlay:
             # Selected objects are never culled - always visible
             if hasattr(obj, 'select_get') and obj.select_get():
                 return False
-        except Exception:
-            pass  # If selection check fails, continue with normal culling
+        except Exception as e:
+            logger.debug(f"Cannot check object selection: {e}")
 
         screen_size = self._calculate_object_screen_size(obj, context, viewport_distance)
         return screen_size < self.zoom_settings['min_screen_size']
@@ -143,9 +146,9 @@ class OutlineOverlay:
 
             r, g, b = colorsys.hls_to_rgb(h, l, s)
             return (r, g, b, a)
-        except Exception:
-            # Fallback to base color if anything goes wrong
-            return base_color
+        except Exception as e:
+            logger.debug(f"Cannot get selection-aware color: {e}")
+        return base_color
 
     def _get_selection_aware_lod(self, obj, distance):
         """Get LOD level with selection priority override."""
@@ -153,8 +156,8 @@ class OutlineOverlay:
             # Selected objects always get full quality regardless of distance
             if hasattr(obj, 'select_get') and obj.select_get() and self.selection_settings['selected_always_full_quality']:
                 return 0  # Full quality for selected objects
-        except Exception:
-            pass  # If selection check fails, use normal LOD
+        except Exception as e:
+            logger.debug(f"Cannot check object selection for LOD: {e}")
 
         # Use normal distance-based LOD for unselected objects
         return self._get_lod_level(distance)
@@ -239,8 +242,8 @@ class OutlineOverlay:
                     selected_objects.append(obj)
                 else:
                     unselected_objects.append(obj)
-            except Exception:
-                # If selection check fails, treat as unselected
+            except Exception as e:
+                logger.debug(f"Cannot check object selection: {e}")
                 unselected_objects.append(obj)
 
         # Render unselected objects first (background)
@@ -828,7 +831,6 @@ def get_outline_overlay():
         _overlay_instance = OutlineOverlay()
     return _overlay_instance
 
-
 def _draw_scene_object_strokes_if_no_lights():
     """
     Draw scene object SOLID color overlays when viewport shading is RENDERED and there are no lights.
@@ -852,8 +854,8 @@ def _draw_scene_object_strokes_if_no_lights():
         addon_prefs = bpy.context.preferences.addons.get(__package__.split('.')[0] or "LumiFlow")
         if addon_prefs and hasattr(addon_prefs.preferences, 'outline_method'):
             outline_method = addon_prefs.preferences.outline_method
-    except:
-        pass  # Use default if preferences not available
+    except Exception as e:
+        logger.debug(f"Cannot get outline method preference: {e}")
 
     # Get overlay instance
     overlay = get_outline_overlay()

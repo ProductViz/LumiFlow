@@ -23,8 +23,11 @@ Provides singleton pattern implementation for camera-based light management.
 """
 import bpy
 import re
+import logging
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
+
+logger = logging.getLogger(__name__)
 
 # Global singleton instance
 _assign_light_manager_instance = None
@@ -54,7 +57,7 @@ class AssignLightManager:
 
         # CONTEXT VALIDATION: Ensure context is valid and has scene
         if not self._is_context_valid(context):
-            print("⚠️  Context not ready, scheduling delayed initialization")
+            logger.warning("Context not ready, scheduling delayed initialization")
             self._schedule_delayed_initialization()
             return
 
@@ -271,7 +274,7 @@ class AssignLightManager:
             )
 
         except Exception as e:
-            print(f"❌ Failed to schedule delayed initialization: {e}")
+            logger.error(f"Failed to schedule delayed initialization: {e}")
 
     def _delayed_initialize(self):
         """Delayed initialization called by timer"""
@@ -280,7 +283,7 @@ class AssignLightManager:
             if self._is_context_valid(context):
                 self.initialize_system(context)
         except Exception as e:
-            print(f"❌ Delayed initialization failed: {e}")
+            logger.error(f"Delayed initialization failed: {e}")
         finally:
             # Remove timer reference if completed
             if hasattr(self, '_delayed_init_timer'):
@@ -358,9 +361,7 @@ class AssignLightManager:
             return loaded_count > 0
 
         except Exception as e:
-            print(f"⚠️  Failed to load assignments: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"Failed to load assignments: {e}", exc_info=True)
             return False
 
     def _extract_camera_number(self, camera_name):
@@ -466,7 +467,7 @@ def assign_light_to_active_camera(light_obj):
 
         # Validate context before accessing scene
         if context is None or not hasattr(context, 'scene') or context.scene is None:
-            print("⚠️  Cannot assign light to camera: Context not available")
+            logger.warning("Cannot assign light to camera: Context not available")
             return
 
         scene = context.scene
@@ -521,11 +522,11 @@ def assign_light_to_active_camera(light_obj):
                 # Update visibility immediately (system always active)
                 manager.update_light_visibility_for_camera(context, active_camera.name)
             else:
-                print(f"⚠️  No active camera found for light assignment")
+                logger.warning("No active camera found for light assignment")
 
         # Force viewport update
         if context.area:
             context.area.tag_redraw()
 
     except Exception as e:
-        print(f"❌ Failed to assign light to camera: {e}")
+        logger.error(f"Failed to assign light to camera: {e}")

@@ -444,8 +444,8 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
                 state = get_state()
                 state.unregister_modal('scroll')
                 lumi_disable_cursor_overlay_handler()
-            except:
-                pass
+            except Exception as cleanup_error:
+                logger.error(f"Cleanup failed during modal error: {cleanup_error}")
             
             import traceback
             traceback.print_exc()

@@ -732,77 +732,22 @@ def analyze_subject(objects: List[bpy.types.Object], context: bpy.types.Context)
         return analysis
 
 
+from ...utils.scene_context import BoundsCalculator
+
 def calculate_bounds(objects: List[bpy.types.Object]) -> Dict[str, Any]:
-    """
-    Calculate combined bounding box for all objects.
-    
-    Args:
-        objects: List of objects to analyze
-        
-    Returns:
-        Dictionary with bounds information
-    """
-    # # Coba eksekusi kode dengan error handling
-    try:
-        if not objects:
-            return {
-                "min": Vector(),
-                "max": Vector(),
-                "center": Vector(),
-                "dimensions": Vector((1.0, 1.0, 1.0)),
-                "diagonal": 1.0,
-                "radius": 0.5
-            }
-        
-        # Initialize bounds with first object
-        first_obj = objects[0]
-        bbox_corners = [first_obj.matrix_world @ Vector(corner) for corner in first_obj.bound_box]
-        
-        min_coord = Vector(bbox_corners[0])
-        max_coord = Vector(bbox_corners[0])
-        
-        # Process all objects
-        for obj in objects:
-            # # Coba eksekusi kode dengan error handling
-            try:
-                # Get world-space bounding box corners
-                world_corners = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]
-                
-                for corner in world_corners:
-                    # Update min/max for each axis
-                    for i in range(3):
-                        min_coord[i] = min(min_coord[i], corner[i])
-                        max_coord[i] = max(max_coord[i], corner[i])
-                        
-            # # Tangani error jika terjadi
-            except Exception as e:
-                continue
-        
-        # Calculate derived values
-        center = (min_coord + max_coord) * 0.5
-        dimensions = max_coord - min_coord
-        diagonal = dimensions.length
-        radius = diagonal * 0.5
-        
-        return {
-            "min": min_coord,
-            "max": max_coord,
-            "center": center,
-            "dimensions": dimensions,
-            "diagonal": diagonal,
-            "radius": radius
-        }
-        
-    # # Tangani error jika terjadi
-    except Exception as e:
-        return {
-            "min": Vector(),
-            "max": Vector(),
-            "center": Vector(),
-            "dimensions": Vector((1.0, 1.0, 1.0)),
-            "diagonal": 1.0,
-            "radius": 0.5
-        }
+    """Calculate bounds using unified system."""
+    calc = BoundsCalculator()
+    bounds_data = calc.calculate(objects)
+
+    # Return in existing format for compatibility
+    return {
+        "min": bounds_data.min,
+        "max": bounds_data.max,
+        "center": bounds_data.center,
+        "dimensions": bounds_data.dimensions,
+        "radius": bounds_data.radius,
+        "diagonal": bounds_data.diagonal
+    }
 
 
 def detect_orientation(objects: List[bpy.types.Object]) -> Dict[str, Any]:

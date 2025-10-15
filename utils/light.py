@@ -9,12 +9,14 @@ Contains specialized light-related utility functions: positioning, creation, int
 
 import math
 import bpy
+import logging
 from mathutils import Vector
 from bpy_extras import view3d_utils
 
 # Import common utilities
 from .common import lumi_get_light_collection, lumi_move_to_collection
 
+logger = logging.getLogger(__name__)
 
 # MODE MANAGEMENT FUNCTIONS moved to overlay/utils.py
 
@@ -31,16 +33,13 @@ def lumi_get_light_pivot(light_obj) -> Vector:
                 # Handle bpy id property array and similar objects
                 try:
                     return Vector((pivot[0], pivot[1], pivot[2]))
-                except (IndexError, TypeError):
-                    print(f"❌ Error: Cannot access pivot elements: {pivot}")
+                except (IndexError, TypeError) as e:
+                    logger.debug(f"Cannot access pivot elements: {e}")
             else:
-                print(f"❌ Error: Invalid pivot format: {pivot} (type: {type(pivot)})")
+                logger.debug(f"Invalid pivot format: {type(pivot)}")
         return light_obj.location.copy()
     except Exception as e:
-        print(f"❌ Error in lumi_get_light_pivot: {e}")
-        import traceback
-        traceback.print_exc()
-        # Fallback: return light location
+        logger.error(f"Error in lumi_get_light_pivot: {e}")
         return light_obj.location.copy()
 
 
@@ -49,7 +48,7 @@ def lumi_set_light_pivot(light_obj: bpy.types.Object, pivot_location: Vector):
     try:
         # Validate input
         if not isinstance(pivot_location, Vector):
-            print(f"❌ Error: pivot_location is not Vector: {type(pivot_location)}")
+            logger.warning(f"pivot_location is not Vector: {type(pivot_location)}")
             return
 
         relative_position = pivot_location - light_obj.location
@@ -58,7 +57,7 @@ def lumi_set_light_pivot(light_obj: bpy.types.Object, pivot_location: Vector):
         light_obj["Lumi_pivot_world"] = (pivot_location.x, pivot_location.y, pivot_location.z)
 
     except Exception as e:
-        print(f"❌ Error in lumi_set_light_pivot: {e}")
+        logger.error(f"Error in lumi_set_light_pivot: {e}")
 
 
 def lumi_initialize_pivot_for_existing_light(light_obj: bpy.types.Object, context: bpy.types.Context) -> bool:
@@ -72,7 +71,7 @@ def lumi_initialize_pivot_for_existing_light(light_obj: bpy.types.Object, contex
         light_direction = lumi_get_light_facing_direction(light_obj)
 
         if light_direction is None:
-            print(f"⚠️ Could not determine facing direction for {light_obj.name}")
+            logger.warning(f"Could not determine facing direction for {light_obj.name}")
             return False
 
         # Perform raycast from light position in the direction the light is shining
@@ -93,11 +92,10 @@ def lumi_initialize_pivot_for_existing_light(light_obj: bpy.types.Object, contex
             # No mesh found - place pivot 5 meters in facing direction
             fallback_pivot = ray_start + light_direction * 5.0
             lumi_set_light_pivot(light_obj, fallback_pivot)
-            print(f"✅ Initialized pivot for {light_obj.name} at 5m distance (no mesh found)")
             return True
 
     except Exception as e:
-        print(f"❌ Error initializing pivot for {light_obj.name}: {e}")
+        logger.error(f"Error initializing pivot for {light_obj.name}: {e}")
         return False
 
 
@@ -141,7 +139,7 @@ def lumi_get_light_facing_direction(light_obj: bpy.types.Object) -> Vector | Non
             return Vector((0, 0, -1))
 
     except Exception as e:
-        print(f"❌ Error getting light facing direction: {e}")
+        logger.error(f"Error getting light facing direction: {e}")
         return None
 
 
@@ -162,7 +160,7 @@ def lumi_initialize_pivots_for_all_existing_lights(context: bpy.types.Context) -
             # Context is restricted, use bpy.context as fallback
             proper_context = bpy.context
             if not hasattr(proper_context, 'scene') or not hasattr(proper_context, 'view_layer'):
-                print(f"❌ Error: No valid Blender context available for pivot initialization")
+                logger.error("No valid Blender context available for pivot initialization")
                 return 0
         else:
             proper_context = context
@@ -178,7 +176,7 @@ def lumi_initialize_pivots_for_all_existing_lights(context: bpy.types.Context) -
             return initialized_count
 
     except Exception as e:
-        print(f"❌ Error initializing pivots for existing lights: {e}")
+        logger.error(f"Error initializing pivots for existing lights: {e}")
         return 0
 
 
@@ -194,20 +192,18 @@ def lumi_update_light_orientation(light_obj: bpy.types.Object):
                 # Handle bpy id property array and similar objects
                 try:
                     pivot_world = Vector((pivot_data[0], pivot_data[1], pivot_data[2]))
-                except (IndexError, TypeError):
-                    print(f"❌ Error: Cannot access pivot elements in orientation: {pivot_data}")
+                except (IndexError, TypeError) as e:
+                    logger.debug(f"Cannot access pivot elements: {e}")
                     return
             else:
-                print(f"❌ Error: Invalid pivot format in orientation: {pivot_data} (type: {type(pivot_data)})")
+                logger.debug(f"Invalid pivot format: {type(pivot_data)}")
                 return
                 
             direction = (pivot_world - light_obj.location).normalized()
             rot_quat = direction.to_track_quat('-Z', 'Y')
             light_obj.rotation_euler = rot_quat.to_euler()
     except Exception as e:
-        print(f"❌ Error in lumi_update_light_orientation: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Error in lumi_update_light_orientation: {e}", exc_info=True)
 
 
 def lumi_calculate_light_intensity(light_type: str, distance: float) -> float:
@@ -319,10 +315,10 @@ def lumi_calculate_light_target_position(light_obj: bpy.types.Object, scene: bpy
                 # Handle bpy id property array and similar objects
                 try:
                     return Vector((pivot_data[0], pivot_data[1], pivot_data[2]))
-                except (IndexError, TypeError):
-                    print(f"❌ Error: Cannot access pivot elements in target calculation: {pivot_data}")
+                except (IndexError, TypeError) as e:
+                    logger.debug(f"Cannot access pivot elements: {e}")
             else:
-                print(f"❌ Error: Invalid pivot format in target calculation: {pivot_data} (type: {type(pivot_data)})")
+                logger.debug(f"Invalid pivot format: {type(pivot_data)}")
         
         # Fallback: calculate target based on light direction and distance
         light_location = light_obj.location
@@ -353,7 +349,7 @@ def lumi_calculate_light_target_position(light_obj: bpy.types.Object, scene: bpy
             return light_location + direction * distance
             
     except Exception as e:
-        print(f"❌ Error in lumi_calculate_light_target_position: {e}")
+        logger.error(f"Error in lumi_calculate_light_target_position: {e}")
         # Ultimate fallback: return position slightly below the light
         return light_obj.location + Vector((0, 0, -1))
 

@@ -20,7 +20,7 @@ from .menus_ops import (
     LUMI_OT_set_light_assignment_mode  # Light assignment mode operator
 )
 from .selection_ops import LUMI_OT_select_light, LUMI_OT_delete_light, LUMI_OT_delete_collection, LUMI_OT_cycle_lights_modal, LUMI_OT_quick_solo_light
-from .panels_ops import LUMI_OT_toggle_overlay_info, LUMI_OT_toggle_overlay_tips, LUMI_OT_toggle_addon
+from .panels_ops import LUMI_OT_toggle_overlay_info, LUMI_OT_toggle_overlay_tips, LUMI_OT_toggle_addon, LUMI_OT_open_user_guide
 
 from .positioning import __all__ as positioning_all
 linking_all = [
@@ -81,7 +81,7 @@ main_operators = [
     
     # Utility operators
     'LUMI_OT_select_light', 'LUMI_OT_delete_light', 'LUMI_OT_delete_collection', 'LUMI_OT_cycle_lights_modal', 'LUMI_OT_quick_solo_light',
-    'LUMI_OT_toggle_overlay_info', 'LUMI_OT_toggle_overlay_tips', 'LUMI_OT_toggle_addon'
+    'LUMI_OT_toggle_overlay_info', 'LUMI_OT_toggle_overlay_tips', 'LUMI_OT_toggle_addon', 'LUMI_OT_open_user_guide'
 ]
 
 __all__ = list(positioning_all) + linking_all + list(smart_all) + list(smart_template_all) + main_operators

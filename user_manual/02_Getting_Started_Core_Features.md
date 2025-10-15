@@ -1,0 +1,856 @@
+# Part 2: Getting Started & Core Features
+
+**LumiFlow User Manual - Part 2 of 5**
+
+---
+
+## Table of Contents
+
+- [Quick Start Guide](#quick-start-guide)
+- [Understanding the Interface](#understanding-the-interface)
+- [Core Features Overview](#core-features-overview)
+- [Assignment Modes Explained](#assignment-modes-explained)
+- [Basic Workflows](#basic-workflows)
+
+---
+
+## Quick Start Guide
+
+Let's create your first professional lighting setup in just **5 minutes**!
+
+### Your First Lighting Setup
+
+#### Step 1: Prepare Your Scene (1 minute)
+
+1. **Start Fresh**
+   - Open Blender (File > New > General)
+   - You'll see the default scene with cube, camera, and light
+
+2. **Remove Default Light**
+   - Click on the default light (cone-shaped object)
+   - Press `X` key and confirm delete
+   - We'll replace it with LumiFlow lights
+
+3. **Position Your View**
+   - Press `Numpad 7` for top view
+   - Press `Numpad 0` to view through camera
+   - Scroll to zoom if needed
+
+**Your scene is now ready!**
+
+#### Step 2: Enable LumiFlow (30 seconds)
+
+1. **Open Sidebar**
+   - Press `N` key in 3D Viewport
+   - Sidebar appears on the right
+
+2. **Find LumiFlow Tab**
+   - Click the **LumiFlow** tab
+   - Panel opens showing controls
+
+3. **Activate Addon**
+   - Press `L` key (or click Enable button)
+   - Status shows "✅ ENABLED"
+
+**LumiFlow is now active!**
+
+#### Step 3: Apply Your First Template (1 minute)
+
+1. **Select Your Subject**
+   - Click on the cube (or your object)
+   - It highlights in orange (selected)
+
+2. **Choose a Template**
+   - In LumiFlow panel, find "Quick Templates" section
+   - Click **"Three-Point Setup"**
+   - A dialog window appears
+
+3. **Configure Options**
+   - ✅ Check "Clear Existing Lights" (removes any old lights)
+   - Leave "Auto-Scale" checked (adjusts to scene size)
+   - Click **OK**
+
+**Lights are now created!**
+
+#### Step 4: View Your Lighting (1 minute)
+
+1. **Enter Camera View**
+   - Press `Numpad 0` to look through camera
+   - You'll see your object from camera perspective
+
+2. **Change Viewport Shading**
+   - Press `Z` key to open shading menu
+   - Select **"Material Preview"** or **"Rendered"**
+   - You'll see realistic lighting!
+
+3. **Observe the Setup**
+   - Look in the Outliner (top-right panel)
+   - You should see three new lights:
+     - `G_KeyLight` (main light, brightest)
+     - `G_FillLight` (soft, fills shadows)
+     - `G_RimLight` (back edge lighting)
+
+**Your object is now professionally lit!**
+
+#### Step 5: Adjust a Light (1.5 minutes)
+
+1. **Select a Light**
+   - Click on `G_KeyLight` in viewport or Outliner
+   - Light becomes active (highlighted)
+
+2. **Change Light Power**
+   - Hold `Middle Mouse Button (MMB)`
+   - Drag mouse **left** (dimmer) or **right** (brighter)
+   - Watch the HUD display showing current power value
+   - Release MMB when satisfied
+
+3. **Change Light Distance**
+   - Press `D` key (or select Distance mode)
+   - Hold `MMB` and drag
+   - Light moves closer or farther from subject
+   - Release when positioned well
+
+4. **Render Preview**
+   - Press `F12` to render
+   - See your final result!
+
+**🎉 Congratulations!** You've created your first professional lighting setup with LumiFlow!
+
+---
+
+## Understanding the Interface
+
+Let's explore every part of the LumiFlow panel in detail.
+
+### Main Panel Layout
+
+The LumiFlow panel is organized into logical sections from top to bottom:
+
+```
+┌─────────────────────────────┐
+│   [Enable/Disable Toggle]   │  ← Master switch
+├─────────────────────────────┤
+│    [Assignment Mode]         │  ← Scene vs Camera
+├─────────────────────────────┤
+│    [Quick Templates]         │  ← 6 popular templates
+├─────────────────────────────┤
+│    [All Templates Browser]   │  ← Access all 40+ templates
+├─────────────────────────────┤
+│    [Positioning Controls]    │  ← 6 positioning modes
+├─────────────────────────────┤
+│    [Light Linking]           │  ← Link lights to objects
+├─────────────────────────────┤
+│    [Overlay Settings]        │  ← Visual feedback config
+├─────────────────────────────┤
+│    [Support & Info]          │  ← Help & community links
+└─────────────────────────────┘
+```
+
+### Section 1: Enable/Disable Toggle
+
+**Location:** Top of panel
+
+**Controls:**
+- Large **Enable** button (or shows "✅ ENABLED" when active)
+- Status indicator
+
+**Purpose:**
+- Master switch for all LumiFlow functionality
+- When disabled: All LumiFlow features are inactive
+- When enabled: Full access to all tools
+
+**Keyboard Shortcut:** `L` key
+
+**Visual Feedback:**
+- **Disabled**: Button shows "Enable" in gray
+- **Enabled**: Button shows "✅ ENABLED" in green
+
+### Section 2: Assignment Mode
+
+**Location:** Below enable toggle
+
+**Controls:**
+- Two buttons: **SCENE** and **CAMERA**
+- Only one can be active at a time
+
+**SCENE Mode:**
+- Creates global lights (prefix: `G_`)
+- Lights visible in ALL cameras
+- Best for: Single-camera projects, simple scenes
+
+**CAMERA Mode:**
+- Creates camera-specific lights (prefix: `C_01_`, `C_02_`, etc.)
+- Lights visible only in assigned camera
+- Best for: Multi-camera setups, different lighting per angle
+
+**Visual Indicator:**
+- Active mode button is highlighted/pressed
+- Inactive mode button is flat
+
+### Section 3: Quick Templates
+
+**Location:** Middle-upper panel
+
+**Purpose:** One-click access to the 6 most popular lighting templates
+
+**Available Templates:**
+1. **Three-Point Setup** - Classic 3-light setup (key, fill, rim)
+2. **Product Shot Basic** - 2-light product photography
+3. **Product Shot Advanced** - 4-light high-end product
+4. **Portrait Classic** - Standard portrait lighting
+5. **Dramatic Portrait** - High-contrast dramatic lighting
+6. **Studio Daylight** - Simulated natural daylight
+
+**How to Use:**
+- Click any template button
+- Dialog appears with options
+- Configure and click OK
+- Lights are created instantly
+
+### Section 4: All Templates Browser
+
+**Location:** Below quick templates
+
+**Purpose:** Access to complete template library (40+ templates)
+
+**Organization:** Four categories
+1. Studio & Commercial (12 templates)
+2. Dramatic & Cinematic (10 templates)
+3. Environment & Realistic (12 templates)
+4. Utilities & Single Lights (6 templates)
+
+**Interface:**
+- Expandable categories (click to expand/collapse)
+- Each template shows:
+  - Name
+  - Brief description
+  - Light count
+  - Apply button
+
+### Section 5: Positioning Controls
+
+**Location:** Middle panel
+
+**Purpose:** Select which positioning mode to use
+
+**6 Available Modes:**
+1. **Highlight** - Position at specular highlight point
+2. **Normal** - Align with surface normal
+3. **Target** - Point light at selected objects
+4. **Orbit** - Rotate around pivot point
+5. **Free** - Manual XYZ coordinate input
+6. **Move** - Interactive drag-based movement
+
+**Interface:**
+- Radio buttons or dropdown to select mode
+- Description of active mode
+- Apply button (for some modes)
+
+### Section 6: Light Linking
+
+**Location:** Lower-middle panel
+
+**Purpose:** Control which lights affect which objects
+
+**Controls:**
+- **Create Group** - Make object group from selection
+- **Quick Link** - Link active light to selected objects
+- **Mode Toggle** - Include vs Exclude
+- **Group List** - Show existing groups
+
+**Quick Link Shortcut:** `Ctrl+Shift+X`
+
+### Section 7: Overlay Settings
+
+**Location:** Lower panel
+
+**Purpose:** Configure viewport visual feedback
+
+**Options:**
+- ☑️ **Show Light Icons** - Display light type icons
+- ☑️ **Show Direction Arrows** - Show light orientation
+- ☑️ **Show Mesh Outlines** - Highlight subject objects
+- ☑️ **Show Text Labels** - Display light names
+- **Icon Scale** slider (0.5 - 2.0)
+- ☑️ **Enable LOD** - Performance optimization
+
+### Section 8: Support & Info
+
+**Location:** Bottom of panel
+
+**Purpose:** Access help and community resources
+
+**Contains:**
+- **Documentation** link
+- **Report Bug** link
+- **Discord Community** link
+- **Version** number display
+- **Donate** button (optional support)
+
+---
+
+## Core Features Overview
+
+### 1. Smart Light Creation
+
+**What it does:** Creates lights with intelligent positioning based on scene analysis
+
+**How it works:**
+- Analyzes selected objects
+- Calculates optimal light positions
+- Sets appropriate default properties
+- Names lights based on assignment mode
+- Organizes in "LumiFlow Lights" collection
+
+**Access:**
+- Pie Menu: `Ctrl+Shift+A`
+- Options: Area, Point, Spot, Sun
+
+**Smart Features:**
+- Auto-distance based on object size
+- Pivot point initialization with raycast
+- Camera-aware positioning
+- Automatic naming conventions
+
+### 2. Template System
+
+**What it does:** Applies professional lighting setups in one click
+
+**Benefits:**
+- Save hours of manual positioning
+- Learn from professional setups
+- Consistent quality results
+- Customizable after application
+
+**Template Categories:**
+
+**Studio & Commercial (12 templates)**
+- Product photography
+- Portrait lighting
+- Commercial shots
+- E-commerce setups
+
+**Dramatic & Cinematic (10 templates)**
+- Film noir
+- Horror atmosphere
+- Action dynamic
+- Romance soft
+- Thriller tension
+
+**Environment & Realistic (12 templates)**
+- Daylight simulation
+- Golden hour
+- Night scenes
+- Weather-based lighting
+
+**Utilities & Single Lights (6 templates)**
+- Individual light types
+- Building blocks for custom setups
+
+### 3. Positioning System
+
+**What it does:** 6 different methods to position lights precisely
+
+**Modes:**
+
+**Highlight Mode**
+- Positions light at specular highlight
+- Perfect for glossy products
+- Works with camera angle
+
+**Normal Mode**
+- Aligns light with surface normal
+- Great for architectural lighting
+- Perpendicular wall lights
+
+**Target Mode**
+- Points light at selected objects
+- Maintains current position
+- Updates rotation only
+
+**Orbit Mode**
+- Rotates light around pivot
+- Maintains distance
+- 360° turntable lighting
+
+**Free Mode**
+- Manual XYZ coordinate input
+- Precise numerical control
+- Relative or absolute positioning
+
+**Move Mode**
+- Interactive mouse-based movement
+- Real-time viewport feedback
+- Axis constraints available
+
+### 4. Smart Controls
+
+**What it does:** Adjust light properties with intuitive mouse gestures
+
+**6 Control Types:**
+
+**Distance Control**
+- Range: 0.1m - 100m
+- Adjusts light distance from pivot
+- Visual distance feedback
+
+**Power Control**
+- Range: 1W - 10,000W
+- Adjusts light intensity
+- Logarithmic scaling for precision
+
+**Scale Control**
+- Range: 0.01m - 50m
+- Area lights: Physical size
+- Point/Spot: Radius
+
+**Angle Control**
+- Range: 0° - 180°
+- Spot lights only
+- Cone width adjustment
+
+**Blend Control**
+- Range: 0.0 - 1.0
+- Shadow softness
+- Hard vs soft shadows
+
+**Temperature Control**
+- Range: 1000K - 12,000K
+- Color temperature
+- Warm to cool spectrum
+
+**How to Use:**
+- Select a light
+- Hold `MMB` (Middle Mouse Button)
+- Drag left/right
+- HUD shows current value
+- Release to confirm
+
+### 5. Light Linking System
+
+**What it does:** Control which lights affect which objects
+
+**Use Cases:**
+- Light only the hero product, not background
+- Exclude foreground objects from backlight
+- Create focused spotlights on specific areas
+
+**Modes:**
+
+**Include Mode**
+- Light ONLY affects linked objects
+- Other objects receive no light from this source
+
+**Exclude Mode**
+- Light affects everything EXCEPT linked objects
+- Useful for removing unwanted light
+
+**Quick Link:** `Ctrl+Shift+X`
+- Select light (active)
+- Select objects
+- Press shortcut
+- Instant linking!
+
+### 6. Flip Operations
+
+**What it does:** Mirror or rotate entire lighting setups
+
+**8 Operations:**
+
+1. **Flip Horizontal** - Mirror across vertical plane (X-axis)
+2. **Flip Vertical** - Mirror across horizontal plane (Z-axis)
+3. **Front/Back Swap** - Swap lights front/back of subject
+4. **Left/Right Swap** - Swap lights left/right
+5. **To Camera Front** - Move lights behind subject, facing camera
+6. **To Camera Back** - Move lights in front, facing away
+7. **Rotate Camera Z** - 180° rotation around camera Z-axis
+8. **Rotate Target Z** - 180° rotation around target Z-axis
+
+**Access:** `Ctrl+Shift+C` (Flip menu)
+
+**Use Case Example:**
+- Set up lighting for left side of face
+- Use "Flip Horizontal" to mirror for right side
+- Saves time repositioning each light
+
+### 7. Solo Light Mode
+
+**What it does:** Isolate a single light for testing
+
+**How to Use:**
+1. Select a light
+2. Press `Ctrl+Shift+D` (or use panel button)
+3. All other lights hide
+4. Only selected light visible
+
+**Benefits:**
+- Test individual light contribution
+- Fine-tune without interference
+- Understand each light's role
+
+**Unsolo:**
+- Press `Ctrl+Shift+D` again
+- Or select another light and solo it
+
+### 8. Cycle Light Selection
+
+**What it does:** Quickly navigate through scene lights
+
+**Keyboard:** `D` key
+
+**Behavior:**
+- Cycles through all lights in scene
+- Order: Closest to camera first
+- Skips non-light objects
+- Wraps around to first light
+
+**Use Case:**
+- Quickly check all lights
+- Adjust properties of multiple lights
+- Find specific light without searching Outliner
+
+---
+
+## Assignment Modes Explained
+
+Understanding Scene vs Camera modes is crucial for organizing complex lighting setups.
+
+### SCENE Mode (Global Lights)
+
+**Concept:** Lights visible in ALL cameras
+
+**Naming Convention:** `G_LightName`
+- `G_` = Global prefix
+- Examples: `G_KeyLight`, `G_RimLight`, `G_SunLight`
+
+**Use Cases:**
+- Single-camera projects
+- Environment lighting (sun, sky)
+- Base lighting that should always be present
+- Simple scenes
+
+**Workflow:**
+1. Set assignment mode to SCENE
+2. Add lights
+3. Lights automatically prefixed with `G_`
+4. Visible in all cameras automatically
+
+**Benefits:**
+- Simpler to understand
+- Good for beginners
+- Less management overhead
+
+### CAMERA Mode (Per-Camera Lights)
+
+**Concept:** Lights assigned to specific cameras
+
+**Naming Convention:** `C_XX_LightName`
+- `C_` = Camera prefix
+- `XX` = Camera number (01, 02, 03, etc.)
+- Examples: `C_01_KeyLight`, `C_02_Backlight`
+
+**Use Cases:**
+- Multi-camera studio setups
+- Different lighting for different angles
+- Professional multi-shot projects
+- Architectural walkthroughs
+
+**How It Works:**
+1. Active camera determines camera number
+2. Lights created get camera prefix
+3. When switching cameras, visibility auto-updates
+
+**Example Scenario:**
+
+```
+Camera 1 (Front View):
+  - C_01_KeyLight (visible)
+  - C_01_FillLight (visible)
+  - G_SunLight (visible - global)
+
+Camera 2 (Side View):
+  - C_02_KeyLight (visible)
+  - C_02_RimLight (visible)
+  - G_SunLight (visible - global)
+
+When you switch to Camera 1:
+  ✅ Shows: C_01_* lights + G_* lights
+  ❌ Hides: C_02_* lights
+
+When you switch to Camera 2:
+  ✅ Shows: C_02_* lights + G_* lights
+  ❌ Hides: C_01_* lights
+```
+
+**Workflow:**
+1. Set assignment mode to CAMERA
+2. Set Camera 1 as active (`Ctrl+Numpad 0`)
+3. Add lights → automatically named `C_01_*`
+4. Switch to Camera 2
+5. Add lights → automatically named `C_02_*`
+6. Switch between cameras → visibility updates automatically!
+
+**Benefits:**
+- Different lighting per camera angle
+- Organized, automatic management
+- Professional multi-angle workflows
+
+### Mixed Mode Strategy
+
+You can combine both modes in one scene:
+
+**Global Lights (G_):** Environment, fill, base lighting
+**Camera Lights (C_XX_):** Key lights, accents, specific highlights
+
+**Example:**
+```
+G_SunLight - Daylight simulation (always on)
+G_SkyLight - Blue sky fill (always on)
+C_01_KeyLight - Front view main light
+C_02_KeyLight - Side view main light
+```
+
+### Switching Between Modes
+
+You can change mode at any time:
+- Click SCENE or CAMERA button in panel
+- New lights use new prefix
+- Existing lights keep their prefixes
+
+**Existing lights** don't auto-update - they maintain their original assignment.
+
+---
+
+## Basic Workflows
+
+Let's walk through common scenarios step-by-step.
+
+### Workflow 1: Product Photography
+
+**Goal:** Professional product shot with clean lighting
+
+**Steps:**
+
+1. **Scene Setup**
+   - Add product model (or use simple object)
+   - Position camera for good angle
+   - Delete default light
+
+2. **Enable LumiFlow**
+   - Press `L` key
+   - Keep SCENE mode
+
+3. **Apply Template**
+   - Select product
+   - Click "Product Shot Basic"
+   - Check "Clear Existing Lights"
+   - Click OK
+
+4. **Adjust Key Light**
+   - Select `G_KeyLight`
+   - Use Highlight positioning mode
+   - Click on product's glossy area
+   - Light positions at highlight
+
+5. **Fine-Tune Power**
+   - Key light still selected
+   - Hold `MMB`, drag right (increase power)
+   - Aim for 300-500W for most products
+
+6. **Adjust Temperature**
+   - Switch to Temperature control
+   - Hold `MMB`, drag
+   - Try 5500K for neutral daylight
+   - Or 3000K for warm studio look
+
+7. **Render Test**
+   - Press `F12`
+   - Evaluate result
+   - Adjust as needed
+
+**Result:** Professional product shot in under 5 minutes!
+
+### Workflow 2: Portrait Lighting
+
+**Goal:** Flattering character lighting
+
+**Steps:**
+
+1. **Scene Setup**
+   - Character model in scene
+   - Camera positioned for portrait
+   - Remove default light
+
+2. **Enable LumiFlow** (`L` key)
+
+3. **Apply Portrait Template**
+   - Select character
+   - Choose "Portrait Classic"
+   - Apply with Auto-Scale
+
+4. **Position Key Light**
+   - Select `G_KeyLight`
+   - Use Target mode
+   - Point at character's face
+
+5. **Adjust for Face Structure**
+   - Use Orbit mode
+   - Hold `MMB`, drag to rotate around character
+   - Find flattering angle (usually 30-45°)
+
+6. **Temperature for Skin Tone**
+   - Select Fill light
+   - Temperature control
+   - Set to 4500K (neutral warm)
+
+7. **Final Touches**
+   - Rim light: increase power for edge definition
+   - Key light: adjust distance for softness
+
+**Result:** Professional portrait lighting!
+
+### Workflow 3: Multi-Camera Setup
+
+**Goal:** Different lighting for multiple camera angles
+
+**Steps:**
+
+1. **Scene Setup**
+   - Subject in scene
+   - Create 3 cameras:
+     - Camera 1: Front view
+     - Camera 2: Side view
+     - Camera 3: Top view
+
+2. **Switch to CAMERA Mode**
+   - Click CAMERA button in panel
+
+3. **Light Camera 1**
+   - Set Camera 1 active (`Ctrl+Numpad 0`)
+   - Apply "Three-Point Setup"
+   - Lights created with `C_01_` prefix
+
+4. **Light Camera 2**
+   - Switch to Camera 2
+   - Apply "Dramatic Portrait"
+   - Lights created with `C_02_` prefix
+
+5. **Light Camera 3**
+   - Switch to Camera 3
+   - Manually add lights with `Ctrl+Shift+A`
+   - Lights get `C_03_` prefix
+
+6. **Add Global Fill**
+   - Switch to SCENE mode temporarily
+   - Add soft area light from above
+   - Creates `G_FillLight`
+   - Switch back to CAMERA mode
+
+7. **Test Camera Switching**
+   - Switch through cameras with `Numpad 0`
+   - Observe lights show/hide automatically
+   - Each camera has its own lighting!
+
+**Result:** Professional multi-angle setup!
+
+### Workflow 4: Architectural Interior
+
+**Goal:** Realistic interior lighting with natural windows
+
+**Steps:**
+
+1. **Scene Setup**
+   - Interior room model
+   - Window openings
+   - Camera inside room
+
+2. **Apply Template**
+   - Select interior objects
+   - Use "Indoor Natural Window"
+   - Template creates window + bounce lights
+
+3. **Position Window Light**
+   - Select window light
+   - Use Normal mode
+   - Click on window wall
+   - Light aligns perpendicular
+
+4. **Adjust Daylight Color**
+   - Window light selected
+   - Temperature control: 5500K (daylight)
+
+5. **Add Fill Light**
+   - Manual add Area light
+   - Position as ceiling light
+   - Temperature: 4000K (interior warm)
+
+6. **Light Linking**
+   - Select ceiling light
+   - Select furniture objects
+   - `Ctrl+Shift+X` (Quick Link)
+   - Ceiling light only affects furniture
+
+**Result:** Realistic architectural lighting!
+
+---
+
+## Tips for Beginners
+
+### Start Simple
+- Begin with SCENE mode
+- Use templates first before custom setups
+- Master one control type at a time
+
+### Understand the Basics
+- Key light: Brightest, main illumination
+- Fill light: Softens shadows
+- Rim/Back light: Edge separation from background
+
+### Learn by Templates
+- Apply different templates to same scene
+- Observe how lights are positioned
+- Note power levels and distances
+- Recreate manually to learn
+
+### Use Viewport Shading
+- `Z` key → Material Preview for quick feedback
+- Rendered mode for accurate preview
+- Solid mode for positioning (faster)
+
+### Keyboard Shortcuts
+- Master `L` (enable), `D` (cycle), `P` (position)
+- Learn `Ctrl+Shift+A` (add light) early
+- Others can wait until comfortable
+
+### Save Often
+- Templates are non-destructive
+- Experiment freely
+- Save different versions to compare
+
+---
+
+## Next Steps
+
+**Great job!** You now understand LumiFlow's core features and basic workflows!
+
+### Continue to Part 3
+
+In **Part 3: Template Library**, you'll discover:
+- Complete guide to all 40+ templates
+- When to use each template
+- Template customization techniques
+- Category-specific workflows
+
+👉 **[Continue to Part 3 →](03_Template_Library.md)**
+
+---
+
+## Quick Links
+
+- [← Back to Part 1](01_Introduction_Installation.md)
+- [Back to Index](00_INDEX.md)
+- [Part 3: Template Library →](03_Template_Library.md)
+
+---
+
+**Keep Lighting!** 💡✨

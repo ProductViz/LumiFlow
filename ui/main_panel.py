@@ -243,6 +243,9 @@ class LUMI_PT_light_control(bpy.types.Panel):
             info_prop.overlay_type = 'overlay_info'
             info_prop.viewport_id = viewport_id or ""
 
+        # User Guide button
+        row.operator("lumi.open_user_guide", text="", icon='HELP')
+
         # Update panel toggle
         row.prop(scene, "show_update_panel", text="Check updates", icon='FILE_REFRESH')
 

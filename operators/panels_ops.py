@@ -2,18 +2,18 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2024 LumiFlow Developer
 
-
 import bpy
-try:
-    import requests
-except ImportError:
-    requests = None
-import json
-import tempfile
-import zipfile
-import shutil
 import os
+import shutil
+import requests
+import zipfile
+import tempfile
+import json
+import logging
+import webbrowser
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 # Konfigurasi GitHub
 GITHUB_REPO = "ProductViz/LumiFlow"
@@ -206,8 +206,8 @@ class LUMI_OT_update_addon(bpy.types.Operator):
             if temp_dir and temp_dir.exists():
                 try:
                     shutil.rmtree(temp_dir, ignore_errors=True)
-                except:
-                    pass
+                except Exception as cleanup_error:
+                    logger.warning(f"Failed to cleanup temp files: {cleanup_error}")
 
             return {'CANCELLED'}
 
@@ -336,3 +336,26 @@ class LUMI_OT_toggle_viewport_overlay(bpy.types.Operator):
 
         status = "ENABLED" if new_state else "DISABLED"
         return {'FINISHED'}
+
+
+class LUMI_OT_open_user_guide(bpy.types.Operator):
+    """Open LumiFlow User Manual on GitHub"""
+    bl_idname = "lumi.open_user_guide"
+    bl_label = "Open User Guide"
+    bl_description = "Open the complete LumiFlow User Manual on GitHub in your default web browser"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        try:
+            # GitHub URL for user manual
+            manual_url = "https://github.com/ProductViz/LumiFlow/blob/main/user_manual/00_INDEX.md"
+            
+            # Open in default browser
+            webbrowser.open(manual_url)
+            
+            self.report({'INFO'}, "User guide opened in browser")
+            return {'FINISHED'}
+            
+        except Exception as e:
+            self.report({'ERROR'}, f"Failed to open user guide: {str(e)}")
+            return {'CANCELLED'}
