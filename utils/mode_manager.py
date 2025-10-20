@@ -114,7 +114,7 @@ class ModeManager:
             'modifier': 'Ctrl+Alt',
             'description': 'Color temperature',
             'properties': {
-                'getter': lambda light, ctx: lumi_rgb_to_kelvin(*light.data.color) if hasattr(light.data, 'color') else 5500,
+                'getter': lambda light, ctx: getattr(ctx.scene, 'lumi_color_temperature', 5500),
                 'formatter': lambda value: f"{int(value)}K",
                 'unit': 'K'
             },
@@ -232,7 +232,16 @@ class ModeManager:
     
     @staticmethod
     def _get_angle_value(light_obj: bpy.types.Object) -> float:
-        """Get angle value based on light type."""
+        """Get angle value based on light type.
+        
+        Returns angle in degrees:
+        - SUN.angle: radians (0-π) → convert to degrees (0-180)
+        - SPOT.spot_size: radians (0-π) → convert to degrees (0-180)
+        - AREA.spread: radians (0-π) → convert to degrees (0-180)
+        
+        Note: All angle properties are stored internally as radians in Blender,
+        but UI displays them as degrees. We must convert for display consistency.
+        """
         data = light_obj.data
         light_type = data.type
         
@@ -241,7 +250,8 @@ class ModeManager:
         elif light_type == 'SPOT':
             return getattr(data, 'spot_size', 0.0) * 180.0 / math.pi
         elif light_type == 'AREA':
-            return getattr(data, 'spread', 0.0) * 180.0
+            # Spread is also in radians internally, convert to degrees
+            return getattr(data, 'spread', 0.0) * 180.0 / math.pi
         return 0.0
     
     @staticmethod

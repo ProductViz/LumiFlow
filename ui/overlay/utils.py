@@ -237,37 +237,53 @@ def draw_text(
                     blf.draw(font_id, description)
                     
                     if keymap_text:
+                        # Check user preference for keymap display mode
+                        use_icons = True  # Default to icons
                         try:
-                            from .icon_manager import get_icon_manager
-                            icon_manager = get_icon_manager()
-                            
-                            icon_x = value_x + desc_width + 5
-                            icon_size = icon_manager.get_icon_size()
-                            vertical_offset = int(current_font_size * 0.9)  # Raise by 30% of font size
-                            icon_y = current_y - icon_size + vertical_offset
-                            
-                            
-                            icons_width = icon_manager.draw_keymap_icons(keymap_text, icon_x, icon_y)
-                            
-                            remaining_text = keymap_text
-                            
-                            icon_parts = ['Ctrl', 'Shift', 'Alt', 'LMB_Drag', 'MMB_Drag', 'RMB_Drag', 'A', 'C', 'X', 'V', 'D']
-                            
-                            for part in icon_parts:
-                                remaining_text = remaining_text.replace(part, '')
+                            addon_prefs = bpy.context.preferences.addons.get(__package__.split('.')[0] or "LumiFlow")
+                            if addon_prefs and hasattr(addon_prefs.preferences, 'overlay_keymap_display_mode'):
+                                use_icons = addon_prefs.preferences.overlay_keymap_display_mode == 'ICONS'
+                        except Exception:
+                            pass
+                        
+                        if use_icons:
+                            # ICONS MODE: Render keyboard icons
+                            try:
+                                from .icon_manager import get_icon_manager
+                                icon_manager = get_icon_manager()
                                 
-                            remaining_text = remaining_text.replace('+', '')
-                            
-                            remaining_text = remaining_text.strip()
-                            
-                            if remaining_text:
-                                text_x = icon_x + icons_width + 5
-                                blf.position(font_id, text_x, current_y, 0)
-                                blf.draw(font_id, remaining_text)
-                        except Exception as e:
-                            print(f"Icon manager error: {e}")
-                            fallback_x = value_x + desc_width + 5
-                            blf.position(font_id, fallback_x, current_y, 0)
+                                icon_x = value_x + desc_width + 5
+                                icon_size = icon_manager.get_icon_size()
+                                vertical_offset = int(current_font_size * 0.9)  # Raise by 30% of font size
+                                icon_y = current_y - icon_size + vertical_offset
+                                
+                                
+                                icons_width = icon_manager.draw_keymap_icons(keymap_text, icon_x, icon_y)
+                                
+                                remaining_text = keymap_text
+                                
+                                icon_parts = ['Ctrl', 'Shift', 'Alt', 'LMB_Drag', 'MMB_Drag', 'RMB_Drag', 'A', 'C', 'X', 'V', 'D']
+                                
+                                for part in icon_parts:
+                                    remaining_text = remaining_text.replace(part, '')
+                                    
+                                remaining_text = remaining_text.replace('+', '')
+                                
+                                remaining_text = remaining_text.strip()
+                                
+                                if remaining_text:
+                                    text_x = icon_x + icons_width + 5
+                                    blf.position(font_id, text_x, current_y, 0)
+                                    blf.draw(font_id, remaining_text)
+                            except Exception as e:
+                                # Fallback to text mode if icons fail
+                                fallback_x = value_x + desc_width + 5
+                                blf.position(font_id, fallback_x, current_y, 0)
+                                blf.draw(font_id, keymap_text)
+                        else:
+                            # TEXT MODE: Render plain text
+                            text_x = value_x + desc_width + 5
+                            blf.position(font_id, text_x, current_y, 0)
                             blf.draw(font_id, keymap_text)
                 else:
                     value_width = blf.dimensions(font_id, value_text)[0]
@@ -278,7 +294,11 @@ def draw_text(
                         value_x = draw_x - value_width - int(5 * font_scale)  # 5px spacing
                     else:
                         # For left alignment, value goes to the right of label
-                        value_x = x + int(x_value_offset * font_scale)
+                        # Use column_offset if provided, otherwise use default x_value_offset
+                        if column_offset is not None:
+                            value_x = x + int(column_offset * font_scale)
+                        else:
+                            value_x = x + int(x_value_offset * font_scale)
                         
                     blf.position(font_id, value_x, current_y, 0)
                     blf.draw(font_id, value_text)

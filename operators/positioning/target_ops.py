@@ -35,10 +35,14 @@ class LUMI_OT_target_positioning(bpy.types.Operator, BaseModalOperator):
     _timer = None
     _initial_positions = {}
 
-    @classmethod    
+    @classmethod
     def poll(cls, context):
-        """Check if the operator can be invoked"""
-        return lumi_is_addon_enabled() and any(obj.type == 'LIGHT' for obj in context.selected_objects)
+        """Check if the operator can be invoked - requires exactly 1 light selected"""
+        selected_objects = context.selected_objects
+        return (lumi_is_addon_enabled() and
+                getattr(context.scene, 'lumi_positioning_mode_enabled', True) and
+                len(selected_objects) == 1 and
+                selected_objects[0].type == 'LIGHT')
 
     def validate_context(self, context):
         """Validate context for target positioning operations"""
@@ -51,6 +55,15 @@ class LUMI_OT_target_positioning(bpy.types.Operator, BaseModalOperator):
     def invoke(self, context, event):
         """Invoke for target positioning"""
         try:
+            # Check if exactly 1 light is selected
+            selected_objects = context.selected_objects
+            if len(selected_objects) != 1:
+                self.report({'WARNING'}, "Target positioning requires exactly 1 light selected")
+                return {'CANCELLED'}
+            if selected_objects[0].type != 'LIGHT':
+                self.report({'WARNING'}, "Target positioning requires a light to be selected")
+                return {'CANCELLED'}
+
             if not self.validate_context(context):
                 self.report({'ERROR'}, "Invalid context for target positioning")
                 return {'CANCELLED'}
@@ -65,6 +78,7 @@ class LUMI_OT_target_positioning(bpy.types.Operator, BaseModalOperator):
             lumi_disable_all_positioning_ops(scene)
             
             state = get_state()
+            state.set_modal_state('target', True)
             scene.light_props.positioning_mode = 'TARGET'
             
             context.window_manager.modal_handler_add(self)

@@ -53,14 +53,18 @@ def draw_overlay_info():
     (info_x, info_y), _ = get_overlay_positions(context, region)
     font_scale, line_spacing = get_text_settings(context)
     
-    info_lines = get_info_lines(selected_lights[0], context, colors)
+    # Handle single vs multiple light selection
+    if len(selected_lights) == 1:
+        info_lines = get_info_lines(selected_lights[0], context, colors)
+    else:
+        info_lines = get_multi_light_info_lines(selected_lights, context, colors)
     
     if info_lines:
         draw_text(info_lines, (info_x, info_y), font_scale=font_scale, line_spacing=line_spacing)
 
 
 def get_info_lines(light_obj, context, colors):
-    """Get info lines for light display using centralized mode management."""
+    """Get info lines for single light display using centralized mode management."""
     data = light_obj.data
     ltype = data.type
     
@@ -98,13 +102,58 @@ def get_info_lines(light_obj, context, colors):
         else:
             clean_value = value
         
-        lines.append((label, f": {clean_value}", color, 0.5, 0.5))  
+        lines.append((label, f": {clean_value}", color, 0.5, 90))  
     
     if hasattr(data, 'color') and len(data.color) >= 3:
         r, g, b = data.color[:]
         h, s, v = lumi_rgb_to_hsv(r, g, b)
         if h > 0 or s > 0 or v > 0:
-            lines.append(("HSV", f": {h:.0f}°/{s:.0f}%/{v:.0f}%", colors['secondary'], 0.2, 0.5))
+            lines.append(("HSV", f": {h:.0f}°/{s:.0f}%/{v:.0f}%", colors['secondary'], 0.2, 90))
+    
+    return lines
+
+
+def get_multi_light_info_lines(selected_lights, context, colors):
+    """Get info lines for multiple lights display with smart control mode detection."""
+    smart_mode = getattr(context.scene, 'lumi_smart_mode', 'DISTANCE')
+    scroll_control_active = getattr(context.scene, 'lumi_scroll_control_enabled', False)
+    
+    lines = []
+    
+    # Determine header based on smart control state
+    if scroll_control_active:
+        # Get display name for the active smart control mode
+        # Use first light's type to get the display name
+        first_light_type = selected_lights[0].data.type
+        mode_display_name = ModeManager.get_mode_display_name(smart_mode, first_light_type)
+        header = f"{mode_display_name} Control"
+        lines.append((header, "", colors['highlight'], 0.5, 0.5, 1.1))
+        
+        # Loop through each light and show name with value
+        for light_obj in selected_lights:
+            label, value, is_available = ModeManager.get_mode_info(smart_mode, light_obj, context)
+            
+            if is_available:
+                # Clean up value formatting
+                if 'm' in value and not value.endswith('m'):
+                    clean_value = value.replace('m', '').strip() + 'm'
+                elif 'K' in value and not value.endswith('K'):
+                    clean_value = value.replace(' K', '').strip() + 'K'
+                else:
+                    clean_value = value
+                
+                lines.append((light_obj.name, f": {clean_value}", colors['normal'], 0.5, 160))
+            else:
+                # Mode not available for this light type
+                lines.append((light_obj.name, ": N/A", colors['secondary'], 0.5, 160))
+    else:
+        # No smart control active - just show light names
+        header = f"{len(selected_lights)} Lights Selected"
+        lines.append((header, "", colors['highlight'], 0.5, 0.5, 1.1))
+        
+        # Loop through each light and show name only
+        for light_obj in selected_lights:
+            lines.append((light_obj.name, "", colors['normal'], 0.5, 160))
     
     return lines
 

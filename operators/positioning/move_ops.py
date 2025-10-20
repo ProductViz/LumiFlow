@@ -37,10 +37,13 @@ class LUMI_OT_move_positioning(bpy.types.Operator, BaseModalOperator):
     _timer = None
 
     @classmethod
-    # # Method to determine when operator/panel is active
     def poll(cls, context):
-        # # Get selected objects in scene
-        return lumi_is_addon_enabled() and any(obj.type == 'LIGHT' for obj in context.selected_objects)
+        """Check if the operator can be invoked - requires exactly 1 light selected"""
+        selected_objects = context.selected_objects
+        return (lumi_is_addon_enabled() and
+                getattr(context.scene, 'lumi_positioning_mode_enabled', True) and
+                len(selected_objects) == 1 and
+                selected_objects[0].type == 'LIGHT')
 
     def validate_context(self, context):
         """Validate context for move positioning operations"""
@@ -53,6 +56,15 @@ class LUMI_OT_move_positioning(bpy.types.Operator, BaseModalOperator):
     def invoke(self, context, event):
         """Invoke method - starts modal operator for move positioning"""
         try:
+            # Check if exactly 1 light is selected
+            selected_objects = context.selected_objects
+            if len(selected_objects) != 1:
+                self.report({'WARNING'}, "Move positioning requires exactly 1 light selected")
+                return {'CANCELLED'}
+            if selected_objects[0].type != 'LIGHT':
+                self.report({'WARNING'}, "Move positioning requires a light to be selected")
+                return {'CANCELLED'}
+
             if not self.validate_context(context):
                 self.report({'ERROR'}, "Invalid context for move positioning")
                 return {'CANCELLED'}
@@ -118,6 +130,14 @@ class LUMI_OT_move_positioning(bpy.types.Operator, BaseModalOperator):
             return {'CANCELLED'}
 
         try:
+            # Force viewport redraw to update overlay cursor every frame
+            context.area.tag_redraw()
+            
+            # Update mouse position for overlay cursor (every frame, not just when dragging)
+            scene = context.scene
+            scene.lumi_smart_mouse_x = event.mouse_region_x
+            scene.lumi_smart_mouse_y = event.mouse_region_y
+            
             # Main event handling logic
             if event.type == 'RIGHTMOUSE':
                 return self.cancel(context)
@@ -153,11 +173,6 @@ class LUMI_OT_move_positioning(bpy.types.Operator, BaseModalOperator):
             if self._dragging and event.type == 'MOUSEMOVE' and event.shift and event.alt:
                 self._mouse_x = event.mouse_region_x
                 self._mouse_y = event.mouse_region_y
-                
-                # Update mouse position for overlay cursor
-                scene = context.scene
-                scene.lumi_smart_mouse_x = event.mouse_region_x
-                scene.lumi_smart_mouse_y = event.mouse_region_y
                 
                 self.update_move_position(context)
                 return {'RUNNING_MODAL'}

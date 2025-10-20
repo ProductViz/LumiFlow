@@ -762,6 +762,13 @@ class LUMI_OT_set_light_assignment_mode(bpy.types.Operator):
             self.report({'WARNING'}, 'LumiFlow is not active!')
             return {'CANCELLED'}
 
+        if self.mode == 'CAMERA':
+            # Check if any cameras exist in the scene
+            cameras = [obj for obj in context.scene.objects if obj.type == 'CAMERA']
+            if not cameras:
+                self.report({'WARNING'}, 'No cameras found in scene. Cannot switch to Camera mode.')
+                return {'CANCELLED'}
+
         scene = context.scene
         scene.lumi_light_assignment_mode = self.mode
 

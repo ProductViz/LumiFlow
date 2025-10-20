@@ -15,7 +15,7 @@ ENVIRONMENT_REALISTIC_TEMPLATES = {
         "category": "Environment & Realistic",
         "description": "Soft, even overcast lighting with natural cloud diffusion",
         "author": "LumiFlow",
-        "version": "1.0",
+        "version": "1.1",
         "lights": [
             {
                 "name": "Overcast Sky",
@@ -25,7 +25,7 @@ ENVIRONMENT_REALISTIC_TEMPLATES = {
                     "params": {
                         "x": 0,
                         "y": 0,
-                        "z": 8.0
+                        "z": 6.0
                     }
                 },
                 "rotation": {
@@ -35,8 +35,8 @@ ENVIRONMENT_REALISTIC_TEMPLATES = {
                     }
                 },
                 "properties": {
-                    "size": 12.0,
-                    "intensity": 180,
+                    "size": 8.0,
+                    "intensity": 200,
                     "color": (0.92, 0.95, 1.0),
                     "shape": "DISK"
                 }
@@ -49,7 +49,7 @@ ENVIRONMENT_REALISTIC_TEMPLATES = {
                     "params": {
                         "azimuth": 30,
                         "elevation": 70,
-                        "distance": 6.0
+                        "distance": 5.0
                     }
                 },
                 "rotation": {
@@ -59,9 +59,9 @@ ENVIRONMENT_REALISTIC_TEMPLATES = {
                     }
                 },
                 "properties": {
-                    "size": 8.0,
-                    "size_y": 5.0,
-                    "intensity": 120,
+                    "size": 6.0,
+                    "size_y": 4.0,
+                    "intensity": 140,
                     "color": (0.88, 0.92, 0.98),
                     "shape": "ELLIPSE"
                 }
@@ -74,7 +74,7 @@ ENVIRONMENT_REALISTIC_TEMPLATES = {
                     "params": {
                         "azimuth": -60,
                         "elevation": 45,
-                        "distance": 5.0
+                        "distance": 4.5
                     }
                 },
                 "rotation": {
@@ -82,8 +82,8 @@ ENVIRONMENT_REALISTIC_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "size": 6.0,
-                    "intensity": 80,
+                    "size": 5.0,
+                    "intensity": 100,
                     "color": (0.90, 0.94, 1.0),
                     "shape": "DISK"
                 }
@@ -106,16 +106,16 @@ ENVIRONMENT_REALISTIC_TEMPLATES = {
                     }
                 },
                 "properties": {
-                    "size": 8.0,
-                    "size_y": 5.0,
-                    "intensity": 40,
+                    "size": 6.0,
+                    "size_y": 4.0,
+                    "intensity": 50,
                     "color": (0.85, 0.88, 0.95),
                     "shape": "ELLIPSE"
                 }
             }
         ],
         "settings": {
-            "base_distance": 6.0,
+            "base_distance": 5.0,
             "auto_scale": True,
             "preserve_existing": False
         },

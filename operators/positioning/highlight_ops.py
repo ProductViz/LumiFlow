@@ -54,10 +54,12 @@ class LUMI_OT_highlight_positioning(bpy.types.Operator, BaseModalOperator):
 
     @classmethod
     def poll(cls, context):
-        """Check if operator can run"""
+        """Check if operator can run - requires exactly 1 light selected"""
+        selected_objects = context.selected_objects
         return (lumi_is_addon_enabled() and
                 getattr(context.scene, 'lumi_positioning_mode_enabled', True) and
-                any(obj.type == 'LIGHT' for obj in context.selected_objects))
+                len(selected_objects) == 1 and
+                selected_objects[0].type == 'LIGHT')
 
     def validate_context(self, context):
         """Validate context for highlight positioning operations"""
@@ -70,13 +72,22 @@ class LUMI_OT_highlight_positioning(bpy.types.Operator, BaseModalOperator):
     def invoke(self, context, event):
         """Invoke method - starts modal operator for highlight positioning"""
         try:
+            # Check if exactly 1 light is selected
+            selected_objects = context.selected_objects
+            if len(selected_objects) != 1:
+                self.report({'WARNING'}, "Highlight positioning requires exactly 1 light selected")
+                return {'CANCELLED'}
+            if selected_objects[0].type != 'LIGHT':
+                self.report({'WARNING'}, "Highlight positioning requires a light to be selected")
+                return {'CANCELLED'}
+
             self._dragging = False
             self._initial_distances = {}
             self._initial_positions = {}
             self._mouse_x = 0
             self._mouse_y = 0
             self._start_mouse = None
-            
+
             if not self.validate_context(context):
                 self.report({'ERROR'}, "Invalid context for highlight positioning")
                 return {'CANCELLED'}

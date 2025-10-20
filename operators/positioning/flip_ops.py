@@ -146,9 +146,9 @@ def _get_fallback_candidates(context):
             return view_objects
     except Exception as e:
         pass
-    
+
     # Fallback to all non-light objects in scene
-    return all_objects
+    return [obj for obj in context.scene.objects if obj.visible_get() and obj.type != 'LIGHT']
 
 def find_target_on_camera_z_axis(camera, camera_forward_normalized, context):
     """Find target object on camera Z axis"""
@@ -403,36 +403,33 @@ class LUMI_OT_flip_to_camera_back(bpy.types.Operator):
             return {'CANCELLED'}
 
     def position_light_with_camera(self, light, camera, pivot_point, context):
-        """Position light at same position and distance as camera"""
-        # Get camera distance from pivot
-        camera_distance = (camera.location - pivot_point).length
+        """Position light at same position as camera (co-located)"""
+        # Position light at the SAME position as camera
+        light.location = camera.location.copy()
 
-        # Get camera direction from pivot
-        camera_direction = (camera.location - pivot_point).normalized()
+        # Make light face the SAME direction as camera
+        light.rotation_euler = camera.rotation_euler.copy()
 
-        # Position light at same distance and direction as camera
-        light.location = pivot_point + (camera_direction * camera_distance)
-
-        # Make light face the pivot (same direction as camera)
-        direction_to_pivot = (pivot_point - light.location).normalized()
-        rot_quat = direction_to_pivot.to_track_quat('-Z', 'Y')
-        light.rotation_euler = rot_quat.to_euler()
-        
         # TAHAP AKHIR: ATUR ULANG PIVOT KE PERMUKAAN PERTAMA YANG TERKENA RAYCAST
-        # Cast ray dari light menuju pivot untuk mendeteksi permukaan pertama
-        ray_end = light.location + direction_to_pivot * (camera_distance * 2.0)
-        
+        # Cast ray dari light ke arah yang sama dengan kamera untuk mendeteksi permukaan pertama
+        camera_forward = camera.matrix_world.to_3x3() @ Vector((0, 0, -1))
+        camera_forward_normalized = camera_forward.normalized()
+
+        # Raycast ke arah yang sama dengan kamera menghadap
+        ray_start = light.location
+        ray_end = light.location + camera_forward_normalized * 1000.0  # Jarak yang cukup
+
         has_obstruction, hit_object, hit_location, distance = lumi_ray_cast_between_points(
-            context, light.location, ray_end, exclude_objects=[light]
+            context, ray_start, ray_end, exclude_objects=[light]
         )
-        
+
         # Set pivot to first surface location hit by raycast
         if has_obstruction and hit_location:
             lumi_set_light_pivot(light, hit_location)
-        
-        # IMPORTANT: Don't re-orient light! Light must remain co-located with camera
+
+        # IMPORTANT: Don't re-orient light! Light must remain facing the same direction as camera
         # Light continues to face the same direction as camera
-        
+
         # Update scene
         context.view_layer.update()
 

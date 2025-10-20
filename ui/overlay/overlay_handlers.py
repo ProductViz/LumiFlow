@@ -197,6 +197,21 @@ def lumi_scene_update_handler(scene, depsgraph):
         lumi_enable_draw_handler()
         lumi_enable_overlay_draw_handler()
     
+    # Force viewport redraw to update overlays when objects/collections change
+    # This ensures overlay updates when lights are added/removed from LumiFlow collection
+    try:
+        for update in depsgraph.updates:
+            # Check if any object or collection changed
+            if isinstance(update.id, (bpy.types.Object, bpy.types.Collection)):
+                # Trigger redraw of all 3D viewports
+                for window in bpy.context.window_manager.windows:
+                    for area in window.screen.areas:
+                        if area.type == 'VIEW_3D':
+                            area.tag_redraw()
+                break  # Only need to trigger once per update
+    except (AttributeError, RuntimeError):
+        pass
+    
     lumi_enable_tips_overlay_handler()
     lumi_enable_general_tips_overlay_handler()
     lumi_enable_cursor_overlay_handler()

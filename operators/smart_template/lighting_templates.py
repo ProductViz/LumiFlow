@@ -35,7 +35,7 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
     auto_scale: BoolProperty(name="Auto Scale", default=True)
     manual_distance: FloatProperty(name="Manual Distance", default=0.0, min=0.0)
     use_camera_relative: BoolProperty(name="Camera Relative", default=False)
-    enable_obstruction_detection: BoolProperty(name="Obstruction Detection", default=True)
+    enable_obstruction_detection: BoolProperty(name="Obstruction Detection", default=False)
     obstruction_fallback_strategy: EnumProperty(
         name="Fallback Strategy",
         items=[
@@ -59,57 +59,44 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
 
     def invoke(self, context, event):
         """Invoke operator with dialog when called from UI"""
-        return context.window_manager.invoke_props_dialog(self, width=400)
+        return context.window_manager.invoke_props_dialog(self, width=300)
 
     def draw(self, context):
         """Draw operator properties in dialog"""
-        layout = self.layout
+        layout = self.layout       
         
-        # Template selection (display template name if set)
-        layout.label(text="Template Settings:", icon='LIGHT')
         if self.template_id:
             # Get template info to display name
             try:
                 template = get_template(self.template_id)
                 if template:
                     template_name = template.get('name', self.template_id)
-                    layout.label(text=f"Template: {template_name}")
+                    layout.label(text=f"{template_name}")
             except:
-                layout.label(text=f"Template: {self.template_id}")
+                layout.label(text=f"{self.template_id}")
         
         layout.separator()
         
-        # Scaling options
-        layout.label(text="Scaling Options:", icon='TRANSFORM_ORIGINS')
-        layout.prop(self, "auto_scale")
-        layout.prop(self, "intensity_multiplier")
-        layout.prop(self, "size_multiplier")
-        
-        layout.separator()
-        
-        # Positioning options
-        layout.label(text="Positioning Options:", icon='OBJECT_ORIGIN')
-        layout.prop(self, "use_camera_relative")
-        row = layout.row()
-        row.prop(self, "manual_distance")
-        row.enabled = not self.auto_scale
-        
-        layout.separator()
-        
-        # Advanced options
-        layout.label(text="Advanced Options:", icon='PREFERENCES')
+        # Only show camera relative option if cameras exist in scene
+        cameras_in_scene = any(obj.type == 'CAMERA' for obj in context.scene.objects)
+        if cameras_in_scene:
+            layout.prop(self, "use_camera_relative")
+        else:
+            # Show disabled label if no cameras
+            row = layout.row()
+            row.label(text="Camera Relative: No cameras in scene")
+            row.enabled = False
+               
         layout.prop(self, "preserve_existing")
         layout.prop(self, "use_material_adaptation")
         
         layout.separator()
         
-        # Obstruction detection
-        layout.label(text="Obstruction Detection:", icon='MODIFIER')
-        layout.prop(self, "enable_obstruction_detection")
+        # Info: Show that auto-scaling is enabled
+        box = layout.box()
+        box.label(text="Auto-scaling enabled")
+        box.label(text="Light distances scale with object size")
         
-        if self.enable_obstruction_detection:
-            layout.prop(self, "obstruction_fallback_strategy")
-            layout.prop(self, "show_obstruction_warnings")
 
     def execute(self, context):
         """Main execution - orchestration only."""
@@ -370,18 +357,27 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
         
         light_data = bpy.data.lights.new(light_name, light_type)
 
+        # Get properties dict
+        properties = light_template.get('properties', {})
+        
         # Set properties
-        power = light_template.get('power', 100.0) * self.intensity_multiplier
-        light_data.energy = power
-        light_data.color = light_template.get('color', (1.0, 1.0, 1.0))
+        intensity = properties.get('intensity', 100.0) * self.intensity_multiplier
+        light_data.energy = intensity
+        light_data.color = properties.get('color', (1.0, 1.0, 1.0))
 
         if light_type == 'AREA':
-            size = light_template.get('size', 1.0) * self.size_multiplier
+            size = properties.get('size', 1.0) * self.size_multiplier
             light_data.size = size
-            light_data.shape = light_template.get('shape', 'SQUARE')
+            light_data.shape = properties.get('shape', 'SQUARE')
+            # Set size_y for RECTANGLE and ELLIPSE
+            if light_data.shape in ['RECTANGLE', 'ELLIPSE']:
+                size_y = properties.get('size_y', size) * self.size_multiplier
+                light_data.size_y = size_y
         elif light_type == 'SPOT':
-            light_data.spot_size = light_template.get('spot_size', 0.785398)  # 45 deg
-            light_data.spot_blend = light_template.get('spot_blend', 0.15)
+            light_data.spot_size = properties.get('spot_size', 0.785398)  # 45 deg
+            light_data.spot_blend = properties.get('spot_blend', 0.15)
+        elif light_type == 'SUN':
+            light_data.angle = properties.get('angle', 0.53)  # Default sun angle
 
         # Create object
         light_obj = bpy.data.objects.new(light_name, light_data)
@@ -405,6 +401,13 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
 
         # Link to scene
         context.scene.collection.objects.link(light_obj)
+
+        # Assign light to camera based on current assignment mode
+        try:
+            from ...core.assign_manager import assign_light_to_active_camera
+            assign_light_to_active_camera(light_obj)
+        except Exception as e:
+            self.report({'WARNING'}, f"Failed to assign light '{light_name}' to camera: {e}")
 
         return light_obj
 
@@ -687,7 +690,7 @@ class LUMI_OT_preview_template(bpy.types.Operator):
 
                 # Automatic camera light assignment for preview lights
                 try:
-                    from ...core.camera_manager import assign_light_to_active_camera
+                    from ...core.assign_manager import assign_light_to_active_camera
                     assign_light_to_active_camera(light_obj)
                 except Exception:
                     pass

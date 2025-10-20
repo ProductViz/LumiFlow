@@ -65,7 +65,7 @@ Real-time property adjustments with mouse gestures:
 - **Distance Control** - Move lights closer or farther
 - **Power Control** - Adjust light intensity
 - **Scale Control** - Change light size/radius
-- **Angle Control** - Modify spot light spread
+- **Angle Control** - Modify spot light spread, area light spread (Cycles only)
 - **Blend Control** - Soft vs hard shadows
 - **Temperature Control** - Warm to cool color shifts
 

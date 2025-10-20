@@ -424,10 +424,16 @@ def draw_light_visualization(light, target_pos: Vector, cam_pos: Vector, region=
         draw_area_overlay(light, target_pos, batch_shapes=batch_shapes)
         draw_screen_aligned_circle(light.location, radius=0.001, region=region, rv3d=rv3d, batch_shapes=batch_shapes)
 
-def render_batches(shader, batch_lines, batch_shapes):
-    """Render the accumulated line and shape batches."""
+def draw_light_sign_only(light, target_pos: Vector, region=None, rv3d=None, batch_lines=None):
+    """Draw only the sign (target marker) for unselected lights."""
+    target_size = OverlayConfig.get_light_setting('target_size', 0.05)
+    draw_sign(target_pos, size=target_size, region=region, rv3d=rv3d, batch_lines=batch_lines)
+
+def render_batches(shader, batch_lines, batch_shapes, batch_lines_unselected=None, batch_shapes_unselected=None):
+    """Render the accumulated line and shape batches with different colors for selected/unselected."""
     from gpu_extras.batch import batch_for_shader
 
+    # Draw selected lights (normal colors)
     if batch_lines:
         shader.bind()
         shader.uniform_float("color", OverlayConfig.get_color('highlight'))
@@ -438,6 +444,21 @@ def render_batches(shader, batch_lines, batch_shapes):
         shader.bind()
         shader.uniform_float("color", OverlayConfig.get_light_color('selected'))
         batch = batch_for_shader(shader, 'LINES', {"pos": batch_shapes})
+        batch.draw(shader)
+    
+    # Draw unselected lights (gray color with high transparency)
+    gray_color = (0.5, 0.5, 0.5, 0.1)  # Gray with high transparency
+    
+    if batch_lines_unselected:
+        shader.bind()
+        shader.uniform_float("color", gray_color)
+        batch = batch_for_shader(shader, 'LINES', {"pos": batch_lines_unselected})
+        batch.draw(shader)
+    
+    if batch_shapes_unselected:
+        shader.bind()
+        shader.uniform_float("color", gray_color)
+        batch = batch_for_shader(shader, 'LINES', {"pos": batch_shapes_unselected})
         batch.draw(shader)
 
 def initialize_drawing_context():
@@ -466,7 +487,12 @@ def initialize_drawing_context():
 # ============================================================================
 
 def lumi_draw_light_lines():
-    """Draw light visualization lines, shapes, and indicators using OverlayConfig."""
+    """Draw light visualization lines, shapes, and indicators using OverlayConfig.
+    
+    Shows ALL lights from LumiFlow collection:
+    - Selected lights: normal color (highlight)
+    - Unselected lights: gray color (dimmed)
+    """
     context = bpy.context
     region = context.region
     rv3d = context.region_data
@@ -476,24 +502,48 @@ def lumi_draw_light_lines():
     
     scene = context.scene
     
+    # Get ALL lights from LumiFlow collection
+    from ...utils.common import lumi_get_light_collection
+    light_collection = lumi_get_light_collection(scene)
+    if not light_collection:
+        return
+    
+    all_lights = [obj for obj in light_collection.objects if obj.type == 'LIGHT']
+    if not all_lights:
+        return
+    
     selected_objects = context.selected_objects
-    lights = [obj for obj in selected_objects if obj.type == 'LIGHT']
+    selected_lights = [obj for obj in selected_objects if obj.type == 'LIGHT']
     
     # Initialize drawing components
     shader = gpu.shader.from_builtin('UNIFORM_COLOR')
-    batch_lines = []
-    batch_shapes = []
+    
+    # Separate batches for selected and unselected
+    batch_lines_selected = []
+    batch_shapes_selected = []
+    batch_lines_unselected = []
+    batch_shapes_unselected = []
+    
     cam_pos = lumi_get_viewport_camera_position(rv3d)
 
-    # Main light drawing logic - only if lights are selected
-    for light in lights:
+    # Draw all lights
+    for light in all_lights:
         # Calculate target position for light
         from ...utils.light import lumi_calculate_light_target_position
         target_pos = lumi_calculate_light_target_position(light, scene)
         
-        # Draw visualization for this light
-        draw_light_visualization(light, target_pos, cam_pos, region, rv3d, batch_lines, batch_shapes)
+        # Choose batch based on selection status
+        if light in selected_lights:
+            # Draw full visualization for selected lights
+            batch_lines = batch_lines_selected
+            batch_shapes = batch_shapes_selected
+            draw_light_visualization(light, target_pos, cam_pos, region, rv3d, batch_lines, batch_shapes)
+        else:
+            # Draw only sign for unselected lights
+            batch_lines = batch_lines_unselected
+            draw_light_sign_only(light, target_pos, region, rv3d, batch_lines)
 
-    # Render all accumulated batches
-    render_batches(shader, batch_lines, batch_shapes)
+    # Render all accumulated batches (unselected first, then selected on top)
+    render_batches(shader, batch_lines_selected, batch_shapes_selected, 
+                   batch_lines_unselected, batch_shapes_unselected)
 

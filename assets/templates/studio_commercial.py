@@ -15,7 +15,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
         "category": "Studio & Commercial",
         "description": "Classic three-point studio lighting with key, fill, and rim for professional results",
         "author": "LumiFlow",
-        "version": "1.0",
+        "version": "1.1",
         "lights": [
             {
                 "name": "Key Light",
@@ -24,8 +24,8 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "method": "spherical",
                     "params": {
                         "azimuth": 45,
-                        "elevation": 45,
-                        "distance": 4.0
+                        "elevation": 40,
+                        "distance": 2.0
                     }
                 },
                 "rotation": {
@@ -33,9 +33,9 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "size": 0.8,
-                    "size_y": 1.0,
-                    "intensity": 120,
+                    "size": 1.0,
+                    "size_y": 1.2,
+                    "intensity": 200,
                     "color": (1.0, 1.0, 1.0),
                     "shape": "RECTANGLE"
                 }
@@ -48,7 +48,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "params": {
                         "azimuth": -45,
                         "elevation": 30,
-                        "distance": 4.5
+                        "distance": 2.5
                     }
                 },
                 "rotation": {
@@ -56,11 +56,11 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "size": 0.6,
-                    "size_y": 0.8,
-                    "intensity": 60,
+                    "size": 1.5,
+                    "size_y": 1.5,
+                    "intensity": 100,
                     "color": (0.95, 0.98, 1.0),
-                    "shape": "RECTANGLE"
+                    "shape": "SQUARE"
                 }
             },
             {
@@ -70,8 +70,8 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "method": "spherical",
                     "params": {
                         "azimuth": 135,
-                        "elevation": 60,
-                        "distance": 3.2
+                        "elevation": 55,
+                        "distance": 1.8
                     }
                 },
                 "rotation": {
@@ -79,15 +79,15 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "intensity": 80,
+                    "intensity": 150,
                     "color": (1.0, 1.0, 1.0),
-                    "spot_size": 0.785398,
+                    "spot_size": 0.698132,
                     "spot_blend": 0.15
                 }
             }
         ],
         "settings": {
-            "base_distance": 3.8,
+            "base_distance": 2.0,
             "auto_scale": True,
             "preserve_existing": False
         },
@@ -115,7 +115,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
         "category": "Studio & Commercial", 
         "description": "Bright, clean high-key lighting with minimal shadows for e-commerce product shots",
         "author": "LumiFlow",
-        "version": "1.0",
+        "version": "1.1",
         "lights": [
             {
                 "name": "Main Light",
@@ -124,8 +124,8 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "method": "spherical",
                     "params": {
                         "azimuth": 30,
-                        "elevation": 45,
-                        "distance": 3.6
+                        "elevation": 40,
+                        "distance": 2.2
                     }
                 },
                 "rotation": {
@@ -133,9 +133,9 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "size": 0.9,
-                    "size_y": 1.1,
-                    "intensity": 150,
+                    "size": 1.2,
+                    "size_y": 1.4,
+                    "intensity": 180,
                     "color": (1.0, 1.0, 1.0),
                     "shape": "RECTANGLE"
                 }
@@ -148,7 +148,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "params": {
                         "azimuth": -60,
                         "elevation": 30,
-                        "distance": 3.9
+                        "distance": 2.2
                     }
                 },
                 "rotation": {
@@ -156,9 +156,9 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "size": 0.7,
-                    "size_y": 0.9,
-                    "intensity": 80,
+                    "size": 1.0,
+                    "size_y": 1.2,
+                    "intensity": 160,
                     "color": (1.0, 1.0, 1.0),
                     "shape": "RECTANGLE"
                 }
@@ -171,7 +171,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "params": {
                         "azimuth": 120,
                         "elevation": 30,
-                        "distance": 3.9
+                        "distance": 2.2
                     }
                 },
                 "rotation": {
@@ -179,9 +179,9 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "size": 0.7,
-                    "size_y": 0.9,
-                    "intensity": 70,
+                    "size": 1.0,
+                    "size_y": 1.2,
+                    "intensity": 160,
                     "color": (1.0, 1.0, 1.0),
                     "shape": "RECTANGLE"
                 }
@@ -193,7 +193,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "method": "cartesian",
                     "params": {
                         "x": 0,
-                        "y": 5.0,
+                        "y": 3.5,
                         "z": 0
                     }
                 },
@@ -202,16 +202,16 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "size": 1.2,
-                    "size_y": 0.8,
-                    "intensity": 40,
+                    "size": 2.0,
+                    "size_y": 1.5,
+                    "intensity": 120,
                     "color": (1.0, 1.0, 1.0),
                     "shape": "RECTANGLE"
                 }
             }
         ],
         "settings": {
-            "base_distance": 4.0,
+            "base_distance": 2.2,
             "auto_scale": True,
             "preserve_existing": False
         },
@@ -236,9 +236,9 @@ STUDIO_COMMERCIAL_TEMPLATES = {
         "id": "clamshell_beauty",
         "name": "Clamshell Beauty",
         "category": "Studio & Commercial",
-        "description": "Professional clamshell setup with wraparound soft lighting for beauty and jewelry photography",
+        "description": "Professional clamshell lighting for beauty, jewelry, and high-end product shots",
         "author": "LumiFlow",
-        "version": "1.0",
+        "version": "1.1",
         "lights": [
             {
                 "name": "Top Beauty Light",
@@ -247,8 +247,8 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "method": "spherical",
                     "params": {
                         "azimuth": 0,
-                        "elevation": 70,
-                        "distance": 3.2
+                        "elevation": 50,
+                        "distance": 1.8
                     }
                 },
                 "rotation": {
@@ -256,9 +256,9 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "size": 0.7,
-                    "size_y": 0.5,
-                    "intensity": 70,
+                    "size": 0.9,
+                    "size_y": 1.2,
+                    "intensity": 180,
                     "color": (1.0, 0.98, 0.95),
                     "shape": "ELLIPSE"
                 }
@@ -271,7 +271,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "params": {
                         "azimuth": 0,
                         "elevation": -45,
-                        "distance": 2.8
+                        "distance": 1.8
                     }
                 },
                 "rotation": {
@@ -279,9 +279,9 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "size": 0.8,
-                    "size_y": 0.5,
-                    "intensity": 25,
+                    "size": 0.9,
+                    "size_y": 1.2,
+                    "intensity": 60,
                     "color": (0.95, 0.98, 1.0),
                     "shape": "RECTANGLE"
                 }
@@ -294,7 +294,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "params": {
                         "azimuth": -90,
                         "elevation": 15,
-                        "distance": 3.5
+                        "distance": 2.0
                     }
                 },
                 "rotation": {
@@ -302,8 +302,8 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "size": 0.4,
-                    "intensity": 25,
+                    "size": 0.5,
+                    "intensity": 60,
                     "color": (0.98, 1.0, 0.98),
                     "shape": "SQUARE"
                 }
@@ -316,7 +316,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "params": {
                         "azimuth": 90,
                         "elevation": 15,
-                        "distance": 3.5
+                        "distance": 2.0
                     }
                 },
                 "rotation": {
@@ -324,8 +324,8 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "size": 0.4,
-                    "intensity": 25,
+                    "size": 0.5,
+                    "intensity": 60,
                     "color": (1.0, 0.98, 0.98),
                     "shape": "SQUARE"
                 }
@@ -355,7 +355,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
             }
         ],
         "settings": {
-            "base_distance": 3.4,
+            "base_distance": 1.8,
             "auto_scale": True,
             "preserve_existing": False
         },
@@ -387,7 +387,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
         "category": "Studio & Commercial",
         "description": "Dramatic product lighting with gradient background for hero shots and advertising",
         "author": "LumiFlow",
-        "version": "1.0",
+        "version": "1.1",
         "lights": [
             {
                 "name": "Main Product Light",
@@ -397,7 +397,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "params": {
                         "azimuth": 45,
                         "elevation": 35,
-                        "distance": 3.3
+                        "distance": 2.0
                     }
                 },
                 "rotation": {
@@ -405,9 +405,9 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "size": 0.8,
-                    "size_y": 1.0,
-                    "intensity": 180,
+                    "size": 1.0,
+                    "size_y": 1.2,
+                    "intensity": 250,
                     "color": (1.0, 1.0, 1.0),
                     "shape": "RECTANGLE"
                 }
@@ -418,9 +418,9 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                 "position": {
                     "method": "spherical",
                     "params": {
-                        "azimuth": 0,
-                        "elevation": 75,
-                        "distance": 2.6
+                        "azimuth": 135,
+                        "elevation": 60,
+                        "distance": 1.8
                     }
                 },
                 "rotation": {
@@ -428,7 +428,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "intensity": 80,
+                    "intensity": 200,
                     "color": (1.0, 1.0, 1.0),
                     "spot_size": 0.349066,
                     "spot_blend": 0.15
@@ -459,7 +459,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
             }
         ],
         "settings": {
-            "base_distance": 3.3,
+            "base_distance": 2.0,
             "auto_scale": True,
             "preserve_existing": False
         },
@@ -489,7 +489,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
         "category": "Studio & Commercial",
         "description": "Clean, even lighting for product catalog photography with consistent results",
         "author": "LumiFlow",
-        "version": "1.0",
+        "version": "1.1",
         "lights": [
             {
                 "name": "Left Light",
@@ -498,8 +498,8 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "method": "spherical",
                     "params": {
                         "azimuth": -45,
-                        "elevation": 30,
-                        "distance": 3.3
+                        "elevation": 35,
+                        "distance": 2.0
                     }
                 },
                 "rotation": {
@@ -507,9 +507,9 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "size": 0.6,
-                    "size_y": 0.8,
-                    "intensity": 100,
+                    "size": 1.0,
+                    "size_y": 1.2,
+                    "intensity": 200,
                     "color": (1.0, 1.0, 1.0),
                     "shape": "RECTANGLE"
                 }
@@ -521,8 +521,8 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "method": "spherical",
                     "params": {
                         "azimuth": 45,
-                        "elevation": 30,
-                        "distance": 3.3
+                        "elevation": 35,
+                        "distance": 2.5
                     }
                 },
                 "rotation": {
@@ -530,9 +530,9 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "size": 0.6,
-                    "size_y": 0.8,
-                    "intensity": 100,
+                    "size": 1.0,
+                    "size_y": 1.2,
+                    "intensity": 80,
                     "color": (1.0, 1.0, 1.0),
                     "shape": "RECTANGLE"
                 }
@@ -545,7 +545,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "params": {
                         "azimuth": 0,
                         "elevation": 75,
-                        "distance": 2.6
+                        "distance": 2.0
                     }
                 },
                 "rotation": {
@@ -553,9 +553,9 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "size": 0.5,
-                    "size_y": 0.5,
-                    "intensity": 60,
+                    "size": 0.8,
+                    "size_y": 0.8,
+                    "intensity": 100,
                     "color": (1.0, 1.0, 1.0),
                     "shape": "SQUARE"
                 }
@@ -567,7 +567,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "method": "cartesian",
                     "params": {
                         "x": 0,
-                        "y": 4.0,
+                        "y": 3.5,
                         "z": 0
                     }
                 },
@@ -576,16 +576,16 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "size": 1.2,
-                    "size_y": 0.8,
-                    "intensity": 35,
+                    "size": 1.8,
+                    "size_y": 1.2,
+                    "intensity": 80,
                     "color": (1.0, 1.0, 1.0),
                     "shape": "RECTANGLE"
                 }
             }
         ],
         "settings": {
-            "base_distance": 3.2,
+            "base_distance": 2.0,
             "auto_scale": True,
             "preserve_existing": False
         },
@@ -613,7 +613,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
         "category": "Studio & Commercial",
         "description": "Specialized macro lighting for jewelry photography with maximum detail and sparkle",
         "author": "LumiFlow",
-        "version": "1.0",
+        "version": "1.1",
         "lights": [
             {
                 "name": "Top Macro Light",
@@ -623,7 +623,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "params": {
                         "azimuth": 0,
                         "elevation": 80,
-                        "distance": 1.4
+                        "distance": 1.0
                     }
                 },
                 "rotation": {
@@ -631,8 +631,8 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "size": 1.0,
-                    "intensity": 80,
+                    "size": 0.8,
+                    "intensity": 180,
                     "color": (1.0, 1.0, 1.0),
                     "shape": "DISK"
                 }
@@ -645,7 +645,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "params": {
                         "azimuth": -90,
                         "elevation": 30,
-                        "distance": 1.5
+                        "distance": 1.0
                     }
                 },
                 "rotation": {
@@ -653,7 +653,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "intensity": 60,
+                    "intensity": 135,
                     "color": (1.0, 1.0, 1.0),
                     "spot_size": 0.174533,
                     "spot_blend": 0.05
@@ -667,7 +667,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "params": {
                         "azimuth": 90,
                         "elevation": 30,
-                        "distance": 1.5
+                        "distance": 1.0
                     }
                 },
                 "rotation": {
@@ -675,7 +675,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "intensity": 60,
+                    "intensity": 90,
                     "color": (1.0, 1.0, 1.0),
                     "spot_size": 0.174533,
                     "spot_blend": 0.05
@@ -689,7 +689,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "params": {
                         "azimuth": 180,
                         "elevation": 45,
-                        "distance": 1.3
+                        "distance": 0.9
                     }
                 },
                 "rotation": {
@@ -697,7 +697,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "intensity": 35,
+                    "intensity": 80,
                     "color": (1.0, 1.0, 0.9),
                     "spot_size": 0.087266,
                     "spot_blend": 0.02
@@ -705,7 +705,7 @@ STUDIO_COMMERCIAL_TEMPLATES = {
             }
         ],
         "settings": {
-            "base_distance": 1.4,
+            "base_distance": 1.0,
             "auto_scale": True,
             "preserve_existing": False
         },

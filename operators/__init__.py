@@ -20,7 +20,8 @@ from .menus_ops import (
     LUMI_OT_set_light_assignment_mode  # Light assignment mode operator
 )
 from .selection_ops import LUMI_OT_select_light, LUMI_OT_delete_light, LUMI_OT_delete_collection, LUMI_OT_cycle_lights_modal, LUMI_OT_quick_solo_light
-from .panels_ops import LUMI_OT_toggle_overlay_info, LUMI_OT_toggle_overlay_tips, LUMI_OT_toggle_addon, LUMI_OT_open_user_guide
+from .panels_ops import LUMI_OT_toggle_overlay_info, LUMI_OT_toggle_overlay_tips, LUMI_OT_toggle_addon, LUMI_OT_open_user_guide, LUMI_OT_clean_viewport
+from .light_picker import LUMI_OT_auto_light_picker, pick_light_at_position, start_auto_picker, stop_auto_picker
 
 from .positioning import __all__ as positioning_all
 linking_all = [
@@ -81,7 +82,8 @@ main_operators = [
     
     # Utility operators
     'LUMI_OT_select_light', 'LUMI_OT_delete_light', 'LUMI_OT_delete_collection', 'LUMI_OT_cycle_lights_modal', 'LUMI_OT_quick_solo_light',
-    'LUMI_OT_toggle_overlay_info', 'LUMI_OT_toggle_overlay_tips', 'LUMI_OT_toggle_addon', 'LUMI_OT_open_user_guide'
+    'LUMI_OT_toggle_overlay_info', 'LUMI_OT_toggle_overlay_tips', 'LUMI_OT_toggle_addon', 'LUMI_OT_open_user_guide', 'LUMI_OT_clean_viewport',
+    'LUMI_OT_auto_light_picker', 'pick_light_at_position', 'start_auto_picker', 'stop_auto_picker'
 ]
 
 __all__ = list(positioning_all) + linking_all + list(smart_all) + list(smart_template_all) + main_operators
@@ -209,8 +211,8 @@ for name in smart_template_all:
             if should_register:
                 operator_classes.append(obj)
 
-from . import menus_ops, selection_ops, panels_ops
-main_modules = [menus_ops, selection_ops, panels_ops]
+from . import menus_ops, selection_ops, panels_ops, light_picker
+main_modules = [menus_ops, selection_ops, panels_ops, light_picker]
 
 for module in main_modules:
     for name, obj in inspect.getmembers(module, inspect.isclass):

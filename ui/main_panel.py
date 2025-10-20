@@ -124,7 +124,7 @@ class LUMI_PT_light_control(bpy.types.Panel):
             try:
                 quick_row2.operator("lumi.apply_template_default", text="Fill Light").template_id = "fill_light_only"
                 quick_row2.operator("lumi.apply_template_default", text="Background").template_id = "backlight_only"
-                quick_row2.operator("lumi.apply_lighting_template", text="Loop Portrait").template_id = "loop_portrait"
+                quick_row2.operator("lumi.apply_lighting_template", text="Clamshell").template_id = "clamshell_beauty"
             except:
                 # Fallback to basic operators
                 quick_row2.operator("object.light_add", text="Portrait").type = 'POINT'
@@ -242,6 +242,11 @@ class LUMI_PT_light_control(bpy.types.Panel):
             info_prop = row.operator("lumi.toggle_viewport_overlay", text="", icon='INFO', depress=info_enabled)
             info_prop.overlay_type = 'overlay_info'
             info_prop.viewport_id = viewport_id or ""
+
+        # Clean viewport toggle button with dynamic icon (viewport-specific)
+        clean_active = viewport_overlay_manager.get_overlay_state(context, 'clean_viewport')
+        clean_icon = 'RESTRICT_VIEW_ON' if clean_active else 'RESTRICT_VIEW_OFF'
+        row.operator("lumi.clean_viewport", text="", icon=clean_icon, depress=clean_active)
 
         # User Guide button
         row.operator("lumi.open_user_guide", text="", icon='HELP')

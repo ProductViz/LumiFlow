@@ -255,3 +255,6 @@ releases/
 # Testing artifacts
 test_results/
 .coverage.*
+
+# Documentation (internal development docs)
+docs/

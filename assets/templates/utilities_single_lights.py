@@ -15,7 +15,7 @@ UTILITIES_SINGLE_LIGHTS_TEMPLATES = {
         "category": "Utilities & Single Lights",
         "description": "Single key light for primary illumination and testing",
         "author": "LumiFlow",
-        "version": "1.0",
+        "version": "1.1",
         "lights": [
             {
                 "name": "Key Light",
@@ -25,7 +25,7 @@ UTILITIES_SINGLE_LIGHTS_TEMPLATES = {
                     "params": {
                         "azimuth": 45,
                         "elevation": 45,
-                        "distance": 3.0
+                        "distance": 2.0
                     }
                 },
                 "rotation": {
@@ -33,15 +33,15 @@ UTILITIES_SINGLE_LIGHTS_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "size": 2.5,
-                    "intensity": 300,
+                    "size": 1.0,
+                    "intensity": 200,
                     "color": (1.0, 0.95, 0.9),
                     "shape": "SQUARE"  # Professional key light softbox proportion
                 }
             }
         ],
         "settings": {
-            "base_distance": 3.0,
+            "base_distance": 2.0,
             "auto_scale": True,
             "preserve_existing": False
         },
@@ -69,7 +69,7 @@ UTILITIES_SINGLE_LIGHTS_TEMPLATES = {
         "category": "Utilities & Single Lights",
         "description": "Single fill light for shadow softening and secondary illumination",
         "author": "LumiFlow",
-        "version": "1.0",
+        "version": "1.1",
         "lights": [
             {
                 "name": "Fill Light",
@@ -79,7 +79,7 @@ UTILITIES_SINGLE_LIGHTS_TEMPLATES = {
                     "params": {
                         "azimuth": -45,
                         "elevation": 30,
-                        "distance": 3.5
+                        "distance": 2.5
                     }
                 },
                 "rotation": {
@@ -87,16 +87,16 @@ UTILITIES_SINGLE_LIGHTS_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "size": 3.5,
-                    "size_y": 2.5,
+                    "size": 1.5,
+                    "size_y": 1.5,
                     "intensity": 120,
                     "color": (0.9, 0.95, 1.0),
-                    "shape": "ELLIPSE"  # Large soft fill light diffusion pattern
+                    "shape": "SQUARE"  # Large professional fill softbox
                 }
             }
         ],
         "settings": {
-            "base_distance": 3.5,
+            "base_distance": 2.5,
             "auto_scale": True,
             "preserve_existing": False
         },
@@ -178,7 +178,7 @@ UTILITIES_SINGLE_LIGHTS_TEMPLATES = {
         "category": "Utilities & Single Lights",
         "description": "Single backlight for silhouette effects and dramatic lighting",
         "author": "LumiFlow",
-        "version": "1.0",
+        "version": "1.1",
         "lights": [
             {
                 "name": "Backlight",
@@ -188,7 +188,7 @@ UTILITIES_SINGLE_LIGHTS_TEMPLATES = {
                     "params": {
                         "azimuth": 180,
                         "elevation": 30,
-                        "distance": 4.0
+                        "distance": 2.5
                     }
                 },
                 "rotation": {
@@ -196,15 +196,15 @@ UTILITIES_SINGLE_LIGHTS_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "size": 3.0,
-                    "intensity": 400,
+                    "size": 1.8,
+                    "intensity": 350,
                     "color": (1.0, 0.98, 0.94),
                     "shape": "SQUARE"  # Professional backlight panel
                 }
             }
         ],
         "settings": {
-            "base_distance": 4.0,
+            "base_distance": 2.5,
             "auto_scale": True,
             "preserve_existing": False
         },
@@ -232,7 +232,7 @@ UTILITIES_SINGLE_LIGHTS_TEMPLATES = {
         "category": "Utilities & Single Lights",
         "description": "Single overhead light for flat lay and product photography",
         "author": "LumiFlow",
-        "version": "1.0",
+        "version": "1.1",
         "lights": [
             {
                 "name": "Top Light",
@@ -242,7 +242,7 @@ UTILITIES_SINGLE_LIGHTS_TEMPLATES = {
                     "params": {
                         "azimuth": 0,
                         "elevation": 90,
-                        "distance": 3.0
+                        "distance": 2.0
                     }
                 },
                 "rotation": {
@@ -250,15 +250,15 @@ UTILITIES_SINGLE_LIGHTS_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "size": 4.0,
-                    "intensity": 350,
+                    "size": 1.2,
+                    "intensity": 250,
                     "color": (1.0, 1.0, 1.0),
-                    "shape": "DISK"  # Natural overhead light dispersion for flat lay
+                    "shape": "DISK"  # Large octabox/beauty dish for flat lay
                 }
             }
         ],
         "settings": {
-            "base_distance": 3.0,
+            "base_distance": 2.0,
             "auto_scale": True,
             "preserve_existing": False
         },

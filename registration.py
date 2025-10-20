@@ -290,6 +290,8 @@ pie_menu_classes = [
     LUMI_MT_template_dramatic_cinematic,
     LUMI_MT_template_environment_realistic,
     LUMI_MT_template_utilities_single,
+    LUMIFLOW_MT_light_flip_menu,
+    LUMIFLOW_MT_flip_to_camera,
 ]
 
 # Update checker classes
@@ -352,7 +354,15 @@ def register_properties() -> None:
         ("lumi_light_linking_expanded", bpy.props.BoolProperty(name="Show Light Linking Manager", default=False, description="Show/hide light linking manager panel", update=lumi_light_linking_expanded_accordion_update)),
         ("lumi_color_controls_expanded", bpy.props.BoolProperty(name="Show Color Controls", default=False, description="Show/hide color controls panel", update=lumi_color_controls_expanded_update)),
         ("lumi_color_enabled", bpy.props.BoolProperty(name="Color Control Enabled", default=False, description="Enable color and temperature controls", update=lumi_color_enabled_update)),
-        ("lumi_color_temperature", bpy.props.IntProperty(name="Color Temperature", default=5500, min=1000, max=20000, description="Light color temperature in Kelvin")),
+        ("lumi_color_temperature", bpy.props.IntProperty(
+            name="Color Temperature", 
+            default=5500, 
+            min=1000, 
+            max=20000, 
+            soft_min=1800,  # Candlelight - practical minimum
+            soft_max=10000,  # Clear blue sky - practical maximum
+            description="Light color temperature in Kelvin (1800K=Candlelight, 3200K=Tungsten, 5500K=Daylight, 7000K=Overcast, 10000K=Blue Sky)"
+        )),
         ("lumi_smart_enabled", bpy.props.BoolProperty(name="Smart Controls Enabled", default=False, description="Enable smart control settings")),
         ("lumi_status_distance_active", bpy.props.BoolProperty(default=False)),
         ("lumi_status_power_active", bpy.props.BoolProperty(default=False)),        
@@ -366,14 +376,14 @@ def register_properties() -> None:
         ("lumi_positioning_mode_enabled", bpy.props.BoolProperty(
             name="Positioning Mode Enabled",
             description="Enable/disable positioning mode. When disabled, modifier+LMB drag uses default Blender behavior",
-            default=False,
+            default=True,
             update=lumi_positioning_mode_enabled_update
         )),
         ("lumi_status_angle_active", bpy.props.BoolProperty(default=False)),        
         ("lumi_enable_pending", bpy.props.BoolProperty(default=False)),
         ("lumi_scroll_control_enabled", bpy.props.BoolProperty(name="Smart Control Enabled", default=False)),
         ("lumi_show_overlay_info", bpy.props.BoolProperty(name="Show Overlay Info", description="Show/hide the detailed light info on screen", default=True)),
-        ("lumi_show_overlay_tips", bpy.props.BoolProperty(name="Show Overlay Tips", description="Show/hide the tips on screen", default=True)),
+        ("lumi_show_overlay_tips", bpy.props.BoolProperty(name="Show Overlay Tips", description="Show/hide the tips on screen", default=False)),
         ("lumi_smart_mode", bpy.props.StringProperty(name="Smart Mode", default="DISTANCE")),
         ("lumi_smart_mouse_x", bpy.props.IntProperty(name="Smart Mouse X", default=0)),
         ("lumi_smart_mouse_y", bpy.props.IntProperty(name="Smart Mouse Y", default=0)),
@@ -489,6 +499,26 @@ def register_properties() -> None:
             default=False,
             update=show_donate_panel_update
         )),
+        ("lumi_clean_viewport_active", bpy.props.BoolProperty(
+            name="Clean Viewport Active",
+            description="State of clean viewport toggle",
+            default=False
+        )),
+        ("lumi_saved_overlay_ortho_grid", bpy.props.BoolProperty(default=True)),
+        ("lumi_saved_overlay_floor", bpy.props.BoolProperty(default=True)),
+        ("lumi_saved_overlay_axis_x", bpy.props.BoolProperty(default=True)),
+        ("lumi_saved_overlay_axis_y", bpy.props.BoolProperty(default=True)),
+        ("lumi_saved_overlay_cursor", bpy.props.BoolProperty(default=True)),
+        ("lumi_saved_overlay_annotation", bpy.props.BoolProperty(default=True)),
+        ("lumi_saved_overlay_text", bpy.props.BoolProperty(default=True)),
+        ("lumi_saved_overlay_bones", bpy.props.BoolProperty(default=True)),
+        ("lumi_saved_overlay_motion_paths", bpy.props.BoolProperty(default=True)),
+        ("lumi_saved_overlay_object_origins", bpy.props.BoolProperty(default=True)),
+        ("lumi_saved_overlay_extras", bpy.props.BoolProperty(default=True)),
+        ("lumi_saved_overlay_relationship_lines", bpy.props.BoolProperty(default=True)),
+        ("lumi_saved_overlay_viewer_attribute", bpy.props.BoolProperty(default=True)),
+        ("lumi_saved_show_reconstruction", bpy.props.BoolProperty(default=False)),
+        ("lumi_saved_show_gizmo", bpy.props.BoolProperty(default=True)),
     ]    
     for prop_name, prop_def in props:
         setattr(bpy.types.Scene, prop_name, prop_def)
@@ -545,6 +575,13 @@ def unregister_properties() -> None:
         "lumi_template_camera_relative", "lumi_template_intensity_multiplier", "lumi_template_size_multiplier",
         "lumi_template_manual_distance", "lumi_template_preserve_existing", "lumi_template_use_material_adaptation",
         "show_donate_panel",
+        # Clean Viewport Properties
+        "lumi_clean_viewport_active", "lumi_saved_overlay_ortho_grid", "lumi_saved_overlay_floor",
+        "lumi_saved_overlay_axis_x", "lumi_saved_overlay_axis_y", "lumi_saved_overlay_cursor",
+        "lumi_saved_overlay_annotation", "lumi_saved_overlay_text", "lumi_saved_overlay_bones",
+        "lumi_saved_overlay_motion_paths", "lumi_saved_overlay_object_origins", "lumi_saved_overlay_extras",
+        "lumi_saved_overlay_relationship_lines", "lumi_saved_overlay_viewer_attribute",
+        "lumi_saved_show_reconstruction", "lumi_saved_show_gizmo",
         # Template Settings Properties (legacy - for backward compatibility)
         "lumi_template_auto_position", "lumi_template_default_scale", "lumi_template_default_intensity",
         "lumi_template_collection", "lumi_template_auto_organize", "lumi_template_auto_save",

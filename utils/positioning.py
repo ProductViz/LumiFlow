@@ -127,14 +127,28 @@ def _calculate_direct_from_config(light_config: Dict, center: Vector, base_dista
 
 
 def calculate_optimal_distance(bounds_data, template_distance: float = 2.0, auto_scale: bool = True) -> float:
-    """Calculate optimal light distance berdasarkan scene bounds."""
+    """Calculate optimal light distance berdasarkan scene bounds.
+    
+    Scale factor is clamped between 0.5x and 5.0x:
+    - Minimum 0.5x: prevents lights too close on tiny objects (<1m)
+    - Maximum 5.0x: prevents lights too far on huge objects (>10m)
+    
+    Examples:
+    - Small object (0.2m): scale=0.5, distance=1.0m (for 2.0m base)
+    - Normal object (2.0m): scale=1.73, distance=3.46m
+    - Large object (10m): scale=5.0 (clamped), distance=10.0m
+    """
     if not auto_scale:
         return template_distance
 
-    # Use RADIUS (bukan diagonal) untuk scaling seperti implementasi lama
+    # Use RADIUS (bukan diagonal) untuk scaling
     # Radius = diagonal / 2
     subject_radius = bounds_data.radius
-    scale_factor = max(0.5, subject_radius)
+    
+    # Clamp scale factor: 0.5x minimum, 5.0x maximum
+    # - 0.5x prevents lights < 1.0m for tiny objects
+    # - 5.0x prevents lights > 10m for architectural/large objects
+    scale_factor = max(0.5, min(5.0, subject_radius))
 
     # Scale template distance dengan factor
     optimal_distance = template_distance * scale_factor

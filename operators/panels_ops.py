@@ -338,6 +338,82 @@ class LUMI_OT_toggle_viewport_overlay(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class LUMI_OT_clean_viewport(bpy.types.Operator):
+    """Toggle overlay elements for clean viewport"""
+    bl_idname = "lumi.clean_viewport"
+    bl_label = "Clean Viewport"
+    bl_description = "Toggle overlay elements visibility for a clean viewport view"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        try:
+            space_data = context.space_data
+            
+            # Check if we're in a 3D viewport
+            if space_data.type != 'VIEW_3D':
+                self.report({'WARNING'}, "Must be in 3D viewport")
+                return {'CANCELLED'}
+            
+            # Import viewport overlay manager
+            from ..ui.overlay.config import viewport_overlay_manager
+            
+            # Get current viewport state
+            current_state = viewport_overlay_manager.get_overlay_state(context, 'clean_viewport')
+            
+            # Toggle state
+            if not current_state:
+                # Save current overlay states for this viewport
+                viewport_overlay_manager.save_viewport_overlay_states(context, space_data)
+                
+                # Hide overlay elements
+                space_data.overlay.show_ortho_grid = False
+                space_data.overlay.show_floor = False
+                space_data.overlay.show_axis_x = False
+                space_data.overlay.show_axis_y = False
+                space_data.overlay.show_cursor = False
+                space_data.overlay.show_annotation = False
+                space_data.overlay.show_text = False
+                space_data.overlay.show_bones = False
+                space_data.overlay.show_motion_paths = False
+                space_data.overlay.show_object_origins = False
+                space_data.overlay.show_extras = False
+                space_data.overlay.show_relationship_lines = False
+                space_data.overlay.show_outline_selected = True  # Keep outline selected
+                space_data.overlay.show_viewer_attribute = False
+                space_data.show_reconstruction = False
+                space_data.show_gizmo = False
+                
+                # Set viewport state to active
+                viewport_overlay_manager.set_overlay_state(context, 'clean_viewport', True)
+                self.report({'INFO'}, "Viewport overlays hidden")
+            else:
+                # Restore saved overlay states for this viewport
+                restored = viewport_overlay_manager.restore_viewport_overlay_states(context, space_data)
+                
+                if not restored:
+                    # Fallback to default values if no saved states
+                    space_data.overlay.show_ortho_grid = True
+                    space_data.overlay.show_floor = True
+                    space_data.overlay.show_axis_x = True
+                    space_data.overlay.show_axis_y = True
+                    space_data.show_gizmo = True
+                
+                # Set viewport state to inactive
+                viewport_overlay_manager.set_overlay_state(context, 'clean_viewport', False)
+                self.report({'INFO'}, "Viewport overlays restored")
+            
+            # Force redraw
+            for area in context.screen.areas:
+                if area.type == 'VIEW_3D':
+                    area.tag_redraw()
+            
+            return {'FINISHED'}
+            
+        except Exception as e:
+            self.report({'ERROR'}, f"Failed to toggle viewport: {str(e)}")
+            return {'CANCELLED'}
+
+
 class LUMI_OT_open_user_guide(bpy.types.Operator):
     """Open LumiFlow User Manual on GitHub"""
     bl_idname = "lumi.open_user_guide"

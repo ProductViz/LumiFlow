@@ -831,11 +831,63 @@ def get_outline_overlay():
         _overlay_instance = OutlineOverlay()
     return _overlay_instance
 
+def _validate_world_shader_darkness(context):
+    """
+    Validate if world shader has dark background color with strength below 0.3.
+    Returns True if world background is dark enough to need overlay assistance.
+    """
+    try:
+        world = context.scene.world
+        if not world or not world.use_nodes:
+            # No world or nodes - consider it dark
+            return True
+        
+        # Get world node tree
+        node_tree = world.node_tree
+        if not node_tree:
+            return True
+        
+        # Find Background shader node
+        background_node = None
+        for node in node_tree.nodes:
+            if node.type == 'BACKGROUND':
+                background_node = node
+                break
+        
+        if not background_node:
+            # No background node found - consider it dark
+            return True
+        
+        # Get background color and strength
+        bg_color = background_node.inputs['Color'].default_value
+        bg_strength = background_node.inputs['Strength'].default_value
+        
+        # Calculate luminance (perceived brightness) from RGB
+        # Using standard luminance formula: 0.299*R + 0.587*G + 0.114*B
+        luminance = 0.299 * bg_color[0] + 0.587 * bg_color[1] + 0.114 * bg_color[2]
+        
+        # Check if background is dark (low luminance) AND low strength
+        # Dark threshold: luminance < 0.2 (20% brightness)
+        # Strength threshold: < 0.3 (30% strength)
+        is_dark_color = luminance < 0.05
+        is_low_strength = bg_strength < 0.2
+        
+        # Return True if EITHER condition is met (dark color OR low strength)
+        # This ensures overlay is shown when lighting is insufficient
+        return is_dark_color or is_low_strength
+        
+    except Exception as e:
+        logger.debug(f"Cannot validate world shader darkness: {e}")
+        # On error, assume it's dark to be safe
+        return True
+
 def _draw_scene_object_strokes_if_no_lights():
     """
     Draw scene object SOLID color overlays when viewport shading is RENDERED and there are no lights.
     Uses efficient GPU-based method with random pastel colors per object (full opacity).
     Compatible with Blender 4.2+.
+    
+    Now includes validation for dark world shader backgrounds (luminance < 0.2 or strength < 0.3).
     """
     context = bpy.context
 
@@ -846,6 +898,11 @@ def _draw_scene_object_strokes_if_no_lights():
     # Only draw when there are no lights in scene
     light_objects = [obj for obj in context.scene.objects if obj.type == 'LIGHT']
     if light_objects:
+        return
+    
+    # Validate world shader - only show overlay if background is dark
+    if not _validate_world_shader_darkness(context):
+        # World background is bright enough - no need for overlay
         return
 
     # Get outline method from preferences (with fallback to solid color)

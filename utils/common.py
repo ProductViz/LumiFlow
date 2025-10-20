@@ -21,22 +21,26 @@ def lumi_is_addon_enabled() -> bool:
 def lumi_get_light_collection(scene=None) -> bpy.types.Collection:
     """
     Get or create LumiFlow light collection per scene.
-    
+
     Args:
         scene: Target scene, defaults to current scene
-    
+
     Returns:
-        Collection specific to that scene
+        Collection specific to that scene, or None if addon is not enabled
     """
+    # Check if addon is enabled before creating collections
+    if not lumi_is_addon_enabled():
+        return None
+
     if scene is None:
         scene = bpy.context.scene
-    
+
     if not scene:
         return None
-    
+
     # Use naming convention: LumiFlow_Lights_[SceneName]
     col_name = f"LumiFlow_Lights_{scene.name}"
-    
+
     # Check if collection already exists
     if col_name in bpy.data.collections:
         collection = bpy.data.collections[col_name]
@@ -44,7 +48,7 @@ def lumi_get_light_collection(scene=None) -> bpy.types.Collection:
         if collection.name not in scene.collection.children:
             scene.collection.children.link(collection)
         return collection
-    
+
     # Create new collection for this scene
     try:
         collection = bpy.data.collections.new(col_name)

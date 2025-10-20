@@ -15,7 +15,7 @@ DRAMATIC_CINEMATIC_TEMPLATES = {
         "category": "Dramatic & Cinematic",
         "description": "Cinematic portrait lighting with strong key light, deep shadows, and atmospheric mood",
         "author": "LumiFlow",
-        "version": "1.0",
+        "version": "1.1",
         "lights": [
             {
                 "name": "Dramatic Key",
@@ -25,7 +25,7 @@ DRAMATIC_CINEMATIC_TEMPLATES = {
                     "params": {
                         "azimuth": 45,
                         "elevation": 30,
-                        "distance": 3.5
+                        "distance": 2.2
                     }
                 },
                 "rotation": {
@@ -33,9 +33,9 @@ DRAMATIC_CINEMATIC_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "size": 0.8,
-                    "size_y": 1.2,
-                    "intensity": 140,
+                    "size": 1.0,
+                    "size_y": 1.4,
+                    "intensity": 240,
                     "color": (1.0, 0.95, 0.85),
                     "shape": "RECTANGLE"
                 }
@@ -48,7 +48,7 @@ DRAMATIC_CINEMATIC_TEMPLATES = {
                     "params": {
                         "azimuth": 135,
                         "elevation": 45,
-                        "distance": 3.0
+                        "distance": 2.0
                     }
                 },
                 "rotation": {
@@ -56,7 +56,7 @@ DRAMATIC_CINEMATIC_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "intensity": 90,
+                    "intensity": 160,
                     "color": (1.0, 0.90, 0.75),
                     "spot_size": 0.8,
                     "spot_blend": 0.2
@@ -70,7 +70,7 @@ DRAMATIC_CINEMATIC_TEMPLATES = {
                     "params": {
                         "azimuth": -60,
                         "elevation": 15,
-                        "distance": 4.8
+                        "distance": 3.0
                     }
                 },
                 "rotation": {
@@ -78,8 +78,8 @@ DRAMATIC_CINEMATIC_TEMPLATES = {
                     "offset": (0, 0, 0)
                 },
                 "properties": {
-                    "size": 1.0,
-                    "size_y": 0.8,
+                    "size": 1.2,
+                    "size_y": 1.0,
                     "intensity": 30,
                     "color": (0.85, 0.90, 1.0),
                     "shape": "ELLIPSE"
@@ -110,7 +110,7 @@ DRAMATIC_CINEMATIC_TEMPLATES = {
             }
         ],
         "settings": {
-            "base_distance": 3.8,
+            "base_distance": 2.2,
             "auto_scale": True,
             "preserve_existing": False
         },

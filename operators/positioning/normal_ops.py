@@ -48,8 +48,12 @@ class LUMI_OT_normal_positioning(bpy.types.Operator, BaseModalOperator):
 
     @classmethod
     def poll(cls, context):
-        """Check if operator can run"""
-        return lumi_is_valid_positioning_context(context)
+        """Check if operator can run - requires exactly 1 light selected"""
+        selected_objects = context.selected_objects
+        return (lumi_is_addon_enabled() and
+                getattr(context.scene, 'lumi_positioning_mode_enabled', True) and
+                len(selected_objects) == 1 and
+                selected_objects[0].type == 'LIGHT')
 
     def validate_context(self, context):
         """Validate context for normal positioning operations"""
@@ -90,10 +94,18 @@ class LUMI_OT_normal_positioning(bpy.types.Operator, BaseModalOperator):
     def invoke(self, context, event):
         """Invoke method - starts modal operator for normal positioning"""
         try:
-            
+            # Check if exactly 1 light is selected
+            selected_objects = context.selected_objects
+            if len(selected_objects) != 1:
+                self.report({'WARNING'}, "Normal positioning requires exactly 1 light selected")
+                return {'CANCELLED'}
+            if selected_objects[0].type != 'LIGHT':
+                self.report({'WARNING'}, "Normal positioning requires a light to be selected")
+                return {'CANCELLED'}
+
             self._dragging = False
             self._initial_distances = {}
-            
+
             if not self.validate_context(context):
                 self.report({'ERROR'}, "Invalid context for normal positioning")
                 return {'CANCELLED'}
@@ -140,8 +152,11 @@ class LUMI_OT_normal_positioning(bpy.types.Operator, BaseModalOperator):
             
             detected_mode = detect_positioning_mode(event)
             
+            # If we're already dragging, check if Shift is still held (required for normal positioning)
             if self._dragging:
-                pass
+                # Check if Shift key is still held
+                if not event.shift or event.ctrl or event.alt:
+                    return self.cancel(context)
             elif detected_mode != 'NORMAL':
                 return {'PASS_THROUGH'}
             

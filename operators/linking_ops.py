@@ -44,6 +44,21 @@ _dynamic_menu_classes = []
 _FLAG_UPDATING = "_lumi_updating_light_links"
 _FLAG_GROUP_UPDATE = "_lumi_group_update_in_progress"
 
+def validate_render_engine_for_light_linking(context):
+    """
+    Validate that render engine is Cycles for light linking
+    Returns: (is_valid, error_message)
+    """
+    scene = context.scene
+    render_engine = scene.render.engine
+    
+    if render_engine != 'CYCLES':
+        error_msg = f"Cycles render engine required for Light Linking. Current engine: {render_engine}"
+        logger.warning(error_msg)
+        return False, error_msg
+    
+    return True, ""
+
 def update_linking_from_marked(scene, light_item):
     """Update actual Blender light linking when marked property changes"""
     try:
@@ -1360,6 +1375,12 @@ class LUMI_OT_update_light_linking(bpy.types.Operator):
     )
 
     def execute(self, context):
+        # Validate render engine first
+        is_valid, error_msg = validate_render_engine_for_light_linking(context)
+        if not is_valid:
+            self.report({'ERROR'}, error_msg)
+            return {'CANCELLED'}
+        
         scene = context.scene
         obj_groups = scene.lumi_object_groups
 
@@ -1658,8 +1679,12 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
             if target_obj and target_obj.type == 'MESH':
                 self.target_object_name = target_obj.name
                 result = self.execute_quick_link(context)
-                # Don't return FINISHED - keep modal active for more clicks
-                self.report({'INFO'}, f"Quick Link applied to '{target_obj.name}'. Click another object or press X to exit.")
+                
+                # Only show success message if operation succeeded
+                if result == {'FINISHED'}:
+                    self.report({'INFO'}, f"Quick Link applied to '{target_obj.name}'. Click another object or press X to exit.")
+                # If cancelled (e.g., wrong render engine), error message already shown by execute_quick_link
+                
                 return {'RUNNING_MODAL'}
             else:
                 if target_obj:
@@ -1771,6 +1796,12 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
             logger.error("Quick Link: No target object name specified")
             return {'CANCELLED'}
 
+        # Validate render engine first
+        is_valid, error_msg = validate_render_engine_for_light_linking(context)
+        if not is_valid:
+            self.report({'ERROR'}, error_msg)
+            return {'CANCELLED'}
+
         scene = context.scene
         target_obj_name = self.target_object_name
 
@@ -1872,21 +1903,8 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
             scene[_FLAG_UPDATING] = False
             scene[_FLAG_GROUP_UPDATE] = False
 
-        # Trigger batch linking application for all updated lights
-        if toggled_lights:
-            try:
-                # Apply linking for all lights that were toggled
-                for light_name in light_names:
-                    for light_group in scene.lumi_light_groups:
-                        for light_item in light_group.lights:
-                            if light_item.name == light_name:
-                                update_linking_from_marked(scene, light_item)
-                                break
-                        else:
-                            continue
-                        break
-            except Exception as e:
-                logger.warning(f"Error applying batch linking: {e}")
+        # NOTE: Linking will be applied later in the function (lines 1965+)
+        # We skip update_linking_from_marked here to avoid conflicts with target_group
 
         if not toggled_lights:
             self.report({'WARNING'}, "No lights found in light groups")
@@ -1942,12 +1960,14 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
 
                     # Find marked status dari light groups
                     light_marked = False
+                    found_light = False
                     for light_group in scene.lumi_light_groups:
                         for light_item in light_group.lights:
                             if light_item.name == light_name:
                                 light_marked = light_item.marked
+                                found_light = True
                                 break
-                        if light_marked:
+                        if found_light:
                             break
 
                     # Add to internal links jika marked
@@ -1962,55 +1982,49 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
             finally:
                 scene[_FLAG_UPDATING] = False
 
-            # Process INCLUDE lights as SINGLE BATCH operation
+            # Process INCLUDE lights - MUST loop individually since operator only works on active object
             if lights_to_include:
-                # Clear selection
-                bpy.ops.object.select_all(action='DESELECT')
-
-                # Select all receiver objects
-                for obj in receiver_objects:
-                    obj.select_set(True)
-
-                # Select ALL lights to include in one operation
                 for light_obj in lights_to_include:
+                    # Clear selection
+                    bpy.ops.object.select_all(action='DESELECT')
+
+                    # Select all receiver objects
+                    for obj in receiver_objects:
+                        obj.select_set(True)
+
+                    # Select THIS light and make it active (operator only works on active object)
                     light_obj.select_set(True)
+                    context.view_layer.objects.active = light_obj
 
-                # Set first light as active
-                if lights_to_include:
-                    context.view_layer.objects.active = lights_to_include[0]
+                    try:
+                        bpy.ops.object.light_linking_receivers_link(link_state='INCLUDE')
+                        updated_count += 1
+                        logger.info(f"✓ Linked {light_obj.name} to '{target_obj_name}'")
+                    except Exception as e:
+                        logger.error(f"✗ Failed linking {light_obj.name}: {e}")
+                        self.report({'WARNING'}, f"Failed linking {light_obj.name}: {e}")
 
-                try:
-                    bpy.ops.object.light_linking_receivers_link(link_state='INCLUDE')
-                    updated_count += len(lights_to_include)
-                    logger.info(f"✓ Linked {len(lights_to_include)} lights to '{target_obj_name}'")
-                except Exception as e:
-                    logger.error(f"✗ Failed linking lights: {e}")
-                    self.report({'WARNING'}, f"Failed linking lights: {e}")
-
-            # Process EXCLUDE lights as SINGLE BATCH operation
+            # Process EXCLUDE lights - MUST loop individually since operator only works on active object
             if lights_to_exclude:
-                # Clear selection
-                bpy.ops.object.select_all(action='DESELECT')
-
-                # Select all receiver objects
-                for obj in receiver_objects:
-                    obj.select_set(True)
-
-                # Select ALL lights to exclude in one operation
                 for light_obj in lights_to_exclude:
+                    # Clear selection
+                    bpy.ops.object.select_all(action='DESELECT')
+
+                    # Select all receiver objects
+                    for obj in receiver_objects:
+                        obj.select_set(True)
+
+                    # Select THIS light and make it active (operator only works on active object)
                     light_obj.select_set(True)
+                    context.view_layer.objects.active = light_obj
 
-                # Set first light as active
-                if lights_to_exclude:
-                    context.view_layer.objects.active = lights_to_exclude[0]
-
-                try:
-                    bpy.ops.object.light_linking_receivers_link(link_state='EXCLUDE')
-                    updated_count += len(lights_to_exclude)
-                    logger.info(f"✓ Excluded {len(lights_to_exclude)} lights from '{target_obj_name}'")
-                except Exception as e:
-                    logger.error(f"✗ Failed excluding lights: {e}")
-                    self.report({'WARNING'}, f"Failed excluding lights: {e}")
+                    try:
+                        bpy.ops.object.light_linking_receivers_link(link_state='EXCLUDE')
+                        updated_count += 1
+                        logger.info(f"✓ Excluded {light_obj.name} from '{target_obj_name}'")
+                    except Exception as e:
+                        logger.error(f"✗ Failed excluding {light_obj.name}: {e}")
+                        self.report({'WARNING'}, f"Failed excluding {light_obj.name}: {e}")
 
         finally:
             # Restore selection
@@ -2046,6 +2060,12 @@ class LUMI_OT_clear_light_linking(bpy.types.Operator):
 
     # # Main method for operator execution
     def execute(self, context):
+        # Validate render engine first
+        is_valid, error_msg = validate_render_engine_for_light_linking(context)
+        if not is_valid:
+            self.report({'ERROR'}, error_msg)
+            return {'CANCELLED'}
+        
         scene = context.scene
         links = scene.lumi_object_group_link_status
         links.clear()

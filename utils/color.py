@@ -54,7 +54,28 @@ def lumi_hsv_to_rgb(h: float, s: float, v: float) -> tuple[float, float, float]:
 
 
 def lumi_kelvin_to_rgb(kelvin: float) -> tuple[float, float, float]:
-    """Convert color temperature in Kelvin to RGB values."""
+    """
+    Convert color temperature in Kelvin to RGB values.
+    
+    Standard Color Temperature Ranges (Photography/Lighting):
+    - 1000K - 1800K: Extreme warm (fire, deep red)
+    - 1800K - 2000K: Candlelight (very warm, orange-red)
+    - 2800K - 3200K: Tungsten/Incandescent bulbs (warm, yellow-orange)
+    - 2500K - 3500K: Sunrise/Sunset (golden hour, warm)
+    - 3200K: Studio tungsten standard (indoor lighting)
+    - 4000K - 5000K: Fluorescent (neutral to cool)
+    - 5000K - 6500K: Daylight (natural white, balanced)
+    - 6000K - 7000K: Overcast sky (cool, slight blue)
+    - 7000K - 8000K: Shade (cool, blue tint)
+    - 9000K - 10000K: Clear blue sky (very cool, blue)
+    - 10000K - 20000K: Extreme cool (polar sky, creative effects)
+    
+    Args:
+        kelvin: Color temperature in Kelvin (clamped to 1000-20000K range)
+    
+    Returns:
+        RGB tuple with values in range 0.0-1.0
+    """
     kelvin = max(1000, min(20000, kelvin))
     temp = kelvin / 100.0
     

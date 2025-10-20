@@ -13,7 +13,7 @@ from .normal_ops import LUMI_OT_normal_positioning
 from .target_ops import LUMI_OT_target_positioning
 from .orbit_ops import LUMI_OT_orbit_positioning, LUMI_OT_orbit_angles
 from .free_ops import LUMI_OT_free_positioning
-from .move import LUMI_OT_move_positioning
+from .move_ops import LUMI_OT_move_positioning
 
 from .flip_ops import (
     LUMI_OT_flip_to_camera_front,

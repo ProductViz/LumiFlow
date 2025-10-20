@@ -233,6 +233,12 @@ def lumi_enabled_update(self, context: bpy.types.Context):
         # Close other panels when enabled
         scene.lumi_light_linking_expanded = False
         scene.lumi_color_enabled = False
+        # Ensure positioning mode is enabled when addon is enabled
+        try:
+            if hasattr(scene, 'lumi_positioning_mode_enabled'):
+                scene.lumi_positioning_mode_enabled = True
+        except Exception:
+            pass
         # Addon enabled - activating features
         
         # Force scene update to trigger overlay activation
@@ -250,6 +256,13 @@ def lumi_enabled_update(self, context: bpy.types.Context):
                 # Create a dummy depsgraph for the call
                 lumi_scene_update_handler(bpy.context.scene, bpy.context.evaluated_depsgraph_get())
                 # Scene update handler called directly
+            
+            # Start automatic light picker for natural light selection
+            try:
+                from ..operators.light_picker import start_auto_picker
+                start_auto_picker()
+            except Exception as e:
+                logger.warning(f"Failed to start auto light picker: {e}")
                 
             # Initialize Assign Light system when addon is enabled
             try:
@@ -291,6 +304,12 @@ def lumi_enabled_update(self, context: bpy.types.Context):
         # Addon disabled - cleaning up
         state.scroll_control_enabled = False
         scene.lumi_scroll_control_enabled = False
+        # Disable positioning mode when addon is disabled
+        try:
+            if hasattr(scene, 'lumi_positioning_mode_enabled'):
+                scene.lumi_positioning_mode_enabled = False
+        except Exception:
+            pass
         
         # Clean up overlay handlers
         try:
@@ -306,6 +325,13 @@ def lumi_enabled_update(self, context: bpy.types.Context):
             lumi_disable_stroke_overlay_handler()
             lumi_disable_tips_overlay_handler()
             lumi_disable_cursor_overlay_handler()
+            
+            # Stop automatic light picker
+            try:
+                from ..operators.light_picker import stop_auto_picker
+                stop_auto_picker()
+            except Exception as e:
+                logger.warning(f"Failed to stop auto light picker: {e}")
             
             # Cleanup Assign Light system when addon is disabled
             try:

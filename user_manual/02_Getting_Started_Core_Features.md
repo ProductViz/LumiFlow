@@ -406,8 +406,9 @@ The LumiFlow panel is organized into logical sections from top to bottom:
 
 **Angle Control**
 - Range: 0° - 180°
-- Spot lights only
-- Cone width adjustment
+- Spot lights: Cone width adjustment
+- Sun lights: Angular diameter
+- Area lights: Spread (Cycles render engine only)
 
 **Blend Control**
 - Range: 0.0 - 1.0

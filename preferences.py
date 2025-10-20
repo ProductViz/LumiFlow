@@ -44,6 +44,17 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         precision=1,
         description="Combined scale factor for font size and line spacing (0.3x to 3.0x). Perfect for HD, 2K, 4K displays."
     )
+    
+    overlay_keymap_display_mode: bpy.props.EnumProperty(
+        name="Keymap Display Mode",
+        description="Choose how keyboard shortcuts are displayed in overlay tips",
+        items=[
+            ('ICONS', "Icons", "Display keyboard shortcuts as visual icons (recommended for better readability)", 'IMAGE_DATA', 0),
+            ('TEXT', "Text", "Display keyboard shortcuts as plain text", 'FONT_DATA', 1),
+        ],
+        default='ICONS',
+        update=lambda self, context: self.force_viewport_redraw()
+    )
 
     @property
     def overlay_font_scale(self):
@@ -72,7 +83,7 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         
         # Header
         header = layout.row()
-        header.label(text="🎨 LumiFlow Overlay Customization", icon='PREFERENCES')
+        header.label(text="LumiFlow Overlay Customization", icon='PREFERENCES')
         
         
         # =====================================================================
@@ -80,11 +91,26 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         # =====================================================================
         
         box = layout.box()
-        box.label(text="📱 Display & Font Settings", icon='FONTPREVIEW')
         
         col = box.column(align=True)
-        col.label(text="Display Scale (Font & Spacing):")
-        col.prop(self, "overlay_display_scale", slider=True)
+        
+        # Display Scale - Label and slider in one row with wider slider
+        split = col.split(factor=0.40, align=True)
+        split.label(text="Display Scale:")
+        row = split.row(align=True)
+        row.prop(self, "overlay_display_scale", slider=True, text="")
+        
+        col.separator()
+        
+        # =====================================================================
+        # KEYMAP DISPLAY MODE
+        # =====================================================================
+        
+        # Keymap Display Mode - Label and buttons in one row
+        split = col.split(factor=0.60, align=True)
+        split.label(text="Keymap Display:")
+        row = split.row(align=True)
+        row.prop(self, "overlay_keymap_display_mode", expand=True)
         
         
         
@@ -97,9 +123,9 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         info_col.label(text="💡 Tips:", icon='QUESTION')
         info_col.label(text="• Display Scale: Adjust for your screen resolution (0.3x for large screens, 2.0x+ for small/high-DPI)")
         info_col.label(text="• Controls both font size and line spacing proportionally")
+        info_col.label(text="• Keymap Display: Icons mode shows visual keyboard icons, Text mode shows plain text shortcuts")
         info_col.label(text="• Changes take effect immediately in the 3D viewport")
 
 
 # Export for registration
 __all__ = ['LumiFlowAddonPreferences']
-

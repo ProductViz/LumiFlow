@@ -56,8 +56,12 @@ class LUMI_OT_orbit_positioning(bpy.types.Operator, BaseModalOperator):
 
     @classmethod
     def poll(cls, context):
-        # # Get selected objects in scene
-        return lumi_is_addon_enabled() and any(obj.type == 'LIGHT' for obj in context.selected_objects)
+        """Check if the operator can be invoked - requires exactly 1 light selected"""
+        selected_objects = context.selected_objects
+        return (lumi_is_addon_enabled() and
+                getattr(context.scene, 'lumi_positioning_mode_enabled', True) and
+                len(selected_objects) == 1 and
+                selected_objects[0].type == 'LIGHT')
 
     def validate_context(self, context):
         """Validate context for orbit positioning operations"""
@@ -70,6 +74,15 @@ class LUMI_OT_orbit_positioning(bpy.types.Operator, BaseModalOperator):
     def invoke(self, context, event):
         """Invoke method - starts modal operator for orbit positioning"""
         try:
+            # Check if exactly 1 light is selected
+            selected_objects = context.selected_objects
+            if len(selected_objects) != 1:
+                self.report({'WARNING'}, "Orbit positioning requires exactly 1 light selected")
+                return {'CANCELLED'}
+            if selected_objects[0].type != 'LIGHT':
+                self.report({'WARNING'}, "Orbit positioning requires a light to be selected")
+                return {'CANCELLED'}
+
             # Validate inputs
             if not self.validate_context(context):
                 self.report({'ERROR'}, "Invalid context for orbit positioning")

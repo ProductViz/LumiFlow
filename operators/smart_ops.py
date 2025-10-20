@@ -26,7 +26,7 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
     bl_idname = "lumi.smart_control"
     bl_label = "Light Smart Control"
     bl_description = "Toggle smart control or control light properties with mouse movement"
-    bl_options = {'REGISTER'}
+    bl_options = {'REGISTER', 'UNDO'}
 
     # Property for preset mode from keymap
     mode: bpy.props.EnumProperty(
@@ -76,12 +76,12 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
             'accel_factor': 1.8
         },
         'TEMPERATURE': {
-            'base': 0.006,
-            'speed_factor': 1.3,
-            'accel_factor': 1.6
+            'base': 0.025,  # Increased from 0.006 to allow full range (1000K-20000K)
+            'speed_factor': 1.5,  # Increased for better fast drag response
+            'accel_factor': 2.0   # Increased for better acceleration
         },
         'BLEND': {
-            'base': 0.002,
+            'base': 0.008,
             'speed_factor': 0.9,
             'accel_factor': 1.3
         }
@@ -114,6 +114,28 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
             if not selected_lights:
                 self.report({'WARNING'}, 'No lights selected! Please select at least one light object.')
                 return {'CANCELLED'}
+
+            # Store initial values for undo on ESC
+            self._initial_values = {}
+            scene = context.scene
+            self._initial_scene_temp = getattr(scene, 'lumi_color_temperature', 5500)
+            
+            # Reset warning flags for new modal session
+            self._spread_warning_shown = False
+            
+            for light in selected_lights:
+                self._initial_values[light.name] = {
+                    'location': light.location.copy(),
+                    'energy': light.data.energy,
+                    'color': light.data.color[:],
+                    'shadow_soft_size': getattr(light.data, 'shadow_soft_size', 0.0),
+                    'size': getattr(light.data, 'size', 0.0),
+                    'size_y': getattr(light.data, 'size_y', 0.0),
+                    'spot_size': getattr(light.data, 'spot_size', 0.0),
+                    'spot_blend': getattr(light.data, 'spot_blend', 0.0),
+                    'angle': getattr(light.data, 'angle', 0.0),
+                    'spread': getattr(light.data, 'spread', 0.0)
+                }
 
             state = get_state()
             
@@ -296,9 +318,28 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
 
             def cleanup_and_exit(undo_changes=False, message='Changes confirmed'):
                 if undo_changes:
-                    for obj in selected_lights:
-                        if obj.name in self._initial_values:
-                            obj.data.energy = self._initial_values[obj.name]
+                    # Restore all initial values
+                    scene.lumi_color_temperature = self._initial_scene_temp
+                    for light in selected_lights:
+                        if light.name in self._initial_values:
+                            initial = self._initial_values[light.name]
+                            light.location = initial['location']
+                            light.data.energy = initial['energy']
+                            light.data.color = initial['color']
+                            if hasattr(light.data, 'shadow_soft_size'):
+                                light.data.shadow_soft_size = initial['shadow_soft_size']
+                            if hasattr(light.data, 'size'):
+                                light.data.size = initial['size']
+                            if hasattr(light.data, 'size_y'):
+                                light.data.size_y = initial['size_y']
+                            if hasattr(light.data, 'spot_size'):
+                                light.data.spot_size = initial['spot_size']
+                            if hasattr(light.data, 'spot_blend'):
+                                light.data.spot_blend = initial['spot_blend']
+                            if hasattr(light.data, 'angle'):
+                                light.data.angle = initial['angle']
+                            if hasattr(light.data, 'spread'):
+                                light.data.spread = initial['spread']
                 state.unregister_modal('scroll')
                 scene.lumi_scroll_control_enabled = False
                 lumi_disable_cursor_overlay_handler()
@@ -414,11 +455,18 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
                             spot_delta = angle_delta * math.pi / 180.0  
                             data.spot_size = max(0.0, min(math.pi, data.spot_size + spot_delta))
                         elif data.type == 'AREA' and hasattr(data, 'spread'):
-                            if data.spread > 1.0:
-                                data.spread = 0.5  
+                            # CRITICAL: Spread is only available in Cycles render engine
+                            if scene.render.engine != 'CYCLES':
+                                # Skip spread adjustment if not using Cycles
+                                # Show warning only once per modal session
+                                if not hasattr(self, '_spread_warning_shown'):
+                                    self.report({'WARNING'}, f'Spread control requires Cycles render engine (current: {scene.render.engine})')
+                                    self._spread_warning_shown = True
+                                continue
                             
-                            spread_delta = angle_delta / 180.0  
-                            data.spread = max(0.0, min(1.0, data.spread + spread_delta))
+                            # Spread is stored in radians (0-π), convert angle_delta to radians
+                            spread_delta = angle_delta * math.pi / 180.0
+                            data.spread = max(0.0, min(math.pi, data.spread + spread_delta))
                             
                 elif scroll_mode == 'TEMPERATURE':
                     scene.lumi_status_temperature_active = True  

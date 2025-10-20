@@ -406,6 +406,9 @@ def on_scene_update(depsgraph):
         # Check camera change
         if manager.is_initialized:
             manager.check_camera_change(bpy.context)
+
+            # Rebuild camera assignments to handle light renames
+            manager._rebuild_camera_assignments()
     except Exception:
         # Silently fail to avoid breaking Blender
         pass

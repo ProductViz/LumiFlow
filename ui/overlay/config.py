@@ -283,6 +283,7 @@ class ViewportOverlayManager:
         self.active_viewport = None
         self._current_context_area_id = None
         self._viewport_id_map = {}  # context.area -> stable_id
+        self.saved_overlay_states = {}  # stable_id -> saved overlay settings
 
     def _get_stable_viewport_id(self, context):
         """Get a stable identifier for the viewport based on area properties."""
@@ -364,9 +365,59 @@ class ViewportOverlayManager:
         if viewport_id not in self.viewport_states:
             self.viewport_states[viewport_id] = {
                 'overlay_info': True,  # Default to enabled
-                'overlay_tips': True   # Default to enabled
+                'overlay_tips': False,  # Default to disabled
+                'clean_viewport': False  # Default to disabled (overlays visible)
             }
             self.active_viewport = viewport_id
+    
+    def save_viewport_overlay_states(self, context, space_data):
+        """Save current overlay states for a specific viewport."""
+        viewport_id = self.get_viewport_id(context)
+        if viewport_id is None:
+            return
+        
+        self.saved_overlay_states[viewport_id] = {
+            'ortho_grid': space_data.overlay.show_ortho_grid,
+            'floor': space_data.overlay.show_floor,
+            'axis_x': space_data.overlay.show_axis_x,
+            'axis_y': space_data.overlay.show_axis_y,
+            'cursor': space_data.overlay.show_cursor,
+            'annotation': space_data.overlay.show_annotation,
+            'text': space_data.overlay.show_text,
+            'bones': space_data.overlay.show_bones,
+            'motion_paths': space_data.overlay.show_motion_paths,
+            'object_origins': space_data.overlay.show_object_origins,
+            'extras': space_data.overlay.show_extras,
+            'relationship_lines': space_data.overlay.show_relationship_lines,
+            'viewer_attribute': space_data.overlay.show_viewer_attribute,
+            'reconstruction': space_data.show_reconstruction,
+            'gizmo': space_data.show_gizmo,
+        }
+    
+    def restore_viewport_overlay_states(self, context, space_data):
+        """Restore saved overlay states for a specific viewport."""
+        viewport_id = self.get_viewport_id(context)
+        if viewport_id is None or viewport_id not in self.saved_overlay_states:
+            return False
+        
+        saved = self.saved_overlay_states[viewport_id]
+        space_data.overlay.show_ortho_grid = saved.get('ortho_grid', True)
+        space_data.overlay.show_floor = saved.get('floor', True)
+        space_data.overlay.show_axis_x = saved.get('axis_x', True)
+        space_data.overlay.show_axis_y = saved.get('axis_y', True)
+        space_data.overlay.show_cursor = saved.get('cursor', True)
+        space_data.overlay.show_annotation = saved.get('annotation', True)
+        space_data.overlay.show_text = saved.get('text', True)
+        space_data.overlay.show_bones = saved.get('bones', True)
+        space_data.overlay.show_motion_paths = saved.get('motion_paths', True)
+        space_data.overlay.show_object_origins = saved.get('object_origins', True)
+        space_data.overlay.show_extras = saved.get('extras', True)
+        space_data.overlay.show_relationship_lines = saved.get('relationship_lines', True)
+        space_data.overlay.show_viewer_attribute = saved.get('viewer_attribute', True)
+        space_data.show_reconstruction = saved.get('reconstruction', True)
+        space_data.show_gizmo = saved.get('gizmo', True)
+        
+        return True
 
     def debug_print_all_states(self):
         """Debug function to log all viewport states."""

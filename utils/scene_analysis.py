@@ -234,24 +234,27 @@ def is_object_in_frustum(obj: bpy.types.Object, frustum_planes: List[Dict[str, A
 def get_objects_in_camera_view(context: bpy.types.Context, camera_obj: bpy.types.Object = None) -> List[bpy.types.Object]:
     """
     Get all objects visible in camera view.
-    
+
     Args:
         context: Blender context
         camera_obj: Camera object (if None, use active camera)
-    
+
     Returns:
         List of objects in camera view
     """
     if camera_obj is None:
         camera_obj = context.scene.camera
-    
+
     if not camera_obj:
         return []
-    
+
+    # Get frustum planes for the camera
+    frustum_planes = get_camera_frustum_planes(context, camera_obj)
+
     # Collect all objects in frustum
     objects_in_view = []
     total_objects_checked = 0
-    
+
     for obj in context.scene.objects:
         if obj.type in ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT']:
             total_objects_checked += 1
