@@ -426,6 +426,18 @@
 - Disable mesh outlines
 - Hide lights when not adjusting
 - Use Solid shading mode for positioning
+- Clear scene analysis cache if needed
+
+**Problem: Scene analysis taking too long**
+
+**Solutions:**
+- Reduce scene complexity (fewer objects)
+- Disable spatial analysis for simple scenes
+- Use quick bounds calculation instead of full analysis
+- Limit material analysis depth
+- Enable caching for repeated operations
+- Use subject classification selectively
+- Disable advanced features for basic lighting
 
 **Problem: Slow rendering**
 
@@ -444,6 +456,8 @@
 - Reduce active viewport overlays
 - Check for other resource-heavy addons
 - Restart Blender to clear memory
+- Use scene analysis selectively (disable for simple scenes)
+- Enable performance caching for repeated operations
 
 ---
 
@@ -556,19 +570,19 @@ A: Both! Quick Link works with any selection. Groups are for organization.
 
 **Q: How many lights is too many?**
 
-A: Depends on hardware. Generally:
+A: Depends on hardware and scene analysis settings. Generally:
 - 1-10 lights: No issues
-- 10-30 lights: Monitor performance
-- 30-50 lights: Optimize settings
-- 50+ lights: Use light linking, reduce sizes
+- 10-30 lights: Monitor performance, consider LOD
+- 30-50 lights: Optimize settings, use light linking
+- 50+ lights: Use light linking, reduce sizes, disable advanced analysis
 
 **Q: Does LumiFlow slow down Blender?**
 
-A: Minimal impact when disabled. Overlays use GPU, but LOD system optimizes. Disable when not using.
+A: Minimal impact when disabled. Scene analysis and overlays use GPU with LOD optimization. Advanced features like spatial analysis can be disabled for simple scenes. Performance caching helps with repeated operations.
 
 **Q: Can I use LumiFlow on low-end hardware?**
 
-A: Yes! Disable overlays, use Solid mode for positioning, reduce icon scale. Addon itself is lightweight.
+A: Yes! Disable overlays, use Solid mode for positioning, reduce icon scale. Disable advanced scene analysis features for simple scenes. The addon uses efficient caching and LOD systems to maintain performance.
 
 ### Compatibility
 
@@ -592,11 +606,21 @@ A: Yes! LumiFlow doesn't modify existing data. Can add LumiFlow lights to any sc
 
 **Q: I'm a beginner. Where should I start?**
 
-A: 
+A:
 1. Read Part 1 (Installation) and Part 2 (Getting Started)
 2. Follow Quick Start Guide (5 minutes)
 3. Try different templates on simple objects
 4. Progress to Part 3 (Templates) when comfortable
+5. Experiment with scene analysis features for smarter lighting
+
+**Q: What are the advanced scene analysis features?**
+
+A: LumiFlow includes AI-inspired scene understanding:
+- **Subject Classification**: Automatically detects 20+ subject types (portrait, product, architecture)
+- **Material Analysis**: Adapts lighting based on material properties
+- **Obstruction Detection**: Prevents lights from being placed inside objects
+- **Spatial Relationships**: Understands object positioning and interactions
+- These features work automatically but can be disabled for performance
 
 **Q: How long to learn LumiFlow?**
 
@@ -857,10 +881,10 @@ MMB + Drag      Adjust Light Property
 
 ### Template Categories
 ```
-Studio & Commercial (12)    Product, Portrait, E-commerce
-Dramatic & Cinematic (10)   Film Noir, Horror, Action
-Environment & Realistic (12) Golden Hour, Daylight, Night
-Utilities & Single (6)      Building Blocks
+Studio & Commercial (6)     Product, Portrait, E-commerce
+Dramatic & Cinematic (1)    Film Noir, Horror, Action
+Environment & Realistic (1) Golden Hour, Daylight, Night
+Utilities & Single (7)      Building Blocks
 ```
 
 ### Assignment Modes

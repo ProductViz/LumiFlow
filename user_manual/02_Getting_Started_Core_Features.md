@@ -130,19 +130,15 @@ The LumiFlow panel is organized into logical sections from top to bottom:
 ┌─────────────────────────────┐
 │   [Enable/Disable Toggle]   │  ← Master switch
 ├─────────────────────────────┤
-│    [Assignment Mode]         │  ← Scene vs Camera
+│    [Assignment Mode]        │  ← Scene vs Camera
 ├─────────────────────────────┤
-│    [Quick Templates]         │  ← 6 popular templates
+│    [Quick Templates]        │  ← 6 popular templates
 ├─────────────────────────────┤
-│    [All Templates Browser]   │  ← Access all 40+ templates
+│    [Positioning Controls]   │  ← enable disable positioning
 ├─────────────────────────────┤
-│    [Positioning Controls]    │  ← 6 positioning modes
+│    [Smart Control]          │  ← enable disable smart control
 ├─────────────────────────────┤
-│    [Light Linking]           │  ← Link lights to objects
-├─────────────────────────────┤
-│    [Overlay Settings]        │  ← Visual feedback config
-├─────────────────────────────┤
-│    [Support & Info]          │  ← Help & community links
+│    [Overlay Settings & Donate] │  ← Visual feedback config
 └─────────────────────────────┘
 ```
 
@@ -207,85 +203,77 @@ The LumiFlow panel is organized into logical sections from top to bottom:
 - Configure and click OK
 - Lights are created instantly
 
-### Section 4: All Templates Browser
+### Section 4: Positioning Controls
 
 **Location:** Below quick templates
 
-**Purpose:** Access to complete template library (40+ templates)
-
-**Organization:** Four categories
-1. Studio & Commercial (12 templates)
-2. Dramatic & Cinematic (10 templates)
-3. Environment & Realistic (12 templates)
-4. Utilities & Single Lights (6 templates)
-
-**Interface:**
-- Expandable categories (click to expand/collapse)
-- Each template shows:
-  - Name
-  - Brief description
-  - Light count
-  - Apply button
-
-### Section 5: Positioning Controls
-
-**Location:** Middle panel
-
-**Purpose:** Select which positioning mode to use
-
-**6 Available Modes:**
-1. **Highlight** - Position at specular highlight point
-2. **Normal** - Align with surface normal
-3. **Target** - Point light at selected objects
-4. **Orbit** - Rotate around pivot point
-5. **Free** - Manual XYZ coordinate input
-6. **Move** - Interactive drag-based movement
-
-**Interface:**
-- Radio buttons or dropdown to select mode
-- Description of active mode
-- Apply button (for some modes)
-
-### Section 6: Light Linking
-
-**Location:** Lower-middle panel
-
-**Purpose:** Control which lights affect which objects
+**Purpose:** Enable/disable positioning system
 
 **Controls:**
-- **Create Group** - Make object group from selection
-- **Quick Link** - Link active light to selected objects
-- **Mode Toggle** - Include vs Exclude
-- **Group List** - Show existing groups
+- Large toggle button: **✅ POSITIONING ENABLED** / **❌ POSITIONING DISABLED**
+- When enabled: All positioning modes (Highlight, Normal, Target, etc.) are active
+- When disabled: Positioning system is inactive
 
-**Quick Link Shortcut:** `Ctrl+Shift+X`
+**Keyboard Shortcut:** `P` key
 
-### Section 7: Overlay Settings
+**Visual Feedback:**
+- **Enabled**: Button shows "✅ POSITIONING ENABLED" in green
+- **Disabled**: Button shows "❌ POSITIONING DISABLED" in gray
 
-**Location:** Lower panel
+### Section 5: Smart Control
 
-**Purpose:** Configure viewport visual feedback
+**Location:** Below positioning controls
 
-**Options:**
-- ☑️ **Show Light Icons** - Display light type icons
-- ☑️ **Show Direction Arrows** - Show light orientation
-- ☑️ **Show Mesh Outlines** - Highlight subject objects
-- ☑️ **Show Text Labels** - Display light names
-- **Icon Scale** slider (0.5 - 2.0)
-- ☑️ **Enable LOD** - Performance optimization
+**Purpose:** Enable/disable smart control system for mouse-based property adjustments
 
-### Section 8: Support & Info
+**Controls:**
+- Large toggle button: **✅ SMART CONTROL ENABLED** / **❌ SMART CONTROL DISABLED**
+- When enabled: Mouse drag controls (Distance, Power, Scale, etc.) are active
+- When disabled: Smart control system is inactive
 
-**Location:** Bottom of panel
+**Additional Settings (when enabled):**
+- **Scale Axis** selector: XY (Uniform), X only, Y only
+- Only available for Area lights with Rectangle/Ellipse shapes
+- Controls which axis to scale when using Scale control
 
-**Purpose:** Access help and community resources
+**Keyboard Shortcut:** No direct shortcut (activated via mouse gestures)
 
-**Contains:**
-- **Documentation** link
-- **Report Bug** link
-- **Discord Community** link
-- **Version** number display
-- **Donate** button (optional support)
+**Visual Feedback:**
+- **Enabled**: Button shows "✅ SMART CONTROL ENABLED" in green
+- **Disabled**: Button shows "❌ SMART CONTROL DISABLED" in gray
+
+### Section 6: Overlay Settings & Donate
+
+**Location:** Bottom panel
+
+**Purpose:** Configure viewport visual feedback and access support options
+
+**Overlay Controls:**
+- **Tips Button** (?) - Toggle overlay tips display
+- **Info Button** (i) - Toggle overlay info display
+- **Clean Viewport** - Toggle clean viewport mode
+- **Light Picker** - Toggle light picker mode
+
+**Support Controls:**
+- **Help Button** (?) - Open user guide
+- **Check Updates** - Toggle update panel
+- **Donate** - Toggle donation panel
+
+**Conditional Panels:**
+- **Update Panel**: Shows when "Check updates" is enabled
+  - Displays current version vs latest version
+  - Update button when new version available
+- **Donate Panel**: Shows when "Donate" is enabled
+  - Links to GitHub Sponsors, Patreon, Ko-fi
+  - Support information
+
+### Removed Sections
+
+**Note:** The following sections have been removed or reorganized in the new panel layout:
+
+- **All Templates Browser** - Now accessed via pie menus (`Ctrl+Shift+A`)
+- **Light Linking** - Now accessed via pie menus (`Ctrl+Shift+X`)
+- **Support & Info** - Integrated into overlay settings section
 
 ---
 

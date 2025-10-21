@@ -97,7 +97,7 @@ Free, open-source, and community-powered.
 | **Modifier + MMB Drag** | Smart Control (adjust light properties) |
 | **Modifier + LMB Drag** | Positioning Mode (move or align lights) |
 | **Ctrl + Shift + A** | Add smart lights |
-| **Ctrl + Shift + C** | Open Flip Menu |
+| **Ctrl + Shift + F** | Open Flip Menu |
 | **Ctrl + Shift + X** | Quick Link to Target |
 | **Ctrl + Shift + D** | Quick Solo Light | 
 

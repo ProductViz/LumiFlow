@@ -66,7 +66,7 @@ from .ui.main_panel import (
 )
 
 # Import update checker operators
-from .operators.panels_ops import LUMI_OT_check_update, LUMI_OT_update_addon, LUMI_OT_toggle_donate_panel, LUMI_OT_toggle_positioning_mode, LUMI_OT_toggle_viewport_overlay
+from .operators.panels_ops import LUMI_OT_check_update, LUMI_OT_update_addon, LUMI_OT_toggle_donate_panel, LUMI_OT_toggle_positioning_mode, LUMI_OT_toggle_smart_control_mode, LUMI_OT_toggle_viewport_overlay
 
 # Template settings panel classes have been deleted
 
@@ -155,7 +155,9 @@ from .utils.properties import (
     lumi_light_linking_expanded_update,
     lumi_color_controls_expanded_update,
     lumi_light_linking_expanded_accordion_update,
-    lumi_scroll_settings_expanded_update
+    lumi_scroll_settings_expanded_update,
+    lumi_positioning_mode_enabled_update,
+    lumi_smart_control_mode_enabled_update
 )
 
 def show_update_panel_update(self, context):
@@ -300,6 +302,7 @@ update_classes = [
     LUMI_OT_update_addon,
     LUMI_OT_toggle_donate_panel,
     LUMI_OT_toggle_positioning_mode,
+    LUMI_OT_toggle_smart_control_mode,
     LUMI_OT_toggle_viewport_overlay,
 ]
 
@@ -379,9 +382,15 @@ def register_properties() -> None:
             default=True,
             update=lumi_positioning_mode_enabled_update
         )),
+        ("lumi_smart_control_mode_enabled", bpy.props.BoolProperty(
+            name="Smart Control Mode Enabled",
+            description="Enable/disable smart control mode. When disabled, modifier+MMB drag uses default Blender behavior",
+            default=True,
+            update=lumi_smart_control_mode_enabled_update
+        )),
         ("lumi_status_angle_active", bpy.props.BoolProperty(default=False)),        
         ("lumi_enable_pending", bpy.props.BoolProperty(default=False)),
-        ("lumi_scroll_control_enabled", bpy.props.BoolProperty(name="Smart Control Enabled", default=False)),
+        ("lumi_smart_control_enabled", bpy.props.BoolProperty(name="Smart Control Enabled", default=False)),
         ("lumi_show_overlay_info", bpy.props.BoolProperty(name="Show Overlay Info", description="Show/hide the detailed light info on screen", default=True)),
         ("lumi_show_overlay_tips", bpy.props.BoolProperty(name="Show Overlay Tips", description="Show/hide the tips on screen", default=False)),
         ("lumi_smart_mode", bpy.props.StringProperty(name="Smart Mode", default="DISTANCE")),
@@ -499,6 +508,11 @@ def register_properties() -> None:
             default=False,
             update=show_donate_panel_update
         )),
+        ("enable_light_picker", bpy.props.BoolProperty(
+            name="Enable Light Picker",
+            description="Enable light picker and show unselected light overlays",
+            default=True
+        )),
         ("lumi_clean_viewport_active", bpy.props.BoolProperty(
             name="Clean Viewport Active",
             description="State of clean viewport toggle",
@@ -551,7 +565,7 @@ def unregister_properties() -> None:
         "lumi_distance_step", "lumi_scale_step", "lumi_power_sensitivity", "lumi_scroll_settings_expanded", "lumi_light_linking_expanded",
         "lumi_color_enabled", "lumi_color_temperature", "lumi_color_step", "lumi_smart_template_expanded", 
         "light_target_face_location", "lumi_overlay_info_enabled", "lumi_status_angle_active",
-        "lumi_enable_pending", "lumi_scroll_control_enabled", "lumi_smart_mode",
+        "lumi_enable_pending", "lumi_smart_control_enabled", "lumi_smart_mode",
         "lumi_status_distance_active", "lumi_status_power_active", "lumi_status_scale_active", 
         "lumi_status_temperature_active", "lumi_status_hue_active", "lumi_status_saturation_active",
         "lumi_show_overlay_info", "lumi_show_overlay_tips", "lumi_show_keymap_icons", "lumi_icon_size", "lumi_smart_mouse_x", "lumi_smart_mouse_y",
@@ -574,7 +588,7 @@ def unregister_properties() -> None:
         "lumi_template_view_mode", "lumi_template_favorites", "lumi_template_auto_scale",
         "lumi_template_camera_relative", "lumi_template_intensity_multiplier", "lumi_template_size_multiplier",
         "lumi_template_manual_distance", "lumi_template_preserve_existing", "lumi_template_use_material_adaptation",
-        "show_donate_panel",
+        "show_donate_panel", "enable_light_picker",
         # Clean Viewport Properties
         "lumi_clean_viewport_active", "lumi_saved_overlay_ortho_grid", "lumi_saved_overlay_floor",
         "lumi_saved_overlay_axis_x", "lumi_saved_overlay_axis_y", "lumi_saved_overlay_cursor",
@@ -695,6 +709,7 @@ def register_keymaps() -> None:
             ('lumi.cycle_lights_modal', 'D', 'PRESS', False, False, False),
             ('lumi.quick_solo_light', 'D', 'PRESS', True, True, False),
             ('lumi.toggle_positioning_mode', 'P', 'PRESS', False, False, False),
+            ('lumi.toggle_smart_control_mode', 'F', 'PRESS', False, False, False),
         ]
         for op, key, action, ctrl, shift, alt in shortcuts:
             kmi = km.keymap_items.new(op, key, action, ctrl=ctrl, shift=shift, alt=alt)

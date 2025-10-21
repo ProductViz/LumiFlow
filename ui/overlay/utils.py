@@ -73,7 +73,7 @@ def get_overlay_positions(context: bpy.types.Context, region) -> tuple:
 
     # Tips panel - always on the left side
     tips_x = margin  # Left side with margin
-    tips_y = margin + 60  # Lift tips slightly upwards
+    tips_y = margin + 20  # Lower position
 
     return (info_x, info_y), (tips_x, tips_y)
 
@@ -213,12 +213,13 @@ def draw_text(
                 blf.size(font_id, current_font_size)
                 
                 value_text = value_lines[0]
-                if ":" in value_text and is_tips:
-                    parts = value_text.split(":", 1)
-                    description = parts[0].strip()
-                    keymap_text = parts[1].strip() if len(parts) > 1 else ""
+                if value_text and is_tips and not value_text.startswith(":"):
+                    # New format: value contains only keymap text (e.g., "Ctrl + MMB_Drag")
+                    # Label is already drawn separately
+                    keymap_text = value_text.strip()
                     
-                    desc_width = blf.dimensions(font_id, description)[0]
+                    # Get label width for positioning
+                    desc_width = blf.dimensions(font_id, line)[0]
                     
                     # Set value position based on alignment
                     if alignment == 'right':
@@ -232,9 +233,6 @@ def draw_text(
                         else:
                             adjusted_offset = int(x_value_offset * font_scale * 0.75)  # Use 75% of original offset
                             value_x = x + adjusted_offset
-                        
-                    blf.position(font_id, value_x, current_y, 0)
-                    blf.draw(font_id, description)
                     
                     if keymap_text:
                         # Check user preference for keymap display mode
@@ -247,12 +245,12 @@ def draw_text(
                             pass
                         
                         if use_icons:
-                            # ICONS MODE: Render keyboard icons
+                            # ICONS MODE: Render keyboard icons (no colon separator)
                             try:
                                 from .icon_manager import get_icon_manager
                                 icon_manager = get_icon_manager()
                                 
-                                icon_x = value_x + desc_width + 5
+                                icon_x = value_x
                                 icon_size = icon_manager.get_icon_size()
                                 vertical_offset = int(current_font_size * 0.9)  # Raise by 30% of font size
                                 icon_y = current_y - icon_size + vertical_offset
@@ -276,15 +274,13 @@ def draw_text(
                                     blf.position(font_id, text_x, current_y, 0)
                                     blf.draw(font_id, remaining_text)
                             except Exception as e:
-                                # Fallback to text mode if icons fail
-                                fallback_x = value_x + desc_width + 5
-                                blf.position(font_id, fallback_x, current_y, 0)
-                                blf.draw(font_id, keymap_text)
+                                # Fallback to text mode if icons fail (with colon)
+                                blf.position(font_id, value_x, current_y, 0)
+                                blf.draw(font_id, ": " + keymap_text)
                         else:
-                            # TEXT MODE: Render plain text
-                            text_x = value_x + desc_width + 5
-                            blf.position(font_id, text_x, current_y, 0)
-                            blf.draw(font_id, keymap_text)
+                            # TEXT MODE: Render plain text with colon separator
+                            blf.position(font_id, value_x, current_y, 0)
+                            blf.draw(font_id, ": " + keymap_text)
                 else:
                     value_width = blf.dimensions(font_id, value_text)[0]
                     

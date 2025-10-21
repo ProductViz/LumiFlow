@@ -106,6 +106,36 @@ def draw_screen_aligned_circle(center_world: Vector, radius: float = 0.00001, co
         if i + 1 < len(points):
             batch_shapes.extend([points[i], points[i + 1]])
 
+def draw_circle_in_screen_space(center_world: Vector, radius_pixels: float, region=None, rv3d=None, batch_shapes=None):
+    """Draw circle with radius specified in screen pixels (for clickable area indicator)."""
+    if batch_shapes is None:
+        return
+        
+    screen_pos = view3d_utils.location_3d_to_region_2d(region, rv3d, center_world)
+    if not screen_pos:
+        return
+    
+    points = []
+    segments = 32  # More segments for smoother circle
+    for i in range(segments):
+        angle = 2 * math.pi * i / segments
+        # Calculate screen space offset in pixels
+        offset = Vector((math.cos(angle), math.sin(angle))) * radius_pixels
+        screen = screen_pos + offset
+        
+        # Convert screen position back to world space
+        ray_origin = view3d_utils.region_2d_to_origin_3d(region, rv3d, screen)
+        ray_dir = view3d_utils.region_2d_to_vector_3d(region, rv3d, screen)
+        
+        # Calculate depth to keep circle at same depth as center
+        depth = (center_world - ray_origin).dot(rv3d.view_rotation @ Vector((0, 0, -1)))
+        point = ray_origin + ray_dir * depth
+        points.append(point)
+    
+    # Add line segments to batch (connect consecutive points)
+    for i in range(len(points)):
+        batch_shapes.extend([points[i], points[(i + 1) % len(points)]])
+
 def draw_sun_icon(center: Vector, region=None, rv3d=None, batch_shapes=None):
     screen_pos = view3d_utils.location_3d_to_region_2d(region, rv3d, center)
     if not screen_pos:
@@ -356,7 +386,7 @@ def draw_spot_cone(light, target_pos: Vector, cam_pos: Vector, region=None, rv3d
     edge2 = cone_base + (q2 @ proj) * cone_radius
 
     edge_distance = (edge1 - edge2).length
-    if edge_distance < 2.0:  # not drawn if too narrow
+    if edge_distance < 0.5:  # not drawn if too narrow
         return
 
     # Add cone lines
@@ -424,14 +454,23 @@ def draw_light_visualization(light, target_pos: Vector, cam_pos: Vector, region=
         draw_area_overlay(light, target_pos, batch_shapes=batch_shapes)
         draw_screen_aligned_circle(light.location, radius=0.001, region=region, rv3d=rv3d, batch_shapes=batch_shapes)
 
-def draw_light_sign_only(light, target_pos: Vector, region=None, rv3d=None, batch_lines=None):
-    """Draw only the sign (target marker) for unselected lights."""
+def draw_light_sign_only(light, target_pos: Vector, region=None, rv3d=None, batch_lines=None, batch_shapes=None):
+    """Draw only the sign (target marker) for unselected lights with clickable area circle."""
     target_size = OverlayConfig.get_light_setting('target_size', 0.05)
     draw_sign(target_pos, size=target_size, region=region, rv3d=rv3d, batch_lines=batch_lines)
+    
+    # Draw clickable area circle with same size as sign
+    if batch_shapes is not None:
+        circle_radius_pixels = target_size * 150  # Same scale as sign (7.5 pixels)
+        draw_circle_in_screen_space(target_pos, circle_radius_pixels, region=region, rv3d=rv3d, batch_shapes=batch_shapes)
 
 def render_batches(shader, batch_lines, batch_shapes, batch_lines_unselected=None, batch_shapes_unselected=None):
     """Render the accumulated line and shape batches with different colors for selected/unselected."""
     from gpu_extras.batch import batch_for_shader
+    
+    # Enable alpha blending for transparency
+    gpu.state.blend_set('ALPHA')
+    gpu.state.depth_test_set('LESS_EQUAL')
 
     # Draw selected lights (normal colors)
     if batch_lines:
@@ -446,20 +485,25 @@ def render_batches(shader, batch_lines, batch_shapes, batch_lines_unselected=Non
         batch = batch_for_shader(shader, 'LINES', {"pos": batch_shapes})
         batch.draw(shader)
     
-    # Draw unselected lights (gray color with high transparency)
-    gray_color = (0.5, 0.5, 0.5, 0.1)  # Gray with high transparency
+    # Draw unselected lights (gray color with transparency)
+    gray_color_lines = (0.7, 0.7, 0.7, 0.5)  # Same as circle for visibility
+    gray_color_shapes = (0.7, 0.7, 0.7, 0.5)  # Lighter gray with higher opacity for circle
     
     if batch_lines_unselected:
         shader.bind()
-        shader.uniform_float("color", gray_color)
+        shader.uniform_float("color", gray_color_lines)
         batch = batch_for_shader(shader, 'LINES', {"pos": batch_lines_unselected})
         batch.draw(shader)
     
     if batch_shapes_unselected:
         shader.bind()
-        shader.uniform_float("color", gray_color)
+        shader.uniform_float("color", gray_color_shapes)
         batch = batch_for_shader(shader, 'LINES', {"pos": batch_shapes_unselected})
         batch.draw(shader)
+    
+    # Reset GPU state
+    gpu.state.blend_set('NONE')
+    gpu.state.depth_test_set('NONE')
 
 def initialize_drawing_context():
     """Initialize drawing context including region, shader, and batch arrays."""
@@ -526,6 +570,9 @@ def lumi_draw_light_lines():
     
     cam_pos = lumi_get_viewport_camera_position(rv3d)
 
+    # Check if light picker is enabled
+    enable_light_picker = getattr(scene, 'enable_light_picker', True)
+    
     # Draw all lights
     for light in all_lights:
         # Calculate target position for light
@@ -538,10 +585,11 @@ def lumi_draw_light_lines():
             batch_lines = batch_lines_selected
             batch_shapes = batch_shapes_selected
             draw_light_visualization(light, target_pos, cam_pos, region, rv3d, batch_lines, batch_shapes)
-        else:
-            # Draw only sign for unselected lights
+        elif enable_light_picker:
+            # Draw only sign for unselected lights (only if picker enabled)
             batch_lines = batch_lines_unselected
-            draw_light_sign_only(light, target_pos, region, rv3d, batch_lines)
+            batch_shapes = batch_shapes_unselected
+            draw_light_sign_only(light, target_pos, region, rv3d, batch_lines, batch_shapes)
 
     # Render all accumulated batches (unselected first, then selected on top)
     render_batches(shader, batch_lines_selected, batch_shapes_selected, 

@@ -38,9 +38,9 @@ LumiFlow is built on three core principles:
 
 ## Key Features
 
-### 🎨 40+ Professional Templates
+### 🎨 15 Professional Templates
 
-Pre-designed lighting setups covering every major use case:
+Pre-designed lighting setups covering major use cases:
 
 - **Studio & Commercial** - Product photography, portraits, e-commerce
 - **Dramatic & Cinematic** - Film noir, horror, action, romance
@@ -57,6 +57,15 @@ Pre-designed lighting setups covering every major use case:
 - **Orbit Mode** - Rotate around subjects
 - **Free Mode** - Manual XYZ positioning
 - **Move Mode** - Interactive drag-based movement
+
+### 🧠 Scene Context Analysis
+
+Advanced AI-inspired scene understanding:
+
+- **Subject Classification** - Automatically detects 20+ subject types (portrait, product, architecture, etc.)
+- **Material Analysis** - Adapts lighting based on material properties (metallic, diffuse, transparent)
+- **Obstruction Detection** - Prevents lights from being placed inside objects
+- **Spatial Relationships** - Understands object positioning and relationships
 
 ### 🎛️ Smart Controls
 
@@ -95,6 +104,8 @@ Real-time viewport overlays:
 - **Direction Arrows** - See light orientation
 - **Distance Indicators** - Visual distance feedback
 - **LOD System** - Performance optimization for complex scenes
+- **Material Adaptation Indicators** - Shows automatic lighting adjustments
+- **Obstruction Warnings** - Alerts when lights are placed incorrectly
 
 ### ⌨️ Keyboard Shortcuts
 
@@ -106,6 +117,7 @@ Streamlined workflow with intuitive shortcuts:
 - **Ctrl+Shift+A** - Add light pie menu
 - **Ctrl+Shift+C** - Flip operations menu
 - **Ctrl+Shift+X** - Quick link to objects
+- **Ctrl+Shift+D** - Solo active light
 
 ---
 

@@ -343,8 +343,15 @@ class ModeManager:
         light_type = light_obj.data.type
         
         if not cls.is_mode_available(mode_name, light_type):
-            error_msg = f"âœ {mode_name.title()} mode not available for {light_type} lights"
+            error_msg = f"❌ {mode_name.title()} mode not available for {light_type} lights"
             return None, error_msg, False
+        
+        # Special check: ANGLE mode on AREA light (Spread) requires Cycles
+        if mode_name == 'ANGLE' and light_type == 'AREA':
+            render_engine = context.scene.render.engine
+            if render_engine != 'CYCLES':
+                error_msg = f"❌ Spread requires Cycles"
+                return None, error_msg, False
         
         if mode_name not in cls.MODES:
             return mode_name.title(), "N/A", True
@@ -367,7 +374,7 @@ class ModeManager:
         result = []
         for mode_name in cls.get_smart_control_modes():
             label, value, is_available = cls.get_mode_info(mode_name, light_obj, context)
-            if is_available and value not in ("N/A", "") and not value.startswith("âœ"):
+            if is_available and value not in ("N/A", "") and not value.startswith("❌"):
                 result.append((label, value))
         return result
 

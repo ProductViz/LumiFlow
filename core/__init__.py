@@ -4,8 +4,8 @@ Contains core functionality for state management and global variables used throu
 """
 from .state import get_state, LumiFlowState
 from .globals import (
-    get_scroll_control_enabled,
-    get_scroll_operator_instance,
+    get_smart_control_enabled,
+    get_smart_operator_instance,
     get_last_selected_lights,
     get_rotate_modal_active,
     get_target_modal_active,
@@ -16,8 +16,8 @@ from .globals import (
 __all__ = [
     'get_state', 
     'LumiFlowState',
-    'get_scroll_control_enabled',
-    'get_scroll_operator_instance',
+    'get_smart_control_enabled',
+    'get_smart_operator_instance',
     'get_last_selected_lights',
     'get_rotate_modal_active',
     'get_target_modal_active',

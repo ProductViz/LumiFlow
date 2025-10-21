@@ -27,25 +27,25 @@ import warnings
 
 # Legacy accessors (deprecated, will be removed in v2.0)
 # These functions are kept for backward compatibility only
-def get_scroll_control_enabled():
-    """Deprecated: Use get_state().scroll_control_enabled"""
+def get_smart_control_enabled():
+    """Deprecated: Use get_state().smart_control_enabled"""
     warnings.warn(
-        "get_scroll_control_enabled() is deprecated and will be removed in v2.0. "
-        "Use get_state().scroll_control_enabled instead.",
+        "get_smart_control_enabled() is deprecated and will be removed in v2.0. "
+        "Use get_state().smart_control_enabled instead.",
         DeprecationWarning,
         stacklevel=2
     )
-    return get_state().scroll_control_enabled
+    return get_state().smart_control_enabled
 
-def get_scroll_operator_instance():
-    """Deprecated: Use get_state().modal_operators['scroll']"""
+def get_smart_operator_instance():
+    """Deprecated: Use get_state().modal_operators['smart']"""
     warnings.warn(
-        "get_scroll_operator_instance() is deprecated and will be removed in v2.0. "
-        "Use get_state().modal_operators['scroll'] instead.",
+        "get_smart_operator_instance() is deprecated and will be removed in v2.0. "
+        "Use get_state().modal_operators['smart'] instead.",
         DeprecationWarning,
         stacklevel=2
     )
-    return get_state().modal_operators.get('scroll')
+    return get_state().modal_operators.get('smart')
 
 def get_last_selected_lights():
     """Deprecated: Use get_state().last_selected_lights"""

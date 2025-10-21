@@ -191,7 +191,7 @@ class LUMI_OT_move_positioning(bpy.types.Operator, BaseModalOperator):
                     context.scene.light_props.positioning_mode = 'DISABLE'
 
                 # Disable overlay handler only if no smart control is active
-                if not state.scroll_control_enabled:
+                if not state.smart_control_enabled:
                     from ...ui.overlay import lumi_disable_cursor_overlay_handler
                     lumi_disable_cursor_overlay_handler()
 
@@ -371,7 +371,7 @@ class LUMI_OT_move_positioning(bpy.types.Operator, BaseModalOperator):
                 state.set_modal_state('move_pressing', False)
 
             # Disable overlay handler only if no smart control is active
-            if not state.scroll_control_enabled:
+            if not state.smart_control_enabled:
                 from ...ui.overlay import lumi_disable_cursor_overlay_handler
                 lumi_disable_cursor_overlay_handler()
 

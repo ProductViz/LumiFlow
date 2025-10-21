@@ -229,7 +229,7 @@ def lumi_enabled_update(self, context: bpy.types.Context):
     scene = context.scene  # Define scene variable for both cases
     
     if self.lumi_enabled:
-        state.scroll_control_enabled = True
+        state.smart_control_enabled = True
         # Close other panels when enabled
         scene.lumi_light_linking_expanded = False
         scene.lumi_color_enabled = False
@@ -237,6 +237,12 @@ def lumi_enabled_update(self, context: bpy.types.Context):
         try:
             if hasattr(scene, 'lumi_positioning_mode_enabled'):
                 scene.lumi_positioning_mode_enabled = True
+        except Exception:
+            pass
+        # Ensure smart control mode is enabled when addon is enabled
+        try:
+            if hasattr(scene, 'lumi_smart_control_mode_enabled'):
+                scene.lumi_smart_control_mode_enabled = True
         except Exception:
             pass
         # Addon enabled - activating features
@@ -302,12 +308,18 @@ def lumi_enabled_update(self, context: bpy.types.Context):
     else:
         # Proper cleanup when disabled
         # Addon disabled - cleaning up
-        state.scroll_control_enabled = False
-        scene.lumi_scroll_control_enabled = False
+        state.smart_control_enabled = False
+        scene.lumi_smart_control_enabled = False
         # Disable positioning mode when addon is disabled
         try:
             if hasattr(scene, 'lumi_positioning_mode_enabled'):
                 scene.lumi_positioning_mode_enabled = False
+        except Exception:
+            pass
+        # Disable smart control mode when addon is disabled
+        try:
+            if hasattr(scene, 'lumi_smart_control_mode_enabled'):
+                scene.lumi_smart_control_mode_enabled = False
         except Exception:
             pass
         
@@ -521,6 +533,35 @@ def lumi_positioning_mode_enabled_update(self, context: bpy.types.Context):
         print(f"Error updating positioning mode toggle: {e}")
 
 
+def lumi_smart_control_mode_enabled_update(self, context: bpy.types.Context):
+    """Update function when smart control mode toggle changes"""
+    try:
+        state = get_state()
+        
+        # Disable active smart control when mode is disabled
+        if not self.lumi_smart_control_mode_enabled:
+            if state.smart_control_enabled:
+                state.smart_control_enabled = False
+                self.lumi_smart_control_enabled = False
+                
+                # Cleanup cursor overlay if active
+                try:
+                    from ..ui.overlay import lumi_disable_cursor_overlay_handler
+                    lumi_disable_cursor_overlay_handler()
+                except Exception:
+                    pass
+
+        # Force redraw to update UI
+        for window in bpy.context.window_manager.windows:
+            if not window:
+                continue
+            for area in window.screen.areas:
+                if area.type == 'VIEW_3D':
+                    area.tag_redraw()
+    except Exception as e:
+        print(f"Error updating smart control mode toggle: {e}")
+
+
 # Individual update functions for each accordion section
 def lumi_color_controls_expanded_update(self, context):
     """Update callback for Color Controls accordion."""
@@ -564,6 +605,7 @@ __all__ = [
     'lumi_color_enabled_update',
     'lumi_light_linking_expanded_update',
     'lumi_positioning_mode_enabled_update',
+    'lumi_smart_control_mode_enabled_update',
     'accordion_update_handler',
     'lumi_color_controls_expanded_update',
     'lumi_light_mixer_expanded_update',

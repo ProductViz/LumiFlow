@@ -22,7 +22,7 @@ from ..core.state import get_state
 def lumi_start_smart_control_if_needed(context: bpy.types.Context):
     """Start smart control if needed."""
     state = get_state()
-    state.scroll_control_enabled = True
+    state.smart_control_enabled = True
     
     def start_operation():
         bpy.ops.lumi.smart_control('INVOKE_DEFAULT')
@@ -35,7 +35,7 @@ def lumi_start_smart_control_if_needed(context: bpy.types.Context):
 def lumi_stop_smart_control():
     """Stop smart control."""
     state = get_state()
-    state.scroll_control_enabled = False
+    state.smart_control_enabled = False
     pass
 
 

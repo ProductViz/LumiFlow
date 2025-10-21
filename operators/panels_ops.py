@@ -270,6 +270,21 @@ class LUMI_OT_toggle_positioning_mode(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class LUMI_OT_toggle_smart_control_mode(bpy.types.Operator):
+    """Toggle smart control mode on/off"""
+    bl_idname = "lumi.toggle_smart_control_mode"
+    bl_label = "Toggle Smart Control Mode"
+    bl_description = "Toggle smart control mode on/off (F)"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        scene = context.scene
+        scene.lumi_smart_control_mode_enabled = not scene.lumi_smart_control_mode_enabled
+        status = "ENABLED" if scene.lumi_smart_control_mode_enabled else "DISABLED"
+        self.report({'INFO'}, f"Smart Control Mode {status}")
+        return {'FINISHED'}
+
+
 class LUMI_OT_toggle_addon(bpy.types.Operator):
     """Toggle LumiFlow addon on/off"""
     bl_idname = "lumi.toggle_addon"
@@ -387,20 +402,32 @@ class LUMI_OT_clean_viewport(bpy.types.Operator):
                 viewport_overlay_manager.set_overlay_state(context, 'clean_viewport', True)
                 self.report({'INFO'}, "Viewport overlays hidden")
             else:
-                # Restore saved overlay states for this viewport
-                restored = viewport_overlay_manager.restore_viewport_overlay_states(context, space_data)
+                # Get saved states for this viewport (for tracking purposes)
+                viewport_id = viewport_overlay_manager.get_viewport_id(context)
+                saved_states = viewport_overlay_manager.saved_overlay_states.get(viewport_id, {})
                 
-                if not restored:
-                    # Fallback to default values if no saved states
-                    space_data.overlay.show_ortho_grid = True
-                    space_data.overlay.show_floor = True
-                    space_data.overlay.show_axis_x = True
-                    space_data.overlay.show_axis_y = True
-                    space_data.show_gizmo = True
+                # Invert: all false values become true (and true stays true)
+                # Result: enable all overlays for this specific viewport
+                space_data.overlay.show_ortho_grid = True
+                space_data.overlay.show_floor = True
+                space_data.overlay.show_axis_x = True
+                space_data.overlay.show_axis_y = True
+                space_data.overlay.show_cursor = True
+                space_data.overlay.show_annotation = True
+                space_data.overlay.show_text = True
+                space_data.overlay.show_bones = True
+                space_data.overlay.show_motion_paths = True
+                space_data.overlay.show_object_origins = True
+                space_data.overlay.show_extras = True
+                space_data.overlay.show_relationship_lines = True
+                space_data.overlay.show_outline_selected = True
+                space_data.overlay.show_viewer_attribute = True
+                space_data.show_reconstruction = True
+                space_data.show_gizmo = True
                 
                 # Set viewport state to inactive
                 viewport_overlay_manager.set_overlay_state(context, 'clean_viewport', False)
-                self.report({'INFO'}, "Viewport overlays restored")
+                self.report({'INFO'}, "Viewport overlays inverted (false→true)")
             
             # Force redraw
             for area in context.screen.areas:

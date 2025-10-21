@@ -35,12 +35,12 @@ class LUMI_OT_auto_light_picker(bpy.types.Operator):
     _instance = None
     
     # Pick radius in pixels
-    pick_radius: bpy.props.IntProperty(
+    pick_radius: bpy.props.FloatProperty(
         name="Pick Radius",
         description="Radius in pixels for detecting light clicks",
-        default=25,
-        min=10,
-        max=100
+        default=7.5,
+        min=5.0,
+        max=50.0
     )
     
     @classmethod
@@ -75,6 +75,14 @@ class LUMI_OT_auto_light_picker(bpy.types.Operator):
         # Stop if addon disabled
         if not lumi_is_addon_enabled():
             return self.cancel(context)
+        
+        # Check if light picker is enabled
+        scene = context.scene
+        enable_light_picker = getattr(scene, 'enable_light_picker', True)
+        
+        # If light picker disabled, pass through all events
+        if not enable_light_picker:
+            return {'PASS_THROUGH'}
         
         # Only intercept left mouse press in 3D viewport
         if event.type == 'LEFTMOUSE' and event.value == 'PRESS':

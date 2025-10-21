@@ -17,17 +17,19 @@
 
 ## Positioning System
 
-LumiFlow provides 6 intelligent positioning modes for precise light placement.
+LumiFlow provides 6 intelligent positioning modes for precise light placement, enhanced by advanced scene analysis and obstruction detection.
 
 ### Mode 1: HIGHLIGHT
 
 **Purpose:** Position light at specular highlight point
 
 **How It Works:**
-1. Raycasts from camera to selected object
-2. Calculates reflection vector at hit point
-3. Positions light in reflection direction
-4. Distance based on object size
+1. Analyzes scene context and subject classification
+2. Raycasts from camera to selected object surface
+3. Calculates reflection vector at hit point using material properties
+4. Checks for obstructions along the light path
+5. Positions light in reflection direction with optimal distance
+6. Automatically adjusts based on material type (metallic, glossy, etc.)
 
 **Use Cases:**
 - Product photography with glossy materials
@@ -44,15 +46,21 @@ LumiFlow provides 6 intelligent positioning modes for precise light placement.
 **Algorithm:**
 ```
 View Vector = HitPoint - CameraLocation
+Surface Normal = GetSurfaceNormal(HitPoint)
 Reflect Vector = View.reflect(SurfaceNormal)
+Material Factor = AnalyzeMaterialProperties(HitPoint)
+Obstruction Check = CheckLineOfSight(HitPoint, LightPosition)
+Optimal Distance = CalculateDistance(ObjectBounds, MaterialFactor)
 Light Position = HitPoint + ReflectVector * OptimalDistance
 ```
 
 **Tips:**
 - Works best with glossy/metallic materials
 - Click on areas you want bright highlights
-- Distance auto-adjusts based on object size
+- Distance auto-adjusts based on object size and material properties
 - Use Material Preview to see highlights in real-time
+- Obstruction detection prevents lights from being placed inside objects
+- Material adaptation automatically adjusts light intensity for different surface types
 
 ---
 
@@ -241,7 +249,7 @@ NewPosition = PivotPoint + NewVector
 
 ## Smart Controls
 
-Adjust light properties with intuitive mouse gestures.
+Adjust light properties with intuitive mouse gestures, featuring advanced sensitivity tracking and material-aware adjustments.
 
 ### Control Basics
 
@@ -254,8 +262,10 @@ Adjust light properties with intuitive mouse gestures.
 
 **Visual Feedback:**
 - HUD display shows property name and current value
-- Real-time viewport update
+- Real-time viewport update with material adaptation indicators
 - Color-coded indicators
+- Smart sensitivity tracking based on mouse speed and acceleration
+- Context-aware value ranges based on light type and scene
 
 ### Control 1: DISTANCE
 
@@ -438,7 +448,7 @@ Adjust light properties with intuitive mouse gestures.
 
 ## Light Linking System
 
-Control which lights affect which objects.
+Control which lights affect which objects with advanced scene analysis and automatic grouping.
 
 ### Concepts
 
@@ -513,7 +523,7 @@ Result: Light avoids certain objects
 
 ### Collection-Based Linking
 
-**Alternative Method:** Use Blender collections
+**Alternative Method:** Use Blender collections with automatic scene analysis
 
 1. Create collection in Outliner
 2. Add objects to collection
@@ -525,6 +535,7 @@ Result: Light avoids certain objects
 - Integrates with existing workflow
 - Works with Blender's native system
 - Dynamic (new objects auto-link)
+- Scene context analysis helps suggest optimal groupings
 
 ### Advanced Techniques
 

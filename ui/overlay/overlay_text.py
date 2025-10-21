@@ -40,9 +40,6 @@ def draw_overlay_info():
     region = context.region
     if not region:
         return
-
-    if not getattr(context.scene, "lumi_show_overlay_info", True):
-        return
     
     selected_lights = lumi_get_selected_lights()
     if not selected_lights:
@@ -69,7 +66,7 @@ def get_info_lines(light_obj, context, colors):
     ltype = data.type
     
     smart_mode = getattr(context.scene, 'lumi_smart_mode', 'DISTANCE')
-    scroll_control_active = getattr(context.scene, 'lumi_scroll_control_enabled', False)
+    smart_control_active = getattr(context.scene, 'lumi_smart_control_enabled', False)
     
     display_type = ltype
     if ltype == 'AREA':
@@ -90,7 +87,7 @@ def get_info_lines(light_obj, context, colors):
                 mode_name = mode
                 break
         
-        if mode_name and scroll_control_active and smart_mode == mode_name:
+        if mode_name and smart_control_active and smart_mode == mode_name:
             color = colors['highlight']
         else:
             color = colors['secondary']
@@ -116,12 +113,12 @@ def get_info_lines(light_obj, context, colors):
 def get_multi_light_info_lines(selected_lights, context, colors):
     """Get info lines for multiple lights display with smart control mode detection."""
     smart_mode = getattr(context.scene, 'lumi_smart_mode', 'DISTANCE')
-    scroll_control_active = getattr(context.scene, 'lumi_scroll_control_enabled', False)
+    smart_control_active = getattr(context.scene, 'lumi_smart_control_enabled', False)
     
     lines = []
     
     # Determine header based on smart control state
-    if scroll_control_active:
+    if smart_control_active:
         # Get display name for the active smart control mode
         # Use first light's type to get the display name
         first_light_type = selected_lights[0].data.type
@@ -176,9 +173,6 @@ def draw_overlay_tips():
     if not region:
         return
 
-    if not getattr(context.scene, 'lumi_show_overlay_tips', True):
-        return
-
     font_id = 0
     blf.size(font_id, 12)
 
@@ -200,70 +194,25 @@ def draw_overlay_tips():
             ("💡 LumiFlow Tips", "", colors['header'], 0.5, 70, 1.2),
             ("🚀 Create Your First Light:", "", colors['normal'], 0.5, 70, 1.0),
             ("1. Select or Point mouse at mesh surface", "", colors['secondary'], 0.5, 70, 1.0),
-            ("2. Press", ": Ctrl + Shift + A", colors['secondary'], 0.5, 50, 1.0),
+            ("2. Press", "Ctrl + Shift + A", colors['secondary'], 0.5, 50, 1.0),
             ("3. Choose light type from menu", "", colors['secondary'], 0.5, 70, 1.0),
         ]
     elif selected_light:
         tips_lines = get_selected_light_tips_template(selected_light, colors)
     else:
-        tips_lines = get_general_tips_template(colors)
+        # When lights exist but none selected - show general tips
+        tips_lines = [
+            ("💡 LumiFlow Tips", "", colors['header'], 0.5, 70, 1.2),  
+            ("Select a light to begin", "", colors['normal'], 0.5, 70, 1.0),
+            ("Flip", "Ctrl + Shift + C", colors['secondary'], 0.5, 50, 1.0),
+            ("Linking", "Ctrl + Shift + X", colors['secondary'], 0.5, 50, 1.0),
+            ("Solo", "Ctrl + Shift + D", colors['secondary'], 0.7, 50, 1.0),
+            ("Or Add More Light", "", colors['normal'], 0.5, 70, 1.0),
+            ("Smart Add", "Ctrl + Shift + A", colors['secondary'], 0.5, 70, 1.0),
+        ]
 
     font_scale, line_spacing = get_text_settings(context)
     draw_text(tips_lines, (tips_x, tips_y), font_scale, line_spacing, is_tips=True)
-
-
-def draw_general_tips():
-    """Draw general tips that always display when addon is enabled."""
-    context = bpy.context
-    region = context.region
-    if not region:
-        return
-
-    # Check if addon is enabled
-    from ...utils import lumi_is_addon_enabled
-    if not lumi_is_addon_enabled():
-        return
-
-    colors = get_config_colors(context)
-    font_scale, line_spacing = get_text_settings(context)
-
-    # Position at bottom left
-    general_x = 20
-    general_y = 20
-
-    positioning_enabled = getattr(context.scene, 'lumi_positioning_mode_enabled', True)
-
-    if positioning_enabled:
-        tip_text1 = "Positioning Mode captures Modifier + LMB for light placement"
-        tip_text2 = "Press [P] to return to Blender default behavior"
-        
-    else:
-        tip_text1 = "Positioning Mode OFF"
-        tip_text2 ="Press [P] to turn ON Positioning Mode"
-
-    general_lines = [
-        (tip_text1, "", colors['secondary'], 0.5, 70, 1.0),
-        (tip_text2, "", colors['secondary'], 0.5, 70, 1.0),
-    ]
-
-    draw_text(general_lines, (general_x, general_y), font_scale, line_spacing, is_tips=False)
-
-
-def get_general_tips_template(colors=None):
-    """Get general tips template"""
-    if colors is None:
-        colors = OverlayConfig.get_all_colors()
-    
-    return [
-        ("💡 LumiFlow Tips", "", colors['header'], 0.7, 70, 1.2),  
-        ("Select a light to begin", "", colors['normal'], 0.5, 70, 1.0),
-        ("Flip", ": Ctrl + Shift + C", colors['secondary'], 0.5, 50, 1.0),
-        ("Linking", ": Ctrl + Shift + X", colors['secondary'], 0.5, 50, 1.0),
-        ("Solo", ": Ctrl + Shift + D", colors['secondary'], 0.7, 50, 1.0),
-        ("Or Add More Ligt", "", colors['normal'], 0.5, 70, 1.0),
-        ("Smart Add", ": Ctrl + Shift + A", colors['secondary'], 0.5, 70,1.0),
-
-    ]
 
 
 def get_selected_light_tips_template(selected_light, colors=None):
@@ -274,57 +223,57 @@ def get_selected_light_tips_template(selected_light, colors=None):
     light_type = selected_light.data.type
     
     tips_lines = [
-        ("💡 LumiFlow Tips", "", colors['header'], 0.8, 70, 1.2), 
+        ("💡 LumiFlow Tips", "", colors['header'], 0.5, 70, 1.2), 
         ("Smart Controls", "", colors['normal'], 0.55, 70, 1.0),
     ]
     
     if light_type == 'POINT':
         tips_lines.extend([
-            ("Distance", ": Ctrl + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Power", ": Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Radius", ": Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Temp.", ": Ctrl+Alt + MMB_Drag", colors['secondary'], 0.8, 70, 1.0),
+            ("Distance", "Ctrl + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+            ("Power", "Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+            ("Radius", "Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+            ("Temp.", "Ctrl+Alt + MMB_Drag", colors['secondary'], 0.8, 70, 1.0),
         ])
     elif light_type == 'SUN':
         tips_lines.extend([
-            ("Distance", ": Ctrl + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Power", ": Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Angle", ": Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Temp.", ": Ctrl+Alt + MMB_Drag", colors['secondary'], 0.8, 70, 1.0),
+            ("Distance", "Ctrl + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+            ("Power", "Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+            ("Angle", "Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+            ("Temp.", "Ctrl+Alt + MMB_Drag", colors['secondary'], 0.8, 70, 1.0),
         ])
     elif light_type == 'SPOT':
         tips_lines.extend([
-            ("Distance", ": Ctrl + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Power", ": Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Angle", ": Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Blend", ": Ctrl+Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Temp.", ": Shift+Alt + MMB_Drag", colors['secondary'], 0.8, 70, 1.0),
+            ("Distance", "Ctrl + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+            ("Power", "Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+            ("Angle", "Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+            ("Blend", "Ctrl+Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+            ("Temp.", "Shift+Alt + MMB_Drag", colors['secondary'], 0.8, 70, 1.0),
         ])
     elif light_type == 'AREA':
         tips_lines.extend([
-            ("Distance", ": Ctrl + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Power", ": Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Scale", ": Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Blend", ": Ctrl+Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Temp.", ": Shift+Alt + MMB_Drag", colors['secondary'], 0.8, 70, 1.0),
+            ("Distance", "Ctrl + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+            ("Power", "Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+            ("Scale", "Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+            ("Blend", "Ctrl+Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+            ("Temp.", "Shift+Alt + MMB_Drag", colors['secondary'], 0.8, 70, 1.0),
         ])
     
     tips_lines.extend([
         ("Positioning Modes", "", colors['normal'], 0.55, 70, 1.0),
-        ("Highlight", ": Ctrl + LMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-        ("Normal", ": Shift + LMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-        ("Orbit", ": Alt + LMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-        ("Target", ": Ctrl+Alt + LMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-        ("Free", ": Ctrl+Shift + LMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-        ("Move", ": Shift+Alt + LMB_Drag", colors['secondary'], 0.8, 70, 1.0),
+        ("Highlight", "Ctrl + LMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+        ("Normal", "Shift + LMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+        ("Orbit", "Alt + LMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+        ("Target", "Ctrl+Alt + LMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+        ("Free", "Ctrl+Shift + LMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+        ("Move", "Shift+Alt + LMB_Drag", colors['secondary'], 0.8, 70, 1.0),
         ("Menu", "", colors['normal'], 0.55, 70, 1.0),
-        ("Smart Add", ": Ctrl + Shift + A", colors['secondary'], 0.5, 70, 1.0),
-        ("Flip", ": Ctrl + Shift + C", colors['secondary'], 0.5, 70, 1.0),
-        ("Linking", ": Ctrl + Shift + X", colors['secondary'], 0.5, 70, 1.0),
-        ("Solo", ": Ctrl + Shift + D", colors['secondary'], 0.8, 70, 1.0),
+        ("Smart Add", "Ctrl + Shift + A", colors['secondary'], 0.5, 70, 1.0),
+        ("Flip", "Ctrl + Shift + C", colors['secondary'], 0.5, 70, 1.0),
+        ("Linking", "Ctrl + Shift + X", colors['secondary'], 0.5, 70, 1.0),
+        ("Solo", "Ctrl + Shift + D", colors['secondary'], 0.8, 70, 1.0),
         ("Select", "", colors['normal'], 0.55, 70, 1.0),
-        ("Cycle", ": D", colors['secondary'], 0.5, 70, 1.0),
-        
+        ("Cycle", "D", colors['secondary'], 0.8, 70, 1.0),
+        ("Deselect lights to use viewport navigation or multi-select", "", colors['secondary'], 0.5, 70, 1.0),        
     ])
     
     return tips_lines
@@ -339,7 +288,7 @@ def draw_overlay_cursor():
     context = bpy.context
     scene = context.scene
     
-    scroll_control_enabled = getattr(scene, 'lumi_scroll_control_enabled', False)
+    smart_control_enabled = getattr(scene, 'lumi_smart_control_enabled', False)
     
     active_positioning_mode = None
     if hasattr(context, 'selected_objects') and context.selected_objects:
@@ -347,7 +296,7 @@ def draw_overlay_cursor():
         if selected_lights:
             active_positioning_mode = ModeManager.get_active_positioning_mode(context)
     
-    if not scroll_control_enabled and not active_positioning_mode:
+    if not smart_control_enabled and not active_positioning_mode:
         return
 
     selected_lights = [obj for obj in context.selected_objects if obj.type == 'LIGHT']
@@ -404,15 +353,14 @@ def get_smart_overlay(mode, value_text, colors=None, context=None):
     if colors is None:
         colors = OverlayConfig.get_all_colors()
     
+    # Check for unavailable mode (⌀) or error message (❌)
     is_unavailable = value_text.startswith("⌀")
-    value_color = colors['error'] if is_unavailable else colors['scroll_value']
+    is_error = value_text.startswith("❌")
+    
+    value_color = colors['error'] if (is_unavailable or is_error) else colors['scroll_value']
     
     base_tips = [
         (value_text, "", value_color, 0.3, 0.5, 1.3),
     ]
-    
-    if is_unavailable:
-        base_tips.append(("Release to continue", "", colors['scroll_text'], 0.2, 0.3))
-        return base_tips     
     
     return base_tips

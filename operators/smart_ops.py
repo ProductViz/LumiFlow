@@ -90,7 +90,8 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
     @classmethod
     def poll(cls, context):
         has_light = any(obj.type == 'LIGHT' for obj in getattr(context, 'selected_objects', []))
-        return lumi_is_addon_enabled() and has_light
+        smart_control_mode_enabled = getattr(context.scene, 'lumi_smart_control_mode_enabled', True)
+        return lumi_is_addon_enabled() and smart_control_mode_enabled and has_light
 
     def validate_modal_context(self, context):
         """Validate context for modal operations"""
@@ -140,16 +141,16 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
             state = get_state()
             
             # Direct activation - start modal control when keymap is pressed
-            if state.scroll_control_enabled:
-                state.scroll_control_enabled = False
+            if state.smart_control_enabled:
+                state.smart_control_enabled = False
                 lumi_disable_cursor_overlay_handler()
                 self._redraw_view3d()
             
             scene = context.scene
             
             state.register_modal('scroll', self)
-            scene.lumi_scroll_control_enabled = True
-            state.scroll_control_enabled = True
+            scene.lumi_smart_control_enabled = True
+            state.smart_control_enabled = True
             
             self._start_mouse_x = event.mouse_x
             if hasattr(self, 'mode') and self.mode:
@@ -277,20 +278,33 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
             # Check event type (mouse, keyboard, etc.)
             if event.type == 'D' and event.value == 'PRESS':
                 if scene.lumi_smart_mode == 'SCALE':
-                    current_axis = scene.lumi_scale_axis
-                    if current_axis == 'XY':
-                        scene.lumi_scale_axis = 'X'
-                        self.report({'INFO'}, "Scale axis: X only")
-                    elif current_axis == 'X':
-                        scene.lumi_scale_axis = 'Y'
-                        self.report({'INFO'}, "Scale axis: Y only")
-                    elif current_axis == 'Y':
-                        scene.lumi_scale_axis = 'XY'
-                        self.report({'INFO'}, "Scale axis: XY (Uniform)")
+                    # Check if any selected light is Area with Rectangle or Ellipse shape
+                    can_change_axis = False
+                    for light in selected_lights:
+                        if light.data.type == 'AREA':
+                            shape = getattr(light.data, 'shape', 'SQUARE')
+                            if shape in {'RECTANGLE', 'ELLIPSE'}:
+                                can_change_axis = True
+                                break
                     
-                    for area in context.screen.areas:
-                        if area.type == 'VIEW_3D':
-                            area.tag_redraw()
+                    if can_change_axis:
+                        current_axis = scene.lumi_scale_axis
+                        if current_axis == 'XY':
+                            scene.lumi_scale_axis = 'X'
+                            self.report({'INFO'}, "Scale axis: X only")
+                        elif current_axis == 'X':
+                            scene.lumi_scale_axis = 'Y'
+                            self.report({'INFO'}, "Scale axis: Y only")
+                        elif current_axis == 'Y':
+                            scene.lumi_scale_axis = 'XY'
+                            self.report({'INFO'}, "Scale axis: XY (Uniform)")
+                        
+                        for area in context.screen.areas:
+                            if area.type == 'VIEW_3D':
+                                area.tag_redraw()
+                    else:
+                        self.report({'INFO'}, "Axis change only available for Area lights with Rectangle/Ellipse shape")
+                    
                     return {'RUNNING_MODAL'}
                 
                 # Keep modal operator running
@@ -304,7 +318,7 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
             if event.type == 'RIGHTMOUSE' and not event.ctrl and not event.shift and not event.alt:
                 return {'PASS_THROUGH'}
 
-            if not lumi_is_addon_enabled() or not state.scroll_control_enabled:
+            if not lumi_is_addon_enabled() or not state.smart_control_enabled:
                 state.unregister_modal('scroll')
                 self.reset_sensitivity_tracking()
                 return {'CANCELLED'}
@@ -341,7 +355,7 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
                             if hasattr(light.data, 'spread'):
                                 light.data.spread = initial['spread']
                 state.unregister_modal('scroll')
-                scene.lumi_scroll_control_enabled = False
+                scene.lumi_smart_control_enabled = False
                 lumi_disable_cursor_overlay_handler()
                 if not undo_changes:
                     lumi_reset_highlight(scene)
@@ -367,7 +381,7 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
             if event.type == 'MIDDLEMOUSE' and event.value == 'RELEASE':
                 self._mmb_active = False
                 state.unregister_modal('scroll')
-                scene.lumi_scroll_control_enabled = False
+                scene.lumi_smart_control_enabled = False
                 lumi_disable_cursor_overlay_handler()
                 lumi_reset_highlight(scene)
                 self.report({'INFO'}, 'Smart control completed')
@@ -423,6 +437,20 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
                     scene.lumi_status_scale_active = True
                     # Use smart sensitivity amount directly
                     scale_factor = amount
+                    
+                    # Check if any selected light can use non-XY axis
+                    can_use_custom_axis = False
+                    for light in selected_lights:
+                        if light.data.type == 'AREA':
+                            shape = getattr(light.data, 'shape', 'SQUARE')
+                            if shape in {'RECTANGLE', 'ELLIPSE'}:
+                                can_use_custom_axis = True
+                                break
+                    
+                    # Force XY axis if no Area Rectangle/Ellipse light selected
+                    if not can_use_custom_axis and scene.lumi_scale_axis != 'XY':
+                        scene.lumi_scale_axis = 'XY'
+                    
                     axis = scene.lumi_scale_axis
                     for light in selected_lights:
                         data = light.data
@@ -504,7 +532,7 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
         try:
             state = get_state()
             state.unregister_modal('scroll')
-            context.scene.lumi_scroll_control_enabled = False
+            context.scene.lumi_smart_control_enabled = False
             lumi_disable_cursor_overlay_handler()
             lumi_reset_highlight(context.scene)
         except Exception as e:

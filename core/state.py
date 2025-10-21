@@ -39,7 +39,7 @@ class LumiFlowState:
         self.temp_data = {}
         
         # Control states
-        self.scroll_control_enabled = False
+        self.smart_control_enabled = False
         self.last_selected_lights = set()
         
         # Modal states (mapped from old global variables)
@@ -106,7 +106,7 @@ class LumiFlowState:
         
         # Clean up temporary data
         self.temp_data.clear()
-        self.scroll_control_enabled = False
+        self.smart_control_enabled = False
         self.last_selected_lights.clear()
         
         # Reset all modal states

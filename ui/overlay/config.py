@@ -325,17 +325,24 @@ class ViewportOverlayManager:
     def get_overlay_state(self, context, overlay_type):
         """Get overlay state for current viewport."""
         viewport_id = self.get_viewport_id(context)
+        
+        # Default values per overlay type
+        default_value = False if overlay_type == 'overlay_tips' else True
+        
         if viewport_id is None:
-            return True  # Default to enabled
+            return default_value
 
-        return self.viewport_states.get(viewport_id, {}).get(overlay_type, True)  # Default to True
+        return self.viewport_states.get(viewport_id, {}).get(overlay_type, default_value)
 
     def get_overlay_state_by_area_id(self, area_id, overlay_type):
         """Get overlay state by area ID (for draw handlers)."""
+        # Default values per overlay type
+        default_value = False if overlay_type == 'overlay_tips' else True
+        
         if area_id is None:
-            return True  # Default to enabled
+            return default_value
 
-        return self.viewport_states.get(area_id, {}).get(overlay_type, True)  # Default to True
+        return self.viewport_states.get(area_id, {}).get(overlay_type, default_value)
 
     def is_overlay_enabled_for_viewport(self, context, overlay_type):
         """Check if overlay should be drawn in current viewport."""
