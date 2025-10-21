@@ -7,17 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
-
-### 🔧 Fixed
-- **Smart Control - Spread Parameter**: Added Cycles render engine validation for Area Light spread control
-  - Spread adjustment now only works when Cycles render engine is active
-  - Warning message displayed when attempting to adjust spread in other render engines (Eevee, Workbench)
-  - Prevents errors and confusion when spread property is not available
-  - Updated user manual to clarify Cycles-only requirement for Area Light spread
-
----
-
 ## [1.0.0] - 2025-10-15
 
 ### 🎉 Initial Public Release
