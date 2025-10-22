@@ -329,9 +329,29 @@ class LUMI_PT_light_control(bpy.types.Panel):
             # Up to date
             uptodate_box = update_box.box()
             col = uptodate_box.column(align=True)
-            col.label(text="✓ Up to Date", icon='CHECKMARK')
+            col.label(text="Up to Date", icon='CHECKMARK')
             if len(parts) > 1:
                 col.label(text=f"Current: {parts[1]}")
+
+        elif status == "SUCCESS":
+            # Update successful - show restart message
+            success_box = update_box.box()
+            col = success_box.column(align=True)
+            col.label(text="Update Successful!", icon='CHECKMARK')
+            
+            if len(parts) > 1:
+                new_version = parts[1]
+                col.separator(factor=0.5)
+                col.label(text=f"Updated to: {new_version}")
+            
+            col.separator(factor=0.5)
+            
+            # Restart warning - prominent display
+            warning_box = col.box()
+            warning_col = warning_box.column(align=True)
+            warning_col.scale_y = 1.3
+            warning_col.label(text="⚠ Please Restart Blender", icon='ERROR')
+            warning_col.label(text="to complete the update")
 
         elif status == "UPDATE":
             # New version available
@@ -412,12 +432,6 @@ class LUMI_PT_light_control(bpy.types.Panel):
 
         # Donation links
         col.label(text="Support via:", icon='HEART')
-
-        # GitHub Sponsors
-        row = col.row()
-        row.scale_y = 1.3
-        op = row.operator("wm.url_open", text="GitHub Sponsors")
-        op.url = "https://github.com/sponsors/ProductViz"
 
         # Patreon
         row = col.row()

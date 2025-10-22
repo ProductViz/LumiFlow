@@ -305,20 +305,24 @@ class LUMI_OT_update_addon(bpy.types.Operator):
             logger.info("Installation complete")
 
             # ============================================================
-            # STEP 7: Cleanup temp directory
+            # STEP 7: Cleanup temp directory and backup
             # ============================================================
             if temp_dir.exists():
                 shutil.rmtree(temp_dir, ignore_errors=True)
+            
+            # Delete backup after successful update
+            if backup_dir and backup_dir.exists():
+                try:
+                    shutil.rmtree(backup_dir, ignore_errors=True)
+                    logger.info(f"Backup deleted: {backup_dir}")
+                except Exception as e:
+                    logger.warning(f"Failed to delete backup: {e}")
 
-            # Clear update info
-            context.window_manager.lumiflow_update_info = ""
-            context.scene.show_update_panel = False
+            # Set SUCCESS status to show restart message
+            context.window_manager.lumiflow_update_info = f"SUCCESS|{self.new_version}"
 
             self.report({'INFO'}, f"✓ Successfully updated to {self.new_version}!")
             self.report({'INFO'}, "Please restart Blender to complete the update")
-            
-            if backup_dir:
-                self.report({'INFO'}, f"Backup saved at: {backup_dir.name}")
 
             return {'FINISHED'}
 
