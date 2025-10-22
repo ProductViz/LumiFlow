@@ -20,7 +20,7 @@ from .menus_ops import (
     LUMI_OT_set_light_assignment_mode  # Light assignment mode operator
 )
 from .selection_ops import LUMI_OT_select_light, LUMI_OT_delete_light, LUMI_OT_delete_collection, LUMI_OT_cycle_lights_modal, LUMI_OT_quick_solo_light
-from .panels_ops import LUMI_OT_toggle_overlay_info, LUMI_OT_toggle_overlay_tips, LUMI_OT_toggle_addon, LUMI_OT_open_user_guide, LUMI_OT_clean_viewport
+from .panels_ops import LUMI_OT_toggle_overlay_info, LUMI_OT_toggle_overlay_tips, LUMI_OT_toggle_addon, LUMI_OT_open_user_guide, LUMI_OT_clean_viewport, LUMI_OT_download_zip
 from .light_picker import LUMI_OT_auto_light_picker, pick_light_at_position, start_auto_picker, stop_auto_picker
 
 from .positioning import __all__ as positioning_all
@@ -82,7 +82,7 @@ main_operators = [
     
     # Utility operators
     'LUMI_OT_select_light', 'LUMI_OT_delete_light', 'LUMI_OT_delete_collection', 'LUMI_OT_cycle_lights_modal', 'LUMI_OT_quick_solo_light',
-    'LUMI_OT_toggle_overlay_info', 'LUMI_OT_toggle_overlay_tips', 'LUMI_OT_toggle_addon', 'LUMI_OT_open_user_guide', 'LUMI_OT_clean_viewport',
+    'LUMI_OT_toggle_overlay_info', 'LUMI_OT_toggle_overlay_tips', 'LUMI_OT_toggle_addon', 'LUMI_OT_open_user_guide', 'LUMI_OT_clean_viewport', 'LUMI_OT_download_zip',
     'LUMI_OT_auto_light_picker', 'pick_light_at_position', 'start_auto_picker', 'stop_auto_picker'
 ]
 

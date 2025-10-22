@@ -28,6 +28,8 @@ def parse_version(version_str):
     """Convert version string to tuple (1, 2, 3)"""
     try:
         version_str = version_str.lstrip('v')
+        # Remove any suffix like -beta, -alpha
+        version_str = version_str.split('-')[0]
         return tuple(map(int, version_str.split('.')))
     except Exception:
         return (0, 0, 0)
@@ -49,6 +51,7 @@ class LUMI_OT_check_update(bpy.types.Operator):
             current_version = get_current_version()
             current_version_str = f"v{current_version[0]}.{current_version[1]}.{current_version[2]}"
 
+            self.report({'INFO'}, "Checking for updates...")
             response = requests.get(ADDON_API_URL, timeout=10)
 
             if response.status_code != 200:
@@ -59,7 +62,46 @@ class LUMI_OT_check_update(bpy.types.Operator):
             data = response.json()
             latest_version_str = data.get("tag_name", "v0.0.0")
             latest_version = parse_version(latest_version_str)
-            download_url = data.get("zipball_url", "")
+            
+            # ✅ PERUBAHAN: Ambil dari assets, bukan zipball_url
+            assets = data.get("assets", [])
+            download_url = ""
+            
+            # Cari asset dengan nama LumiFlow-{tag_name}.zip
+            expected_filename = f"LumiFlow-{latest_version_str}.zip"
+            logger.info(f"Looking for asset: {expected_filename}")
+            
+            for asset in assets:
+                asset_name = asset.get("name", "")
+                if asset_name == expected_filename:
+                    download_url = asset.get("browser_download_url", "")
+                    logger.info(f"Found matching asset: {asset_name}")
+                    break
+            
+            # Fallback 1: Cari asset yang mengandung "LumiFlow" dan ".zip"
+            if not download_url:
+                logger.warning(f"Exact match not found, searching for LumiFlow*.zip")
+                for asset in assets:
+                    asset_name = asset.get("name", "")
+                    if "LumiFlow" in asset_name and asset_name.endswith(".zip"):
+                        download_url = asset.get("browser_download_url", "")
+                        logger.info(f"Found fallback asset: {asset_name}")
+                        break
+            
+            # Fallback 2: Ambil asset pertama jika tidak ada yang cocok
+            if not download_url and assets:
+                download_url = assets[0].get("browser_download_url", "")
+                logger.warning(f"Using first asset: {assets[0].get('name')}")
+            
+            # Fallback 3: Gunakan zipball_url (backward compatibility)
+            if not download_url:
+                download_url = data.get("zipball_url", "")
+                logger.warning("No assets found, falling back to zipball_url")
+
+            if not download_url:
+                context.window_manager.lumiflow_update_info = "ERROR|No download URL found in release"
+                self.report({'ERROR'}, "No download URL found")
+                return {'CANCELLED'}
 
             wm = context.window_manager
 
@@ -79,6 +121,7 @@ class LUMI_OT_check_update(bpy.types.Operator):
         except Exception as e:
             context.window_manager.lumiflow_update_info = f"ERROR|{str(e)}"
             self.report({'ERROR'}, f"Error checking updates: {str(e)}")
+            logger.exception("Error checking updates")
             return {'CANCELLED'}
 
 
@@ -102,12 +145,17 @@ class LUMI_OT_update_addon(bpy.types.Operator):
 
         temp_dir = None
         addon_dest = None
+        backup_dir = None
 
         try:
+            current_version = get_current_version()
+            current_version_str = f"v{current_version[0]}.{current_version[1]}.{current_version[2]}"
+
             # ============================================================
             # STEP 1: Download ZIP
             # ============================================================
             self.report({'INFO'}, f"Downloading LumiFlow {self.new_version}...")
+            logger.info(f"Download URL: {self.download_url}")
 
             temp_dir = Path(tempfile.gettempdir()) / "lumiflow_update"
 
@@ -127,8 +175,32 @@ class LUMI_OT_update_addon(bpy.types.Operator):
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
 
+            logger.info(f"Download complete: {zip_path}")
+
             # ============================================================
-            # STEP 2: Extract ZIP
+            # STEP 2: Validate ZIP
+            # ============================================================
+            self.report({'INFO'}, "Validating download...")
+            
+            try:
+                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                    # Test ZIP integrity
+                    bad_file = zip_ref.testzip()
+                    if bad_file:
+                        raise Exception(f"Corrupted file in ZIP: {bad_file}")
+                    
+                    # Check if __init__.py exists
+                    file_list = zip_ref.namelist()
+                    has_init = any("__init__.py" in f for f in file_list)
+                    if not has_init:
+                        raise Exception("Invalid addon ZIP: missing __init__.py")
+                    
+                    logger.info("ZIP validation passed")
+            except zipfile.BadZipFile:
+                raise Exception("Invalid or corrupted ZIP file")
+
+            # ============================================================
+            # STEP 3: Extract ZIP
             # ============================================================
             self.report({'INFO'}, "Extracting files...")
             extract_dir = temp_dir / "extracted"
@@ -141,32 +213,61 @@ class LUMI_OT_update_addon(bpy.types.Operator):
             with zipfile.ZipFile(zip_path, 'r') as zip_ref:
                 zip_ref.extractall(extract_dir)
 
+            logger.info(f"Extracted to: {extract_dir}")
+
             # ============================================================
-            # STEP 3: Find addon folder
+            # STEP 4: Find addon folder
             # ============================================================
             extracted_folders = list(extract_dir.iterdir())
             if not extracted_folders:
                 raise Exception("Extracted archive is empty")
 
-            # The first folder should be the repo folder
-            repo_folder = extracted_folders[0]
             addon_source = None
 
-            # Look for LumiFlow folder or __init__.py with bl_info
-            for item in repo_folder.iterdir():
-                if item.is_dir() and item.name == "LumiFlow":
-                    addon_source = item
-                    break
-                elif item.is_file() and item.name == "__init__.py":
-                    # Addon root is the repo folder itself
-                    addon_source = repo_folder
-                    break
+            # ✅ PERUBAHAN: Deteksi struktur ZIP yang lebih robust
+            
+            # Scenario 1: ZIP berisi LumiFlow/ langsung (dari asset)
+            if len(extracted_folders) == 1 and extracted_folders[0].name == "LumiFlow":
+                addon_source = extracted_folders[0]
+                logger.info(f"Found addon source (direct): {addon_source}")
+            
+            # Scenario 2: ZIP berisi multiple folders, cari LumiFlow
+            elif len(extracted_folders) > 1:
+                for folder in extracted_folders:
+                    if folder.is_dir() and folder.name == "LumiFlow":
+                        addon_source = folder
+                        logger.info(f"Found addon source (multiple): {addon_source}")
+                        break
+            
+            # Scenario 3: ZIP berisi folder repo (dari zipball)
+            if not addon_source:
+                repo_folder = extracted_folders[0]
+                logger.info(f"Checking repo folder: {repo_folder}")
+                
+                # Cari folder LumiFlow di dalam repo folder
+                for item in repo_folder.iterdir():
+                    if item.is_dir() and item.name == "LumiFlow":
+                        addon_source = item
+                        logger.info(f"Found addon source (repo subfolder): {addon_source}")
+                        break
+                    elif item.is_file() and item.name == "__init__.py":
+                        # Addon root adalah repo folder itu sendiri
+                        addon_source = repo_folder
+                        logger.info(f"Found addon source (repo root): {addon_source}")
+                        break
 
             if not addon_source:
                 raise Exception("Could not find LumiFlow addon in the archive")
 
+            # Verify __init__.py exists
+            init_file = addon_source / "__init__.py"
+            if not init_file.exists():
+                raise Exception(f"Invalid addon structure: {addon_source} missing __init__.py")
+
+            logger.info(f"Addon source validated: {addon_source}")
+
             # ============================================================
-            # STEP 4: Get addon installation path
+            # STEP 5: Get addon installation path
             # ============================================================
             addon_paths = bpy.utils.script_paths(subdir="addons")
             if not addon_paths:
@@ -176,16 +277,35 @@ class LUMI_OT_update_addon(bpy.types.Operator):
             user_addons_dir = Path(addon_paths[0])
             addon_dest = user_addons_dir / "LumiFlow"
 
+            logger.info(f"Addon destination: {addon_dest}")
+
             # ============================================================
-            # STEP 5: Copy new version (overwrite old files)
+            # STEP 5.5: Backup existing addon
+            # ============================================================
+            if addon_dest.exists():
+                self.report({'INFO'}, "Creating backup...")
+                backup_dir = user_addons_dir / f"LumiFlow_backup_{current_version_str}"
+                
+                # Hapus backup lama jika ada
+                if backup_dir.exists():
+                    shutil.rmtree(backup_dir, ignore_errors=True)
+                
+                # Copy addon saat ini ke backup
+                shutil.copytree(addon_dest, backup_dir)
+                logger.info(f"Backup created: {backup_dir}")
+                self.report({'INFO'}, "Backup created")
+
+            # ============================================================
+            # STEP 6: Install new version (overwrite old files)
             # ============================================================
             self.report({'INFO'}, "Installing new version...")
             
             # Simply copy over - let shutil handle overwriting
             shutil.copytree(addon_source, addon_dest, dirs_exist_ok=True)
+            logger.info("Installation complete")
 
             # ============================================================
-            # STEP 6: Cleanup temp directory
+            # STEP 7: Cleanup temp directory
             # ============================================================
             if temp_dir.exists():
                 shutil.rmtree(temp_dir, ignore_errors=True)
@@ -196,11 +316,36 @@ class LUMI_OT_update_addon(bpy.types.Operator):
 
             self.report({'INFO'}, f"✓ Successfully updated to {self.new_version}!")
             self.report({'INFO'}, "Please restart Blender to complete the update")
+            
+            if backup_dir:
+                self.report({'INFO'}, f"Backup saved at: {backup_dir.name}")
 
             return {'FINISHED'}
 
         except Exception as e:
-            self.report({'ERROR'}, f"Update failed: {str(e)}")
+            error_msg = str(e)
+            self.report({'ERROR'}, f"Update failed: {error_msg}")
+            logger.exception("Update failed")
+            
+            # ============================================================
+            # ROLLBACK: Restore backup if update failed
+            # ============================================================
+            if backup_dir and backup_dir.exists() and addon_dest:
+                try:
+                    self.report({'INFO'}, "Rolling back to previous version...")
+                    
+                    # Remove failed update
+                    if addon_dest.exists():
+                        shutil.rmtree(addon_dest, ignore_errors=True)
+                    
+                    # Restore backup
+                    shutil.copytree(backup_dir, addon_dest)
+                    
+                    self.report({'INFO'}, "Rollback successful")
+                    logger.info("Rollback successful")
+                except Exception as rollback_error:
+                    self.report({'ERROR'}, f"Rollback failed: {str(rollback_error)}")
+                    logger.exception("Rollback failed")
             
             # Cleanup temp files on failure
             if temp_dir and temp_dir.exists():
@@ -209,6 +354,55 @@ class LUMI_OT_update_addon(bpy.types.Operator):
                 except Exception as cleanup_error:
                     logger.warning(f"Failed to cleanup temp files: {cleanup_error}")
 
+            return {'CANCELLED'}
+
+
+class LUMI_OT_download_zip(bpy.types.Operator):
+    """Open GitHub Release page to download ZIP manually"""
+    bl_idname = "lumiflow.download_zip"
+    bl_label = "Download from GitHub"
+    bl_description = "Open GitHub Release page in browser to download ZIP file manually"
+
+    download_url: bpy.props.StringProperty()
+    new_version: bpy.props.StringProperty()
+
+    def execute(self, context):
+        try:
+            # Convert download URL to release page URL
+            # From: https://github.com/ProductViz/LumiFlow/releases/download/v1.0.0/LumiFlow-v1.0.0.zip
+            # To:   https://github.com/ProductViz/LumiFlow/releases/tag/v1.0.0
+            
+            if "github.com" in self.download_url and "/releases/download/" in self.download_url:
+                # Extract version tag from download URL
+                parts = self.download_url.split("/releases/download/")
+                if len(parts) == 2:
+                    repo_part = parts[0]  # https://github.com/ProductViz/LumiFlow
+                    version_and_file = parts[1]  # v1.0.0/LumiFlow-v1.0.0.zip
+                    version_tag = version_and_file.split("/")[0]  # v1.0.0
+                    
+                    # Construct release page URL
+                    release_url = f"{repo_part}/releases/tag/{version_tag}"
+                else:
+                    # Fallback: use generic releases page
+                    release_url = "https://github.com/ProductViz/LumiFlow/releases/latest"
+            else:
+                # Fallback: use generic releases page
+                release_url = "https://github.com/ProductViz/LumiFlow/releases/latest"
+            
+            logger.info(f"Opening release page: {release_url}")
+            
+            # Open in default browser
+            webbrowser.open(release_url)
+            
+            self.report({'INFO'}, f"Opening GitHub Release page for {self.new_version}")
+            self.report({'INFO'}, "Download the ZIP file and install manually via Blender Preferences")
+            
+            return {'FINISHED'}
+            
+        except Exception as e:
+            error_msg = str(e)
+            self.report({'ERROR'}, f"Failed to open browser: {error_msg}")
+            logger.exception("Failed to open browser")
             return {'CANCELLED'}
 
 

@@ -128,7 +128,7 @@ The LumiFlow panel is organized into logical sections from top to bottom:
 
 ```
 ┌─────────────────────────────┐
-│   [Enable/Disable Toggle]   │  ← Master switch
+│    [Enable/Disable Toggle]  │  ← Master switch
 ├─────────────────────────────┤
 │    [Assignment Mode]        │  ← Scene vs Camera
 ├─────────────────────────────┤
@@ -138,7 +138,7 @@ The LumiFlow panel is organized into logical sections from top to bottom:
 ├─────────────────────────────┤
 │    [Smart Control]          │  ← enable disable smart control
 ├─────────────────────────────┤
-│    [Overlay Settings & Donate] │  ← Visual feedback config
+│  [Overlay, Update & Donate] │  ← Visual feedback config
 └─────────────────────────────┘
 ```
 
@@ -236,7 +236,7 @@ The LumiFlow panel is organized into logical sections from top to bottom:
 - Only available for Area lights with Rectangle/Ellipse shapes
 - Controls which axis to scale when using Scale control
 
-**Keyboard Shortcut:** No direct shortcut (activated via mouse gestures)
+**Keyboard Shortcut:** `S` key
 
 **Visual Feedback:**
 - **Enabled**: Button shows "✅ SMART CONTROL ENABLED" in green

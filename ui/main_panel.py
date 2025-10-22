@@ -364,19 +364,28 @@ class LUMI_PT_light_control(bpy.types.Panel):
 
             col.separator(factor=0.5)
 
-            # Update button
+            # Update buttons - 2 options
             if len(parts) > 2:
                 download_url = parts[2]
+                
+                # Row 1: Update Now button (auto install)
                 row = col.row()
                 row.scale_y = 1.5
                 op = row.operator("lumiflow.update_addon", text="Update Now", icon='IMPORT')
                 op.download_url = download_url
                 op.new_version = new_version
+                
+                # Row 2: Download from GitHub button (manual)
+                row2 = col.row()
+                row2.scale_y = 1.2
+                op2 = row2.operator("lumiflow.download_zip", text="Download from GitHub", icon='URL')
+                op2.download_url = download_url
+                op2.new_version = new_version
 
             # Warning message
             col.separator(factor=0.3)
             warning_row = col.row()
-            warning_row.label(text="Blender will reload after update", icon='INFO')
+            warning_row.label(text="🔁 Reload Blender after update")
 
     def draw_donate_section(self, context, layout):
         """Draw donation information section"""
