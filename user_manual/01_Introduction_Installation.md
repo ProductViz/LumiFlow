@@ -113,11 +113,15 @@ Streamlined workflow with intuitive shortcuts:
 
 - **L** - Enable/disable addon
 - **P** - Toggle positioning mode
+- **F** - Toggle smart control mode
 - **D** - Cycle through lights
-- **Ctrl+Shift+A** - Add light pie menu
+- **Ctrl+Shift+A** - Template menu (add light)
 - **Ctrl+Shift+C** - Flip operations menu
 - **Ctrl+Shift+X** - Quick link to objects
 - **Ctrl+Shift+D** - Solo active light
+- **Ctrl + MMB** - Distance control
+- **Shift + MMB** - Power control
+- **Alt + MMB** - Scale control
 
 ---
 

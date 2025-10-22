@@ -24,18 +24,45 @@
 |----------|----------|---------|
 | **L** | Enable/Disable LumiFlow | Global |
 | **P** | Toggle Positioning Mode | When LumiFlow enabled |
+| **F** | Toggle Smart Control Mode | When LumiFlow enabled |
 | **D** | Cycle Through Lights | Anytime |
-| **Ctrl+Shift+A** | Add Light Pie Menu | LumiFlow enabled |
+| **Ctrl+Shift+A** | Template Menu (Add Light) | LumiFlow enabled |
 | **Ctrl+Shift+C** | Flip Operations Menu | Lights selected |
 | **Ctrl+Shift+X** | Quick Link to Objects | Light + objects selected |
 | **Ctrl+Shift+D** | Solo Active Light | Light selected |
+
+### Positioning Mode Shortcuts
+
+**Note:** Positioning mode must be enabled (P key)
+
+| Shortcut | Positioning Mode | Description |
+|----------|------------------|-------------|
+| **Ctrl + LMB Drag** | Highlight | Position at specular highlight |
+| **Shift + LMB Drag** | Normal | Align perpendicular to surface |
+| **Alt + LMB Drag** | Orbit | Rotate around pivot point |
+| **Ctrl+Alt + LMB Drag** | Target | Point at selected objects |
+| **Ctrl+Shift + LMB Drag** | Free | Manual XYZ coordinate input |
+| **Shift+Alt + LMB Drag** | Move | Interactive drag positioning |
+
+### Smart Control Shortcuts (MMB)
+
+**Note:** Smart Control mode must be enabled (F key)
+
+| Shortcut | Control Mode | Range |
+|----------|--------------|-------|
+| **Ctrl + MMB Drag** | Distance | 0.1m - 100m |
+| **Shift + MMB Drag** | Power | 1W - 10,000W |
+| **Alt + MMB Drag** | Scale | 0.01m - 50m |
+| **Ctrl+Shift + MMB Drag** | Angle | 0° - 180° (Spot lights) |
+| **Ctrl+Alt + MMB Drag** | Temperature | 1000K - 12,000K |
+| **Shift+Alt + MMB Drag** | Blend | 0.0 - 1.0 (Shadow softness) |
 
 ### Mouse Controls
 
 | Action | Function | Context |
 |--------|----------|---------|
-| **MMB + Drag** | Smart Control (adjust properties) | Light selected |
-| **LMB + Drag** | Positioning Mode (in Move mode) | Move mode active |
+| **MMB + Drag** | Smart Control (adjust properties) | Light selected, Smart Control enabled |
+| **LMB + Drag** | Positioning Mode | Positioning mode active |
 | **RMB Click** | Select light/object | Viewport |
 | **Scroll Wheel** | Zoom in/out | Viewport |
 
@@ -873,10 +900,18 @@ You now have comprehensive knowledge of:
 ### Essential Shortcuts
 ```
 L               Enable/Disable LumiFlow
-Ctrl+Shift+A    Add Light Pie Menu
+P               Toggle Positioning Mode
+F               Toggle Smart Control Mode
 D               Cycle Through Lights
+
+Ctrl+Shift+A    Template Menu (Add Light)
+Ctrl+Shift+C    Flip Operations Menu
 Ctrl+Shift+X    Quick Link to Objects
-MMB + Drag      Adjust Light Property
+Ctrl+Shift+D    Solo Active Light
+
+Ctrl + MMB      Distance Control
+Shift + MMB     Power Control
+Alt + MMB       Scale Control
 ```
 
 ### Template Categories

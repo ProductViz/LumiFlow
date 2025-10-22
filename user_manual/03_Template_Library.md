@@ -180,7 +180,7 @@ Templates are just starting points - customize freely!
 - Change light size and softness
 
 **3. Add/Remove Lights**
-- Add more lights with `Ctrl+Shift+A`
+- Add more lights with `Ctrl+Shift+A` (Template Menu)
 - Delete unwanted lights (`X` key)
 - Duplicate lights (`Shift+D`)
 

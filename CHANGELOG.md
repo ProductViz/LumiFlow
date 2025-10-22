@@ -66,11 +66,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### User Interface
 - Streamlined main control panel in 3D View sidebar
-- Pie menus for quick access:
-  - Add Light Pie (Ctrl+Shift+A)
-  - Smart Template Pie
+- Pie menus and quick access:
+  - Template Menu (Ctrl+Shift+A)
   - Flip Menu (Ctrl+Shift+C)
-- Keyboard shortcuts: L (toggle addon), P (positioning), D (cycle lights), Ctrl+Shift+X (quick link), Ctrl+Shift+D (solo light)
+  - Quick Link (Ctrl+Shift+X)
+- Keyboard shortcuts: L (toggle addon), P (positioning), F (smart control), D (cycle lights), Ctrl+Shift+A (template menu), Ctrl+Shift+C (flip menu), Ctrl+Shift+X (quick link), Ctrl+Shift+D (solo light)
 - Update panel with GitHub integration
 - Donate panel with sponsorship links
 

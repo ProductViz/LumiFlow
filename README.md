@@ -93,13 +93,15 @@ Free, open-source, and community-powered.
 |-----------|---------|
 | **L** | Toggle LumiFlow Addon |
 | **P** | Toggle Positioning Mode |
+| **F** | Toggle Smart Control Mode |
 | **D** | Cycle Through Lights |
-| **Modifier + MMB Drag** | Smart Control (adjust light properties) |
-| **Modifier + LMB Drag** | Positioning Mode (move or align lights) |
-| **Ctrl + Shift + A** | Add smart lights |
-| **Ctrl + Shift + F** | Open Flip Menu |
+| **Ctrl + Shift + A** | Template Menu (Add Light) |
+| **Ctrl + Shift + C** | Flip Operations Menu |
 | **Ctrl + Shift + X** | Quick Link to Target |
-| **Ctrl + Shift + D** | Quick Solo Light | 
+| **Ctrl + Shift + D** | Solo Active Light |
+| **Ctrl + MMB Drag** | Distance Control |
+| **Shift + MMB Drag** | Power Control |
+| **Alt + MMB Drag** | Scale Control |
 
 ---
 

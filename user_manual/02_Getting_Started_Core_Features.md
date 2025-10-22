@@ -236,7 +236,7 @@ The LumiFlow panel is organized into logical sections from top to bottom:
 - Only available for Area lights with Rectangle/Ellipse shapes
 - Controls which axis to scale when using Scale control
 
-**Keyboard Shortcut:** `S` key
+**Keyboard Shortcut:** `F` key
 
 **Visual Feedback:**
 - **Enabled**: Button shows "✅ SMART CONTROL ENABLED" in green
@@ -271,8 +271,8 @@ The LumiFlow panel is organized into logical sections from top to bottom:
 
 **Note:** The following sections have been removed or reorganized in the new panel layout:
 
-- **All Templates Browser** - Now accessed via pie menus (`Ctrl+Shift+A`)
-- **Light Linking** - Now accessed via pie menus (`Ctrl+Shift+X`)
+- **All Templates Browser** - Now accessed via template menu (`Ctrl+Shift+A`)
+- **Light Linking** - Now accessed via quick link (`Ctrl+Shift+X`)
 - **Support & Info** - Integrated into overlay settings section
 
 ---
@@ -291,7 +291,7 @@ The LumiFlow panel is organized into logical sections from top to bottom:
 - Organizes in "LumiFlow Lights" collection
 
 **Access:**
-- Pie Menu: `Ctrl+Shift+A`
+- Template Menu: `Ctrl+Shift+A`
 - Options: Area, Point, Spot, Sun
 
 **Smart Features:**
@@ -807,9 +807,9 @@ Let's walk through common scenarios step-by-step.
 - Solid mode for positioning (faster)
 
 ### Keyboard Shortcuts
-- Master `L` (enable), `D` (cycle), `P` (position)
-- Learn `Ctrl+Shift+A` (add light) early
-- Others can wait until comfortable
+- Master `L` (enable), `P` (positioning), `F` (smart control)
+- Learn `D` (cycle lights) and `Ctrl+Shift+A` (template menu) early
+- Smart controls: `Ctrl+MMB` (distance), `Shift+MMB` (power), `Alt+MMB` (scale)
 
 ### Save Often
 - Templates are non-destructive
