@@ -193,6 +193,10 @@ class LUMI_OT_auto_light_picker(bpy.types.Operator):
         closest_distance = float('inf')
         
         for light in all_lights:
+            # Skip lights that are already selected
+            if light.select_get():
+                continue
+            
             # Check 1: Light position
             light_pos_2d = location_3d_to_region_2d(region, rv3d, light.location)
             if light_pos_2d is not None:
@@ -272,6 +276,10 @@ def pick_light_at_position(context, mouse_x, mouse_y, pick_radius=20):
     closest_distance = float('inf')
     
     for light in all_lights:
+        # Skip lights that are already selected
+        if light.select_get():
+            continue
+        
         # Check 1: Light position
         light_pos_2d = location_3d_to_region_2d(region, rv3d, light.location)
         if light_pos_2d is not None:

@@ -211,13 +211,19 @@ def _assign_unassigned_lights_to_scene(context, assign_manager):
 
         # Assign unassigned lights to scene
         if unassigned_lights:
+            print(f"🔄 Assigning {len(unassigned_lights)} unassigned lights to scene...")
             for light_name in unassigned_lights:
                 try:
                     assign_manager.assign_light_to_camera("SCENE", light_name)
+                    print(f"✓ Assigned '{light_name}' to scene")
                 except Exception as e:
                     print(f"⚠️ Failed to assign light '{light_name}' to scene: {e}")
         else:
             print("✓ All lights are already assigned")
+
+        # Force visibility update for all lights after assignment
+        if context.scene.camera:
+            assign_manager.update_light_visibility_for_camera(context, context.scene.camera.name)
 
     except Exception as e:
         print(f"❌ Error checking unassigned lights: {e}")
@@ -227,8 +233,17 @@ def lumi_enabled_update(self, context: bpy.types.Context):
     """Update callback when addon is enabled/disabled."""
     state = get_state()
     scene = context.scene  # Define scene variable for both cases
-    
+
     if self.lumi_enabled:
+        # Register keymaps when addon is enabled (toggle addon keymap is always registered)
+        try:
+            from ..registration import register_keymaps_conditional, ensure_toggle_addon_keymap
+            register_keymaps_conditional()
+            # Ensure toggle addon keymap is always available
+            ensure_toggle_addon_keymap()
+        except Exception as e:
+            print(f"Failed to register keymaps: {e}")
+
         state.smart_control_enabled = True
         # Close other panels when enabled
         scene.lumi_light_linking_expanded = False
@@ -246,7 +261,7 @@ def lumi_enabled_update(self, context: bpy.types.Context):
         except Exception:
             pass
         # Addon enabled - activating features
-        
+
         # Force scene update to trigger overlay activation
         # This ensures all handlers are activated through the proper scene update mechanism
         try:
@@ -254,7 +269,7 @@ def lumi_enabled_update(self, context: bpy.types.Context):
             if hasattr(bpy.context, 'scene') and bpy.context.scene:
                 bpy.context.scene.update_tag()
                 # Scene tagged for update to activate overlays
-                
+
             # Also call scene update handler directly as backup
             # This ensures overlays are activated immediately
             from ..ui.overlay import lumi_scene_update_handler
@@ -262,14 +277,14 @@ def lumi_enabled_update(self, context: bpy.types.Context):
                 # Create a dummy depsgraph for the call
                 lumi_scene_update_handler(bpy.context.scene, bpy.context.evaluated_depsgraph_get())
                 # Scene update handler called directly
-            
+
             # Start automatic light picker for natural light selection
             try:
                 from ..operators.light_picker import start_auto_picker
                 start_auto_picker()
             except Exception as e:
                 logger.warning(f"Failed to start auto light picker: {e}")
-                
+
             # Initialize Assign Light system when addon is enabled
             try:
                 from ..core.assign_manager import get_assign_light_manager
@@ -306,6 +321,15 @@ def lumi_enabled_update(self, context: bpy.types.Context):
             # Error in overlay activation - pass silently
             pass
     else:
+        # Unregister keymaps when addon is disabled
+        try:
+            from ..registration import unregister_keymaps_conditional, ensure_toggle_addon_keymap
+            unregister_keymaps_conditional()
+            # Ensure toggle addon keymap remains available even after unregistration
+            ensure_toggle_addon_keymap()
+        except Exception as e:
+            print(f"Failed to unregister keymaps: {e}")
+
         # Proper cleanup when disabled
         # Addon disabled - cleaning up
         state.smart_control_enabled = False
@@ -322,7 +346,7 @@ def lumi_enabled_update(self, context: bpy.types.Context):
                 scene.lumi_smart_control_mode_enabled = False
         except Exception:
             pass
-        
+
         # Clean up overlay handlers
         try:
             from ..ui.overlay import (
@@ -337,14 +361,14 @@ def lumi_enabled_update(self, context: bpy.types.Context):
             lumi_disable_stroke_overlay_handler()
             lumi_disable_tips_overlay_handler()
             lumi_disable_cursor_overlay_handler()
-            
+
             # Stop automatic light picker
             try:
                 from ..operators.light_picker import stop_auto_picker
                 stop_auto_picker()
             except Exception as e:
                 logger.warning(f"Failed to stop auto light picker: {e}")
-            
+
             # Cleanup Assign Light system when addon is disabled
             try:
                 from ..core.assign_manager import get_assign_light_manager
@@ -353,7 +377,7 @@ def lumi_enabled_update(self, context: bpy.types.Context):
                 print("🔧 Assign Light System cleanup completed")
             except Exception as e:
                 print(f"❌ Camera Light System cleanup failed: {e}")
-            
+
         except Exception as e:
             pass
 

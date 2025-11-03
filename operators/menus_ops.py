@@ -133,26 +133,33 @@ class LUMI_OT_add_smart_light(bpy.types.Operator):
                 return {'CANCELLED'}
 
         from ..utils.light import create_smart_light
+        from ..utils.smart_calc import get_smart_light_parameters
         light_type_str = str(self.light_type)
         light_obj = create_smart_light(context, light_type_str, hit_location, hit_normal, hit_obj)
         
         if self.area_shape and light_obj and light_obj.data.type == 'AREA':
             area_shape_str = str(self.area_shape).upper()
             
+            # Get smart parameters to preserve calculated scale values
+            smart_params = get_smart_light_parameters(context, hit_obj, hit_location, hit_normal, light_type_str)
+            scale_params = smart_params['scale']
+            calculated_size = scale_params.get('size', 1.0)
+            calculated_size_y = scale_params.get('size_y', 1.2)
+            
             if area_shape_str == "SQUARE":
                 light_obj.data.shape = 'SQUARE'
-                light_obj.data.size = 1.0
+                light_obj.data.size = calculated_size
             elif area_shape_str == "RECTANGLE":
                 light_obj.data.shape = 'RECTANGLE'
-                light_obj.data.size = 1.0
-                light_obj.data.size_y = 0.5
+                light_obj.data.size = calculated_size
+                light_obj.data.size_y = calculated_size_y
             elif area_shape_str == "DISK":
                 light_obj.data.shape = 'DISK'
-                light_obj.data.size = 1.0
+                light_obj.data.size = calculated_size
             elif area_shape_str == "ELLIPSE":
                 light_obj.data.shape = 'ELLIPSE'
-                light_obj.data.size = 1.0
-                light_obj.data.size_y = 0.5
+                light_obj.data.size = calculated_size
+                light_obj.data.size_y = calculated_size_y
             
             shape_names = {
                 "SQUARE": "Square",

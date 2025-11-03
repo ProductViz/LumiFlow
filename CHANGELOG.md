@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2025-11-04
+
+### Fixed
+- **Auto-assign unassigned lights to scene**: Fixed issue where lights without camera assignment were hidden when enabling the addon. Now all unassigned lights are automatically assigned to scene (global visibility) when the enable toggle is activated, with improved logging and forced visibility updates.
+- **Keymap behavior when addon disabled**: Fixed issue where all shortcuts including the toggle addon key (L) were unavailable when addon was disabled. Now the toggle addon key (L) remains always functional to allow re-enabling the addon, while all other shortcuts are properly gated behind addon enable state with operator poll methods.
+- **Area light scale override with hardcoded values**: Fixed issue where AREA light scale (size and size_y) were always set to hardcoded values (1.0 for square/disk, 1.0×0.5 for rectangle/ellipse) regardless of target object size. Now scale values are properly calculated based on target object dimensions and preserved when changing area shape.
+- **SUN light excessive brightness**: Fixed issue where SUN light was excessively bright (~448,000 power) due to incorrect application of inverse square law. SUN light is now treated as a directional source with base power of 15.0 (10x boost from 1.5 for brighter outdoor lighting) and clamped to 0.5-40.0 range, matching Blender best practices for outdoor/directional lighting.
+- **Light picker selecting already-selected lights**: Fixed issue where light picker could re-select lights that were already selected. Now light picker only detects and selects unselected lights, improving workflow efficiency when multi-selecting lights with Shift+Click.
+
 ## [1.0.0] - 2025-10-15
 
 ### Added

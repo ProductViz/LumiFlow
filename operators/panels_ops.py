@@ -416,6 +416,11 @@ class LUMI_OT_toggle_overlay_info(bpy.types.Operator):
     bl_description = "Toggle light info overlay visibility (D)"
     bl_options = {'REGISTER'}
 
+    @classmethod
+    def poll(cls, context):
+        from ..utils import lumi_is_addon_enabled
+        return lumi_is_addon_enabled()
+
     def execute(self, context):
         scene = context.scene
         scene.lumi_show_overlay_info = not scene.lumi_show_overlay_info
@@ -428,6 +433,11 @@ class LUMI_OT_toggle_overlay_tips(bpy.types.Operator):
     bl_label = "Toggle Overlay Tips"
     bl_description = "Toggle tips overlay visibility (T)"
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def poll(cls, context):
+        from ..utils import lumi_is_addon_enabled
+        return lumi_is_addon_enabled()
 
     def execute(self, context):
         scene = context.scene
@@ -460,6 +470,11 @@ class LUMI_OT_toggle_positioning_mode(bpy.types.Operator):
     bl_description = "Toggle positioning mode on/off (P)"
     bl_options = {'REGISTER'}
 
+    @classmethod
+    def poll(cls, context):
+        from ..utils import lumi_is_addon_enabled
+        return lumi_is_addon_enabled()
+
     def execute(self, context):
         scene = context.scene
         scene.lumi_positioning_mode_enabled = not scene.lumi_positioning_mode_enabled
@@ -475,6 +490,11 @@ class LUMI_OT_toggle_smart_control_mode(bpy.types.Operator):
     bl_description = "Toggle smart control mode on/off (F)"
     bl_options = {'REGISTER'}
 
+    @classmethod
+    def poll(cls, context):
+        from ..utils import lumi_is_addon_enabled
+        return lumi_is_addon_enabled()
+
     def execute(self, context):
         scene = context.scene
         scene.lumi_smart_control_mode_enabled = not scene.lumi_smart_control_mode_enabled
@@ -489,6 +509,11 @@ class LUMI_OT_toggle_addon(bpy.types.Operator):
     bl_label = "Toggle LumiFlow Addon"
     bl_description = "Toggle LumiFlow addon on/off (D)"
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def poll(cls, context):
+        # Toggle addon can always be called, regardless of addon state
+        return True
 
     def execute(self, context):
         scene = context.scene
@@ -516,6 +541,11 @@ class LUMI_OT_toggle_viewport_overlay(bpy.types.Operator):
         description="ID of the viewport to toggle overlay for",
         default=""
     )
+
+    @classmethod
+    def poll(cls, context):
+        from ..utils import lumi_is_addon_enabled
+        return lumi_is_addon_enabled()
 
     def execute(self, context):
         if not self.overlay_type:
@@ -557,6 +587,11 @@ class LUMI_OT_clean_viewport(bpy.types.Operator):
     bl_label = "Clean Viewport"
     bl_description = "Toggle overlay elements visibility for a clean viewport view"
     bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        from ..utils import lumi_is_addon_enabled
+        return lumi_is_addon_enabled()
 
     def execute(self, context):
         try:
@@ -645,6 +680,11 @@ class LUMI_OT_open_user_guide(bpy.types.Operator):
     bl_label = "Open User Guide"
     bl_description = "Open the complete LumiFlow User Manual on GitHub in your default web browser"
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def poll(cls, context):
+        from ..utils import lumi_is_addon_enabled
+        return lumi_is_addon_enabled()
 
     def execute(self, context):
         try:

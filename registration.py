@@ -705,7 +705,7 @@ def register_keymaps() -> None:
             ('lumi.flip_menu_call', 'C', 'PRESS', True, True, False),
             ('lumi.quick_link_to_target', 'X', 'PRESS', True, True, False),
             ('lumi.quick_assign_light', 'Q', 'PRESS', True, True, False),
-            ('lumi.toggle_addon', 'L', 'PRESS', False, False, False),
+            # Note: 'lumi.toggle_addon' is registered separately in register_toggle_addon_keymap()
             ('lumi.cycle_lights_modal', 'D', 'PRESS', False, False, False),
             ('lumi.quick_solo_light', 'D', 'PRESS', True, True, False),
             ('lumi.toggle_positioning_mode', 'P', 'PRESS', False, False, False),
@@ -756,6 +756,54 @@ def register_keymaps() -> None:
 
     except (AttributeError, RuntimeError):
         pass
+
+
+def register_keymaps_conditional() -> None:
+    """Register keymaps only if addon is enabled"""
+    from .utils.common import lumi_is_addon_enabled
+    if lumi_is_addon_enabled():
+        register_keymaps()
+
+
+def unregister_keymaps_conditional() -> None:
+    """Unregister keymaps only if addon is disabled"""
+    from .utils.common import lumi_is_addon_enabled
+    if not lumi_is_addon_enabled():
+        unregister_keymaps()
+
+
+def register_toggle_addon_keymap() -> None:
+    """Always register the toggle addon keymap (L key)"""
+    try:
+        wm = bpy.context.window_manager
+        if not wm:
+            return
+
+        kc = wm.keyconfigs.addon
+        if not kc:
+            return
+
+        km = kc.keymaps.new(name='3D View', space_type='VIEW_3D')
+        # Always register the toggle addon keymap
+        kmi = km.keymap_items.new('lumi.toggle_addon', 'L', 'PRESS', ctrl=False, shift=False, alt=False)
+        addon_keymaps.append((km, kmi))
+
+    except (AttributeError, RuntimeError):
+        pass
+
+
+def ensure_toggle_addon_keymap() -> None:
+    """Ensure the toggle addon keymap is always registered, even after unregistration"""
+    # Check if toggle addon keymap is already registered
+    toggle_registered = False
+    for km, kmi in addon_keymaps:
+        if hasattr(kmi, 'idname') and kmi.idname == 'lumi.toggle_addon':
+            toggle_registered = True
+            break
+
+    # Register it if not found
+    if not toggle_registered:
+        register_toggle_addon_keymap()
 
 def unregister_keymaps() -> None:
     """Unregister all LumiFlow keymaps"""
@@ -1149,7 +1197,8 @@ def register() -> None:
     
     # Register handlers and keymaps
     register_handlers()
-    register_keymaps()
+    register_toggle_addon_keymap()  # Always register the toggle addon keymap
+    register_keymaps_conditional()
     
     # Register file detection system
     register_file_detection_system()
