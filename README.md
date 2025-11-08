@@ -87,22 +87,6 @@ Free, open-source, and community-powered.
 4. Apply templates for quick setups  
 5. Position lights interactively using tools or scroll controls  
 
-### 🧭 Key Shortcuts
-
-| Shortcut | Action |
-|-----------|---------|
-| **L** | Toggle LumiFlow Addon |
-| **P** | Toggle Positioning Mode |
-| **F** | Toggle Smart Control Mode |
-| **D** | Cycle Through Lights |
-| **Ctrl + Shift + A** | Template Menu (Add Light) |
-| **Ctrl + Shift + C** | Flip Operations Menu |
-| **Ctrl + Shift + X** | Quick Link to Target |
-| **Ctrl + Shift + D** | Solo Active Light |
-| **Ctrl + MMB Drag** | Distance Control |
-| **Shift + MMB Drag** | Power Control |
-| **Alt + MMB Drag** | Scale Control |
-
 ---
 
 ## 📚 Documentation
@@ -130,7 +114,7 @@ The manual includes:
 ## 🤝 Community & Support
 
 Join the LumiFlow community:  
-- [Discord Server](https://discord.gg/zqrSFctH5s) – Real-time chat & Q&A  
+- [Discord Server](https://discord.gg/Akav3KCRut) – Real-time chat & Q&A  
 - [GitHub Discussions](https://github.com/ProductViz/LumiFlow/discussions) – Feature requests & bug reports  
 - [Blender Artists Forum](https://blenderartists.org/) – Showcase & discussions  
 
@@ -146,9 +130,8 @@ LumiFlow is free and open-source — if you find it helpful, you can support ong
 |-----------|------|-------------|
 | 💜 **GitHub Sponsors** | [ProductViz](https://github.com/sponsors/ProductViz) | Official and most transparent way to support. |
 | ☕ **Ko-fi** | [ko-fi.com/lumiflow](https://ko-fi.com/lumiflow) | One-time or monthly donation. |
-| 🎨 **Patreon** | [patreon.com/lumiflow](https://patreon.com/productviz) | Exclusive early builds and behind-the-scenes updates. |
-| 💰 **PayPal** | [paypal.me/productviz](https://paypal.me/productviz) | Simple one-time contribution. |
-| 📦 **Gumroad** | [gumroad.com/lumiflow](https://gumroad.com/lumiflow) | Pay-what-you-want downloads and supporter bundles. |
+| 🎨 **Patreon** | [patreon.com/lumiflow](https://patreon.com/LumiFlow) | Exclusive early builds and behind-the-scenes updates. |
+| 📦 **Gumroad** | [gumroad.com/lumiflow](https://lumiflow.gumroad.com/l/xhzmmr) | Pay-what-you-want downloads and supporter bundles. |
 
 **Sponsors receive:**
 - Early access to development builds  
