@@ -175,20 +175,6 @@ LumiFlow/
 
 ---
 
-## 🎉 Roadmap
-
-- [ ] More smart templates  
-- [ ] Enhanced camera integration  
-- [ ] Performance optimization  
-- [ ] Community events integration  
-
-Future versions will bring:  
-✨ Advanced rendering integration  
-✨ AI-assisted lighting suggestions  
-✨ Studio workflow tools  
-
----
-
 ## 📄 License
 
 GPL v3.0 – see [LICENSE](LICENSE)  
