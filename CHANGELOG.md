@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+### Changed
+
+### Fixed
+
+## [1.0.2] - 2025-11-14
+
+### Added
+- **Direct Area Light Addition Shortcut**: Added Ctrl+Shift+Right Mouse Button shortcut to directly add Area light with RECTANGLE shape on mesh surfaces. Streamlines workflow for adding rectangle area lights without opening menus.
+
+### Changed
+- **Smart Control Sensitivity System**: Refactored to use only base sensitivity without speed/acceleration factors for more consistent control
+- **Spot light cone overlay behavior**: Updated spot light cone visualization so the two front circles now follow both radius (shadow_soft_size) and spot size.
+- **Documentation – README**: Updated feature list, smart light addition section, and Getting Started instructions to describe the Smart Light & Template Menu (Ctrl+Shift+A), Quick Smart Light (Ctrl+Shift+Right Mouse), 15-template library across 4 categories, and current workflows.
+- **Documentation – User Manual (Parts 1–5)**: Revised all manual parts to be practical and user-focused, aligned with README and the current addon behavior: product visualization focus, GitHub+Gumroad installation, 15-template library details, updated positioning and smart control shortcuts (modifier + MMB / LMB), and refreshed reference, workflows, FAQ, and troubleshooting sections.
+
+### Fixed
+- **Excessive power in smart light addition**: Fixed unrealistically high power values by correcting base distances in photometric calculations, reducing power by 85-90% while maintaining proper illumination.
+- **Overlay mesh rendering fix**: fixing performance and visual issues (81% faster, cleaner outlines)
+- **Overlay tips for smart control shortcuts**: Fixed display issues where overlay tips were not showing correct shortcut information for smart control features. Now overlay tips properly display and update dynamically with the current smart control shortcuts.
+
+
 ## [1.0.1] - 2025-11-04
 
 ### Fixed

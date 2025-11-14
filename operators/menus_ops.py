@@ -75,6 +75,7 @@ class LUMI_OT_smart_light_pie_call(bpy.types.Operator):
         scene = context.scene
         scene.lumi_temp_hit_obj = hit_obj
         scene.lumi_temp_hit_location = tuple(hit_location)
+        scene.lumi_temp_hit_normal = tuple(hit_normal)
         scene.lumi_temp_hit_index = hit_index
 
         bpy.ops.wm.call_menu(name="LUMI_MT_add_light_pie")
@@ -104,8 +105,21 @@ class LUMI_OT_add_smart_light(bpy.types.Operator):
         if not lumi_is_addon_enabled():
             self.report({'WARNING'}, 'LumiFlow is not active!')
             return {'CANCELLED'}
+        
+        scene = context.scene
+
+        # If operator is configured to use stored target but no valid data exists,
+        # fall back to raycast from current mouse position (for keymap usage).
+        if self.use_stored_target:
+            hit_obj = getattr(scene, 'lumi_temp_hit_obj', None)
+            hit_location = getattr(scene, 'lumi_temp_hit_location', None)
+            hit_normal = getattr(scene, 'lumi_temp_hit_normal', None)
+            if hit_obj is None or hit_location is None or hit_normal is None:
+                self.use_stored_target = False
+
         if not self.use_stored_target and event:
             self.mouse_position = (event.mouse_region_x, event.mouse_region_y)
+
         return self.execute(context)
 
     def execute(self, context):
@@ -120,7 +134,7 @@ class LUMI_OT_add_smart_light(bpy.types.Operator):
             hit_location = getattr(scene, 'lumi_temp_hit_location', None)
             hit_normal = getattr(scene, 'lumi_temp_hit_normal', None)
             hit_index = getattr(scene, 'lumi_temp_hit_index', None)
-            if not hit_obj or not hit_location or not hit_normal:
+            if hit_obj is None or hit_location is None or hit_normal is None:
                 self.report({'ERROR'}, 'Target data not found!')
                 return {'CANCELLED'}
             hit_location = Vector(hit_location)

@@ -2,6 +2,14 @@
 
 **LumiFlow User Manual - Part 4 of 5**
 
+This part is for **advanced control** of LumiFlow. Here you will learn how to:
+- Use all positioning modes with confidence
+- Master Smart Controls for precise adjustments
+- Use light linking and camera assignment for complex scenes
+- Flip and manage full lighting setups efficiently
+
+Use this chapter when you already understand the basics and want **fine-tuned, professional control** over your lighting.
+
 ---
 
 ## Table of Contents
@@ -249,23 +257,35 @@ NewPosition = PivotPoint + NewVector
 
 ## Smart Controls
 
-Adjust light properties with intuitive mouse gestures, featuring advanced sensitivity tracking and material-aware adjustments.
+Adjust light properties with **modifier + MMB** mouse gestures directly in the viewport.
 
 ### Control Basics
 
-**How to Use:**
-1. Select a light
-2. Select control mode (Distance, Power, etc.)
-3. Hold `MMB` (Middle Mouse Button)
-4. Drag left (decrease) or right (increase)
-5. Release to confirm
+**Before You Start:**
+- Make sure **Smart Control** is enabled in the LumiFlow panel (**F** key toggle).
+- Select the light you want to adjust.
+
+**Control Modes & Shortcuts:**
+
+| Property      | Shortcut                | Description                          |
+|---------------|-------------------------|--------------------------------------|
+| Distance      | `Ctrl + MMB drag`       | Move light closer/farther            |
+| Power         | `Shift + MMB drag`      | Make light brighter/dimmer           |
+| Scale         | `Alt + MMB drag`        | Change light size/radius             |
+| Angle         | `Ctrl + Shift + MMB`    | Adjust cone/spread/angle             |
+| Temperature   | `Ctrl + Alt + MMB`      | Make light warmer/cooler             |
+| Blend         | `Shift + Alt + MMB`     | Soften or harden shadow edges        |
+
+**How to Use (for any mode):**
+1. Select a light.
+2. Hold the appropriate **modifier + MMB** combination.
+3. Drag left (decrease) or right (increase).
+4. Release to confirm.
 
 **Visual Feedback:**
-- HUD display shows property name and current value
-- Real-time viewport update with material adaptation indicators
-- Color-coded indicators
-- Smart sensitivity tracking based on mouse speed and acceleration
-- Context-aware value ranges based on light type and scene
+- HUD display shows property name and current value.
+- Real-time viewport update.
+- Context-aware ranges based on light type and scene.
 
 ### Control 1: DISTANCE
 

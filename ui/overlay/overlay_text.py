@@ -238,24 +238,25 @@ def get_selected_light_tips_template(selected_light, colors=None):
         tips_lines.extend([
             ("Distance", "Ctrl + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
             ("Power", "Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Angle", "Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+            ("Angle", "Alt + shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
             ("Temp.", "Ctrl+Alt + MMB_Drag", colors['secondary'], 0.8, 70, 1.0),
         ])
     elif light_type == 'SPOT':
         tips_lines.extend([
             ("Distance", "Ctrl + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
             ("Power", "Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Angle", "Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Blend", "Ctrl+Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Temp.", "Shift+Alt + MMB_Drag", colors['secondary'], 0.8, 70, 1.0),
+            ("Radius", "Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+            ("Spot Size", "Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+            ("Blend", "Shift + Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+            ("Temp.", "ctrl+Alt + MMB_Drag", colors['secondary'], 0.8, 70, 1.0),
         ])
     elif light_type == 'AREA':
         tips_lines.extend([
             ("Distance", "Ctrl + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
             ("Power", "Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
             ("Scale", "Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Blend", "Ctrl+Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Temp.", "Shift+Alt + MMB_Drag", colors['secondary'], 0.8, 70, 1.0),
+            ("Spread", "Ctrl+Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+            ("Temp.", "ctrl+Alt + MMB_Drag", colors['secondary'], 0.8, 70, 1.0),
         ])
     
     tips_lines.extend([

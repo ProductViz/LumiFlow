@@ -17,13 +17,17 @@ Free, open-source, and community-powered.
 
 ### Smart Lighting System
 - **Intelligent Light Placement** — Automatically positions lights based on scene geometry and context.  
-- **Smart Templates** — Ready-to-use setups for Studio, Cinematic, and Environmental lighting.  
+- **Smart Templates** — Ready-to-use setups for Studio & Commercial, Dramatic & Cinematic, Environment & Realistic, and Utilities & Single Lights lighting.  
 - **Interactive Positioning** — Real-time manipulation with visual feedback in the viewport.  
 - **Camera-Aware Lighting** — Lights dynamically adapt to the active camera.  
 
 ### Scene & Camera Assignment
 - Assign lights globally or per-camera using organized naming conventions.  
 - Automatically manage light visibility when switching between cameras.  
+
+### Smart Light Addition
+- **Smart Light & Template Menu (Ctrl+Shift+A)** — Open the LumiFlow lighting menu to add Blender lights (Sun, Point, Spot, Area) on the hovered mesh or apply Studio & Commercial, Dramatic & Cinematic, Environment & Realistic, and Utilities & Single Lights templates in one shortcut.  
+- **Quick Smart Light (Ctrl+Shift+Right Mouse)** — Add a Rectangle Area Light directly on the hovered mesh using smart positioning, automatically aligned to the target object.  
 
 ### Smart Controls
 - Control **Distance**, **Power**, **Size/Radius**, **Angle/Spread**, **Blend**, and **Temperature** with scroll gestures.  
@@ -83,9 +87,10 @@ Free, open-source, and community-powered.
 
 1. Enable LumiFlow from the **Sidebar Panel** in 3D View (N key → LumiFlow tab)  
 2. Choose assignment mode (**Scene** or **Camera**)  
-3. Add smart lights with **Ctrl+Shift+A** pie menu  
-4. Apply templates for quick setups  
-5. Position lights interactively using tools or scroll controls  
+3. For individual lights, simply hover the target mesh and add smart lights with the **Ctrl+Shift+A** menu or **Quick Smart Light (Ctrl+Shift+Right Mouse)** – no selection required.  
+4. For smart templates, first **select the product/object** you want to light, then use the same **Ctrl+Shift+A** menu to apply Studio & Commercial, Dramatic & Cinematic, Environment & Realistic, or Utilities & Single Lights setups.  
+5. Adjust light properties (distance, power, size, angle, temperature, etc.) using smart controls (**modifier key + MMB drag**)  
+6. Position lights interactively using positioning tools (**modifier key + LMB drag**)  
 
 ---
 
@@ -172,20 +177,6 @@ LumiFlow/
 2. Follow code style guidelines  
 3. Test on multiple Blender versions  
 4. Submit PR with description & screenshots  
-
----
-
-## 🎉 Roadmap
-
-- [ ] More smart templates  
-- [ ] Enhanced camera integration  
-- [ ] Performance optimization  
-- [ ] Community events integration  
-
-Future versions will bring:  
-✨ Advanced rendering integration  
-✨ AI-assisted lighting suggestions  
-✨ Studio workflow tools  
 
 ---
 
