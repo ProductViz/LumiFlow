@@ -38,101 +38,114 @@ LumiFlow is built on three core principles:
 
 ## Key Features
 
-### 🎨 15 Professional Templates
+### 🌟 Smart Lighting System
 
-Pre-designed lighting setups covering major use cases:
+Core of LumiFlow's workflow:
 
-- **Studio & Commercial** - Product photography, portraits, e-commerce
-- **Dramatic & Cinematic** - Film noir, horror, action, romance
-- **Environment & Realistic** - Daylight, golden hour, night scenes
-- **Utilities** - Individual light types for custom builds
+- **Intelligent Light Placement** – Places lights based on scene geometry and subject context
+- **Scene-Aware Templates** – Uses templates tuned for studio, cinematic, environment, and utility use cases
+- **Context-Aware Behavior** – Works together with positioning modes, smart controls, and overlays
 
-### 🎯 Smart Positioning System
+### 📷 Scene & Camera Assignment
 
-6 intelligent positioning modes that understand your scene:
+Organize lights for single- and multi-camera projects:
 
-- **Highlight Mode** - Position lights at specular highlights
-- **Normal Mode** - Align with surface normals
-- **Target Mode** - Point lights at objects
-- **Orbit Mode** - Rotate around subjects
-- **Free Mode** - Manual XYZ positioning
-- **Move Mode** - Interactive drag-based movement
+- **Scene Mode** – Global lights visible in all cameras
+- **Camera Mode** – Assign lights to specific cameras
+- **Automatic Switching** – Lights show/hide when changing cameras
+- **Organized Naming** – Clear prefixes (G_ for global, C_XX_ for camera)
 
-### 🧠 Scene Context Analysis
+### 💡 Smart Light Addition
 
-Advanced AI-inspired scene understanding:
+Fast ways to add lights exactly where you need them:
 
-- **Subject Classification** - Automatically detects 20+ subject types (portrait, product, architecture, etc.)
-- **Material Analysis** - Adapts lighting based on material properties (metallic, diffuse, transparent)
-- **Obstruction Detection** - Prevents lights from being placed inside objects
-- **Spatial Relationships** - Understands object positioning and relationships
+- **Smart Light & Template Menu (`Ctrl+Shift+A`)** – Add Blender lights on the hovered mesh or apply templates to selected objects
+- **Quick Smart Light (`Ctrl+Shift+Right Mouse`)** – Drop a Rectangle Area Light directly on the hovered mesh with smart distance and orientation
 
 ### 🎛️ Smart Controls
 
 Real-time property adjustments with mouse gestures:
 
-- **Distance Control** - Move lights closer or farther
-- **Power Control** - Adjust light intensity
-- **Scale Control** - Change light size/radius
-- **Angle Control** - Modify spot light spread, area light spread (Cycles only)
-- **Blend Control** - Soft vs hard shadows
-- **Temperature Control** - Warm to cool color shifts
+- **Distance Control** – Move lights closer or farther
+- **Power Control** – Adjust light intensity
+- **Scale Control** – Change light size/radius
+- **Angle Control** – Modify spot light spread, area light spread (Cycles only)
+- **Blend Control** – Soft vs hard shadows
+- **Temperature Control** – Warm to cool color shifts
 
-### 📷 Camera Assignment System
+### 🎯 Positioning Tools
 
-Organize lights for multi-camera setups:
+6 intelligent positioning modes that understand your scene:
 
-- **Scene Mode** - Global lights visible in all cameras
-- **Camera Mode** - Assign lights to specific cameras
-- **Automatic Switching** - Lights show/hide when changing cameras
-- **Organized Naming** - Clear prefixes (G_ for global, C_XX_ for camera)
+- **Highlight Mode** – Position lights at specular highlights
+- **Normal Mode** – Align with surface normals
+- **Target Mode** – Point lights at objects
+- **Orbit Mode** – Rotate around subjects
+- **Free Mode** – Manual XYZ positioning
+- **Move Mode** – Interactive drag-based movement
 
-### 🔗 Light Linking
+### 🔗 Quick Light Linking
 
 Control which lights affect which objects:
 
-- **Quick Link** - One-click light-to-object linking
-- **Object Groups** - Create reusable object collections
-- **Include/Exclude Modes** - Selective lighting control
-- **Collection Support** - Work with existing Blender collections
+- **Quick Link** – One-click light-to-object linking
+- **Object Groups** – Create reusable object collections
+- **Include/Exclude Modes** – Selective lighting control
+- **Collection Support** – Work with existing Blender collections
+
+### 🗂️ Template Library (15 Professional Setups)
+
+Pre-designed lighting setups covering major use cases:
+
+- **Studio & Commercial** – Product photography, packshots, portraits, e-commerce
+- **Dramatic & Cinematic** – Film noir, horror, action, romance
+- **Environment & Realistic** – Daylight, golden hour, night scenes
+- **Utilities & Single Lights** – Individual light types and utility setups for custom builds
+
+### 💼 Light Management
+
+Tools to keep complex scenes under control:
+
+- **Cycle Lights** – Quickly move focus between lights in the scene
+- **Solo Light** – Isolate a single light to fine-tune contribution
+- **Consistent Naming & Collections** – Lights organized under LumiFlow collections
 
 ### 🎨 Visual Feedback System
 
 Real-time viewport overlays:
 
-- **Light Icons** - Visual indicators for each light type
-- **Direction Arrows** - See light orientation
-- **Distance Indicators** - Visual distance feedback
-- **LOD System** - Performance optimization for complex scenes
-- **Material Adaptation Indicators** - Shows automatic lighting adjustments
-- **Obstruction Warnings** - Alerts when lights are placed incorrectly
+- **Light Icons & Direction Arrows** – See light type and orientation at a glance
+- **Distance Indicators** – Visual distance feedback from light to subject
+- **Tips & Info Overlays** – On-screen guides for controls, modes, and active operations
 
 ### ⌨️ Keyboard Shortcuts
 
 Streamlined workflow with intuitive shortcuts:
 
-- **L** - Enable/disable addon
-- **P** - Toggle positioning mode
-- **F** - Toggle smart control mode
-- **D** - Cycle through lights
-- **Ctrl+Shift+A** - Template menu (add light)
-- **Ctrl+Shift+C** - Flip operations menu
-- **Ctrl+Shift+X** - Quick link to objects
-- **Ctrl+Shift+D** - Solo active light
-- **Ctrl + MMB** - Distance control
-- **Shift + MMB** - Power control
-- **Alt + MMB** - Scale control
+- **L** – Enable/disable addon
+- **P** – Toggle positioning mode
+- **F** – Toggle smart control mode
+- **D** – Cycle through lights
+- **Ctrl+Shift+A** – Smart Light & Template menu (add light on hovered mesh or apply templates)
+- **Ctrl+Shift+Right Mouse** – Quick Smart Light (Rectangle Area on hovered mesh)
+- **Ctrl+Shift+C** – Flip operations menu
+- **Ctrl+Shift+X** – Quick link to objects
+- **Ctrl+Shift+D** – Solo active light
+- **Smart Controls:** *modifier key + MMB drag* – Adjust distance, power, size, angle, blend, and temperature
+- **Positioning Tools:** *modifier key + LMB drag* – Move, orbit, and refine light placement in the viewport
 
 ---
 
 ## Who is LumiFlow For?
 
-### 🛍️ Product Photographers
+LumiFlow is primarily designed for **product visualization** and 3D product rendering, but it also supports a wide range of Blender lighting workflows.
 
-Perfect for e-commerce, jewelry, and commercial product visualization:
-- Professional 3-point lighting templates
-- Highlight positioning for glossy materials
-- Auto-scaling for objects of any size
+### 🛍️ Product Visualization & 3D Product Artists
+
+Ideal for e-commerce, packaging, industrial, and marketing renders:
+- Professional 3-point and studio-style lighting templates
+- Highlight positioning for glossy and reflective materials
+- Auto-scaling for products of different sizes
 
 ### 👤 Portrait & Character Artists
 
@@ -224,16 +237,16 @@ Speed up production workflows:
 
 ## Installation
 
-### Method 1: From GitHub Release (Recommended)
+### Method 1: From GitHub Releases (Recommended)
 
 This is the easiest and most reliable method for most users.
 
 #### Step 1: Download the Addon
 
 1. Visit the [LumiFlow Releases page](https://github.com/ProductViz/LumiFlow/releases)
-2. Find the latest release (e.g., v1.0.0)
+2. Find the latest release (for example: `v1.0.0`)
 3. Download the `.zip` file:
-   - Look for `LumiFlow-v1.0.0.zip` in the Assets section
+   - Look for `LumiFlow-v1.0.0.zip` in the **Assets** section
    - Click to download
 4. **Important**: Do NOT extract/unzip the file!
 
@@ -274,69 +287,25 @@ This is the easiest and most reliable method for most users.
 
 ---
 
-### Method 2: Development Installation
+### Method 2: From Gumroad
 
-For developers, contributors, or users who want to modify the source code.
+If you prefer a pay-what-you-want download or supporter bundle, you can get LumiFlow from Gumroad.
 
-#### Prerequisites
+#### Step 1: Download from Gumroad
 
-- Git installed on your system
-- Basic command line knowledge
-- Text editor or IDE (VS Code recommended)
+1. Visit the official Gumroad page: [https://lumiflow.gumroad.com/l/xhzmmr](https://lumiflow.gumroad.com/l/xhzmmr)
+2. Choose your contribution (you can enter **0** for a free download)
+3. Complete the checkout and download the `.zip` file
+4. **Important**: Do NOT extract/unzip the file!
 
-#### Step 1: Clone the Repository
+#### Step 2: Install in Blender
 
-```bash
-# Clone the LumiFlow repository
-git clone https://github.com/ProductViz/LumiFlow.git
-cd LumiFlow
-```
+The installation steps are identical to Method 1:
 
-#### Step 2: Locate Blender's Addons Directory
-
-Find your Blender addons directory:
-
-**Windows:**
-```
-C:\Users\[YourUsername]\AppData\Roaming\Blender Foundation\Blender\4.2\scripts\addons\
-```
-
-**macOS:**
-```
-~/Library/Application Support/Blender/4.2/scripts/addons/
-```
-
-**Linux:**
-```
-~/.config/blender/4.2/scripts/addons/
-```
-
-#### Step 3: Create Symbolic Link
-
-This allows you to edit the code and see changes immediately in Blender.
-
-**Windows (Run Command Prompt as Administrator):**
-```bash
-mklink /D "%APPDATA%\Blender Foundation\Blender\4.2\scripts\addons\LumiFlow" "C:\path\to\LumiFlow"
-```
-
-**macOS/Linux:**
-```bash
-ln -s ~/path/to/LumiFlow ~/Library/Application\ Support/Blender/4.2/scripts/addons/LumiFlow
-```
-
-#### Step 4: Enable in Blender
-
-1. Open Blender
-2. Go to Preferences > Add-ons
-3. Find "LumiFlow" and enable it
-4. Check "Developer Extras" in Preferences > Interface
-
-#### Development Workflow
-
-- Edit code in your preferred editor
-- In Blender, press `F3` and search "Reload Scripts" to see changes
-- Or restart Blender completely
+1. Open Blender and go to **Edit > Preferences > Add-ons**
+2. Click **Install...** and select the downloaded `.zip` from Gumroad
+3. Enable **Lighting: LumiFlow** in the list
+4. Open the **LumiFlow** tab in the 3D Viewport sidebar (`N` key) to confirm installation
 
 ---
 
@@ -374,55 +343,21 @@ Decide your default lighting mode:
 
 You can switch modes anytime, so start with **SCENE** mode for simplicity.
 
-#### Step 4: Configure Overlays (Optional)
+#### Step 4: Overlay & Utility Buttons (Optional)
 
-Customize viewport visual feedback:
+Use the bottom row of icons in the LumiFlow panel to control overlays and helper tools:
 
-1. In LumiFlow panel, find **Overlay Settings**
-2. Toggle options:
-   - ✅ **Show Light Icons** - Visual indicators for lights
-   - ✅ **Show Direction Arrows** - Light orientation
-   - ✅ **Show Mesh Outlines** - Subject highlighting
-   - ✅ **Show Text Labels** - Light names
-3. Adjust **Icon Scale** if needed (0.5 - 2.0)
-4. Enable **LOD System** for better performance in complex scenes
+1. In the LumiFlow panel, look at the **bottom icon row**.
+2. From left to right, you will find:
+   - **Overlay Tips (❓ icon)** – Toggle on-screen hints about active controls and modes.
+   - **Overlay Info (ℹ️ icon)** – Toggle technical overlay with light data, modes, and status.
+   - **Clean Viewport** – Temporarily hide Blender overlays for a clean lighting preview.
+   - **Light Picker** – Enable quick light picking in the viewport for faster selection.
+   - **User Guide (Help icon)** – Open the LumiFlow user guide in your browser.
+   - **Check Updates** – Show the update panel to check for new LumiFlow versions.
+   - **Donate** – Show the donation panel if you want to support development.
 
-#### Step 5: Set Up Keyboard Shortcuts (Already Configured)
-
-LumiFlow comes with pre-configured shortcuts:
-
-| Shortcut | Function |
-|----------|----------|
-| `L` | Enable/Disable LumiFlow |
-| `P` | Toggle Positioning Mode |
-| `D` | Cycle Through Lights |
-| `Ctrl+Shift+A` | Add Light Pie Menu |
-| `Ctrl+Shift+C` | Flip Operations Menu |
-| `Ctrl+Shift+X` | Quick Link to Objects |
-| `Ctrl+Shift+D` | Solo Active Light |
-
-These are ready to use immediately!
-
-### Performance Settings
-
-For optimal performance in your workflow:
-
-#### For Simple Scenes (<20 objects, <10 lights)
-- Keep all overlays enabled
-- Use full LOD detail
-- No special settings needed
-
-#### For Complex Scenes (50+ objects, 20+ lights)
-- Enable **LOD System** in overlay settings
-- Reduce **Icon Scale** to 0.7 or lower
-- Consider disabling mesh outlines
-- Use Solo Light mode to focus on one light
-
-#### For Low-End Hardware
-- Disable mesh outlines
-- Set LOD to maximum distance culling
-- Use Material Preview instead of Rendered mode while positioning
-- Reduce icon scale to minimum
+These buttons are optional, but very helpful when lighting complex product scenes.
 
 ### Console Access (Debugging)
 
@@ -487,13 +422,6 @@ Before proceeding to Part 2, verify:
 2. Look for conflicts with other addons
 3. Try using panel buttons instead of shortcuts
 4. Reset keymap to default
-
-### Issue: Permission Errors (Development Install)
-
-**Solutions:**
-1. Run command prompt/terminal as Administrator/sudo
-2. Check folder permissions
-3. Use Method 1 (ZIP install) instead
 
 ---
 

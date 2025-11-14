@@ -1,16 +1,23 @@
-# Part 3: Template Library (40+ Templates)
+# Part 3: Template Library (15 Templates)
 
 **LumiFlow User Manual - Part 3 of 5**
+
+This part is your **template catalog**. Here you will learn:
+- What each template is designed for
+- When to choose Studio, Cinematic, Environment, or Utility templates
+- How to apply templates to your products or scenes and customize them
+
+Use this chapter when you want to **quickly pick the right lighting setup** for a shot.
 
 ---
 
 ## Table of Contents
 
 - [Template System Overview](#template-system-overview)
-- [Studio & Commercial Templates](#studio--commercial-templates-12)
-- [Dramatic & Cinematic Templates](#dramatic--cinematic-templates-10)
-- [Environment & Realistic Templates](#environment--realistic-templates-12)
-- [Utilities & Single Lights](#utilities--single-lights-6)
+- [Studio & Commercial Templates](#studio--commercial-templates-6)
+- [Dramatic & Cinematic Templates](#dramatic--cinematic-templates-1)
+- [Environment & Realistic Templates](#environment--realistic-templates-1)
+- [Utilities & Single Lights](#utilities--single-lights-7)
 - [How to Apply Templates](#how-to-apply-templates)
 - [Template Customization](#template-customization)
 
@@ -131,8 +138,8 @@ Building blocks for custom lighting setups - applied instantly without dialog.
    - Multiple objects can be selected
 
 2. **Choose Template**
-   - Click template button in panel
-   - Or browse template categories
+   - Press `Ctrl+Shift+A` to open the **Smart Light & Template Menu**, then choose a template from the category list
+   - Or click a template button in the LumiFlow panel (**Quick Templates** or Template Library sections)
 
 3. **Configure Dialog** (for non-utility templates)
    - Review options (Camera Relative, Preserve Existing, Material Adaptation)
@@ -175,7 +182,7 @@ Templates are just starting points - customize freely!
 - Use Orbit mode to rotate around subject
 
 **2. Adjust Properties**
-- Use Smart Controls (`MMB` drag)
+- Use Smart Controls (*modifier key + MMB drag*)
 - Modify power, distance, temperature
 - Change light size and softness
 

@@ -26,7 +26,8 @@
 | **P** | Toggle Positioning Mode | When LumiFlow enabled |
 | **F** | Toggle Smart Control Mode | When LumiFlow enabled |
 | **D** | Cycle Through Lights | Anytime |
-| **Ctrl+Shift+A** | Template Menu (Add Light) | LumiFlow enabled |
+| **Ctrl+Shift+A** | Smart Light & Template Menu (add light on hovered mesh or apply templates) | LumiFlow enabled |
+| **Ctrl+Shift+Right Mouse** | Quick Smart Light (Rectangle Area on hovered mesh) | LumiFlow enabled |
 | **Ctrl+Shift+C** | Flip Operations Menu | Lights selected |
 | **Ctrl+Shift+X** | Quick Link to Objects | Light + objects selected |
 | **Ctrl+Shift+D** | Solo Active Light | Light selected |
@@ -212,7 +213,7 @@
 
 **Setup:**
 1. Enable LumiFlow (SCENE mode)
-2. Apply "Product Shot Advanced"
+2. Apply a **Studio & Commercial** template such as **Product Hero Shot** or **High-Key E-commerce**
 3. Use Highlight mode on glossy areas
 4. Adjust key light power (300-500W)
 5. Set temperature: 5500K (neutral)
@@ -223,7 +224,7 @@
 - Background: Separate lighting or exclude
 
 **Tips:**
-- White background: Use "E-commerce White Background"
+- White background: Use **High-Key E-commerce** template
 - Metallic products: Multiple small highlights
 - Matte products: Larger soft lights
 
@@ -233,7 +234,7 @@
 
 **Setup:**
 1. SCENE mode
-2. Apply "Portrait Classic" or "Portrait Rembrandt"
+2. Apply a **Studio & Commercial** template such as **Three-Point Setup** for neutral portraits or **Dramatic Portrait** for stronger mood
 3. Use Target mode to point key at face
 4. Orbit key light to find flattering angle
 5. Temperature: 4500K (skin tone)
@@ -254,7 +255,7 @@
 
 **Setup:**
 1. SCENE mode
-2. Apply "Indoor Natural Window" or "Studio Daylight"
+2. Apply **Overcast Day** from the *Environment & Realistic* category, then add Studio & Commercial templates for interior accents if needed
 3. Use Normal mode for wall-mounted lights
 4. Temperature: 5500K outside, 4000K inside
 5. Light linking: Separate interior/exterior
@@ -296,7 +297,7 @@
 
 **Setup:**
 1. SCENE mode
-2. Apply "Jewelry Showcase"
+2. Apply **Jewelry Macro** from the *Studio & Commercial* category
 3. Use Highlight mode for all lights
 4. Small spot lights (not area)
 5. Multiple highlight points
@@ -317,7 +318,7 @@
 
 **Setup:**
 1. SCENE mode
-2. Apply "Food Photography"
+2. Apply a **Studio & Commercial** template such as **High-Key E-commerce** or **Product Hero Shot**
 3. 60° angle overhead light (not directly above)
 4. Side/back light for depth
 5. Warm temperature (3500K-4500K)
@@ -338,7 +339,7 @@
 
 **Setup:**
 1. SCENE mode
-2. Apply environment templates (Golden Hour, Sunny Day, etc.)
+2. Apply **Overcast Day** from the *Environment & Realistic* category, then adjust sun angle and temperature for Golden Hour, Midday, or Blue Hour
 3. Sun light: Directional, hard
 4. Sky light: Soft, cool fill
 5. Match time of day with temperature
@@ -411,7 +412,7 @@
 - Ensure light is selected (active)
 - Try clicking in different viewport area
 - Check MMB (middle mouse button) is working
-- Verify control mode is selected
+- Ensure you're using the correct **modifier + MMB** shortcut (see Smart Control Shortcuts above)
 - Restart modal operator
 
 **Problem: Positioning mode not responding**
@@ -869,7 +870,7 @@ You now have comprehensive knowledge of:
 
 ✅ **Installation and Setup** - LumiFlow is installed and configured  
 ✅ **Core Features** - Templates, positioning, controls mastered  
-✅ **40+ Templates** - Professional lighting for any scenario  
+✅ **15-Template Library** - Professional starting points for common scenarios  
 ✅ **Advanced Features** - Camera assignment, light linking, flip ops  
 ✅ **Reference** - Shortcuts, troubleshooting, FAQ
 
@@ -904,14 +905,18 @@ P               Toggle Positioning Mode
 F               Toggle Smart Control Mode
 D               Cycle Through Lights
 
-Ctrl+Shift+A    Template Menu (Add Light)
+Ctrl+Shift+A    Smart Light & Template Menu
+Ctrl+Shift+Right Mouse  Quick Smart Light (Rectangle Area)
 Ctrl+Shift+C    Flip Operations Menu
 Ctrl+Shift+X    Quick Link to Objects
 Ctrl+Shift+D    Solo Active Light
 
-Ctrl + MMB      Distance Control
-Shift + MMB     Power Control
-Alt + MMB       Scale Control
+Ctrl + MMB              Distance (move light closer/farther)
+Shift + MMB             Power (brighter/dimmer)
+Alt + MMB               Scale (size/radius)
+Ctrl+Shift + MMB        Angle (cone/spread)
+Ctrl+Alt + MMB          Temperature (warmer/cooler)
+Shift+Alt + MMB         Blend (shadow softness)
 ```
 
 ### Template Categories
