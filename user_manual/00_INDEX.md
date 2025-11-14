@@ -10,7 +10,7 @@
 |------|---------|------|
 | **Part 1** | Introduction, Installation, Setup | [01_Introduction_Installation.md](01_Introduction_Installation.md) |
 | **Part 2** | Quick Start (5 min), Interface, Core Features | [02_Getting_Started_Core_Features.md](02_Getting_Started_Core_Features.md) |
-| **Part 3** | 15 Templates (Studio, Cinematic, Environment) | [03_Template_Library.md](03_Template_Library.md) |
+| **Part 3** | Templates  | [03_Template_Library.md](03_Template_Library.md) |
 | **Part 4** | Positioning, Smart Controls, Light Linking | [04_Advanced_Features.md](04_Advanced_Features.md) |
 | **Part 5** | Shortcuts, FAQ, Troubleshooting | [05_Reference_Support.md](05_Reference_Support.md) |
 

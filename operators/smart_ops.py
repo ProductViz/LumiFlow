@@ -53,37 +53,25 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
     _total_drag_distance = 0
     _drag_start_time = 0
     
-    # Mode-based sensitivity configuration
+    # Mode-based sensitivity configuration (now percentage-based, only base sensitivity used)
     _MODE_SENSITIVITY = {
         'DISTANCE': {
-            'base': 0.015,
-            'speed_factor': 1.5,
-            'accel_factor': 2.0
+            'base_percent': 0.5  # 0.5% per pixel
         },
         'POWER': {
-            'base': 0.008,
-            'speed_factor': 1.2,
-            'accel_factor': 1.8
+            'base_percent': 1.0  # 1.0% per pixel
         },
         'SCALE': {
-            'base': 0.004,
-            'speed_factor': 1.0,
-            'accel_factor': 1.5
+            'base_percent': 0.3  # 0.3% per pixel
         },
         'ANGLE': {
-            'base': 0.008,
-            'speed_factor': 1.2,
-            'accel_factor': 1.8
+            'base_percent': 0.5  # 0.5% per pixel
         },
         'TEMPERATURE': {
-            'base': 0.025,  # Increased from 0.006 to allow full range (1000K-20000K)
-            'speed_factor': 1.5,  # Increased for better fast drag response
-            'accel_factor': 2.0   # Increased for better acceleration
+            'base_percent': 0.5  # 5.0% per pixel
         },
         'BLEND': {
-            'base': 0.008,
-            'speed_factor': 0.9,
-            'accel_factor': 1.3
+            'base_percent': 0.5  # 0.5% per pixel
         }
     }
 
@@ -191,69 +179,19 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
             traceback.print_exc()
             return {'CANCELLED'}
     
-    def calculate_smart_sensitivity(self, context, event, delta_x, mode):
-        """Calculate smart sensitivity based on mode, speed, and acceleration"""
-        import time
+    def calculate_smart_sensitivity(self, context, event, delta_x, mode, current_value=1.0):
+        """Calculate smart sensitivity based on base percentage only"""
         
         mode_config = self._MODE_SENSITIVITY.get(mode, self._MODE_SENSITIVITY['DISTANCE'])
-        base_sensitivity = mode_config['base']
-        speed_factor = mode_config['speed_factor']
-        accel_factor = mode_config['accel_factor']
+        base_percent = mode_config['base_percent']
         
-        if self._last_time == 0:
-            self._last_mouse_x = event.mouse_x
-            self._last_time = time.time()
-            self._total_drag_distance = 0
-            self._drag_start_time = time.time()
-            return base_sensitivity * delta_x
-        
-        current_time = time.time()
-        time_delta = current_time - self._last_time
-        
-        if time_delta > 0:
-            current_mouse_x = event.mouse_x
-            mouse_delta = current_mouse_x - self._last_mouse_x
-            mouse_speed = abs(mouse_delta) / time_delta
-            
-            if mouse_speed < 100:
-                speed_multiplier = 0.5
-            elif mouse_speed > 1000:
-                speed_multiplier = 2.0
-            else:
-                speed_multiplier = 1.0
-            
-            speed_sensitivity = base_sensitivity * (1.0 + (speed_multiplier - 1.0) * speed_factor)
-        else:
-            speed_sensitivity = base_sensitivity
-        
-        self._total_drag_distance += abs(delta_x)
-        drag_duration = current_time - self._drag_start_time
-        
-        if drag_duration > 0:
-            if self._total_drag_distance < 100:
-                accel_multiplier = 0.7
-            elif self._total_drag_distance > 500:
-                accel_multiplier = 1.5
-            else:
-                accel_multiplier = 1.0
-            
-            accel_sensitivity = speed_sensitivity * (1.0 + (accel_multiplier - 1.0) * accel_factor)
-        else:
-            accel_sensitivity = speed_sensitivity
-        
-        self._last_mouse_x = current_mouse_x
-        self._last_time = current_time
-        
-        final_sensitivity = accel_sensitivity
-        amount = delta_x * final_sensitivity
+        # Return percentage change (as decimal, e.g., 0.05 for 5%)
+        percentage_change = (base_percent / 100.0) * delta_x
         
         if hasattr(context.scene, 'lumi_debug_sensitivity') and context.scene.lumi_debug_sensitivity:
-            if time_delta > 0:
-                print(f"Mode: {mode}, Speed: {mouse_speed:.1f}px/s, Distance: {self._total_drag_distance:.1f}px, Sensitivity: {final_sensitivity:.4f}")
-            else:
-                print(f"Mode: {mode}, Distance: {self._total_drag_distance:.1f}px, Sensitivity: {final_sensitivity:.4f}")
+            print(f"Mode: {mode}, Base Percent: {base_percent:.2f}%, Delta X: {delta_x}, Change: {percentage_change:.4f}")
         
-        return amount
+        return percentage_change
     
     def reset_sensitivity_tracking(self):
         """Reset sensitivity tracking variables"""
@@ -396,7 +334,12 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
                         area.tag_redraw()
                 delta_x = event.mouse_x - self._start_mouse_x
                 scroll_mode = getattr(scene, 'lumi_smart_mode', 'DISTANCE')
-                amount = self.calculate_smart_sensitivity(context, event, delta_x, scroll_mode)
+                # Calculate amount - special handling for POWER, ANGLE, BLEND, TEMPERATURE modes with inverse relationship
+                if scroll_mode in ['POWER', 'ANGLE', 'BLEND', 'TEMPERATURE']:
+                    # These modes use inverse relationship, amount calculated per light/item in the mode block
+                    amount = 0  # Placeholder, will be calculated per light/item
+                else:
+                    amount = self.calculate_smart_sensitivity(context, event, delta_x, scroll_mode)
                 lumi_reset_highlight(scene)
                 
                 # Validate mode availability for selected light
@@ -408,15 +351,14 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
                 
                 if scroll_mode == 'DISTANCE':
                     scene.lumi_status_distance_active = True
-                    # Use smart sensitivity amount directly
-                    distance_step = amount
                     light_target = scene.light_target
                     for light in selected_lights:
                         if "Lumi_pivot_world" in light:
                             pivot = lumi_get_light_pivot(light)
                             light_to_pivot = light.location - pivot
                             current_distance = light_to_pivot.length
-                            new_distance = max(0.1, current_distance + distance_step)
+                            # Apply percentage change: new_distance = current_distance * (1 + amount)
+                            new_distance = max(0.1, current_distance * (1.0 + amount))
                             direction_vec = light_to_pivot.normalized()
                             light.location = pivot + (direction_vec * new_distance)
                             lumi_update_light_orientation(light)
@@ -424,19 +366,25 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
                             target_pos = light_target.location
                             light_to_target = light.location - target_pos
                             current_distance = light_to_target.length
-                            new_distance = max(0.1, current_distance + distance_step)
+                            # Apply percentage change: new_distance = current_distance * (1 + amount)
+                            new_distance = max(0.1, current_distance * (1.0 + amount))
                             direction_vec = light_to_target.normalized()
                             light.location = target_pos + (direction_vec * new_distance)
                 elif scroll_mode == 'POWER':
                     scene.lumi_status_power_active = True
-                    power_value = lumi_get_active_power_value(context)
-                    power_delta = amount * power_value
                     for light in selected_lights:
-                        light.data.energy = max(0.001, light.data.energy + power_delta)
+                        current_energy = light.data.energy
+                        # Inverse relationship: sensitivitas berkurang dari 1% (nilai 1) ke 0.2% (nilai 100)
+                        clamped_energy = max(1.0, min(100.0, current_energy))  # Clamp ke rentang 1-100
+                        # Formula: sensitivitas = 1.0 - (0.8/99) * (clamped_energy - 1)
+                        sensitivity_percent = 1.0 - (0.8 / 99.0) * (clamped_energy - 1.0)
+                        # Hitung amount berdasarkan delta_x dan sensitivitas
+                        amount = (sensitivity_percent / 100.0) * delta_x
+                        # Apply percentage change: new_energy = current_energy * (1 + amount)
+                        new_energy = max(0.001, current_energy * (1.0 + amount))
+                        light.data.energy = new_energy
                 elif scroll_mode == 'SCALE':
                     scene.lumi_status_scale_active = True
-                    # Use smart sensitivity amount directly
-                    scale_factor = amount
                     
                     # Check if any selected light can use non-XY axis
                     can_use_custom_axis = False
@@ -455,33 +403,59 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
                     for light in selected_lights:
                         data = light.data
                         if data.type in {'POINT', 'SPOT'}:
-                            data.shadow_soft_size = max(0.01, data.shadow_soft_size + scale_factor)
+                            current_size = data.shadow_soft_size
+                            new_size = max(0.01, current_size * (1.0 + amount))
+                            data.shadow_soft_size = new_size
                         elif data.type == 'AREA':
                             shape = getattr(data, 'shape', 'SQUARE')
                             if shape in {'SQUARE', 'DISK'}:
-                                data.size = max(0.01, data.size + scale_factor)
+                                current_size = data.size
+                                new_size = max(0.01, current_size * (1.0 + amount))
+                                data.size = new_size
                             elif shape in {'RECTANGLE', 'ELLIPSE'}:
                                 if axis == 'XY':
-                                    data.size = max(0.01, data.size + scale_factor)
-                                    data.size_y = max(0.01, data.size_y + scale_factor)
+                                    current_size = data.size
+                                    current_size_y = data.size_y
+                                    new_size = max(0.01, current_size * (1.0 + amount))
+                                    new_size_y = max(0.01, current_size_y * (1.0 + amount))
+                                    data.size = new_size
+                                    data.size_y = new_size_y
                                 elif axis == 'X':
-                                    data.size = max(0.01, data.size + scale_factor)
+                                    current_size = data.size
+                                    new_size = max(0.01, current_size * (1.0 + amount))
+                                    data.size = new_size
                                 elif axis == 'Y':
-                                    data.size_y = max(0.01, data.size_y + scale_factor)
+                                    current_size_y = data.size_y
+                                    new_size_y = max(0.01, current_size_y * (1.0 + amount))
+                                    data.size_y = new_size_y
                 elif scroll_mode == 'ANGLE':
                     scene.lumi_status_angle_active = True
-                    angle_delta = amount * 10
-                    print(f"DEBUG ANGLE: amount={amount:.6f}, angle_delta={angle_delta:.6f}")
                     for light in selected_lights:
                         data = light.data
                         if data.type == 'SUN':
-                            # Convert angle_delta from degrees to radians for SUN light
-                            sun_delta = angle_delta * math.pi / 180.0
-                            data.angle = max(0.0, min(math.pi, data.angle + sun_delta))
+                            current_angle = data.angle
+                            # Convert to degrees for sensitivity calculation (1-180 range)
+                            current_angle_deg = math.degrees(current_angle)
+                            clamped_angle = max(1.0, min(180.0, current_angle_deg))
+                            # Inverse sensitivity: 0.5% at 1° to 0.1% at 180°
+                            sensitivity_percent = 0.5 - (0.4 / 179.0) * (clamped_angle - 1.0)
+                            # Calculate amount based on delta_x and sensitivity
+                            amount = (sensitivity_percent / 100.0) * delta_x
+                            # Apply percentage change: new_angle = current_angle * (1 + amount)
+                            new_angle = max(0.0, min(math.pi, current_angle * (1.0 + amount)))
+                            data.angle = new_angle
                         elif data.type == 'SPOT':
-                            
-                            spot_delta = angle_delta * math.pi / 180.0  
-                            data.spot_size = max(0.0, min(math.pi, data.spot_size + spot_delta))
+                            current_angle = data.spot_size
+                            # Convert to degrees for sensitivity calculation (1-180 range)
+                            current_angle_deg = math.degrees(current_angle)
+                            clamped_angle = max(1.0, min(180.0, current_angle_deg))
+                            # Inverse sensitivity: 0.5% at 1° to 0.1% at 180°
+                            sensitivity_percent = 0.5 - (0.4 / 179.0) * (clamped_angle - 1.0)
+                            # Calculate amount based on delta_x and sensitivity
+                            amount = (sensitivity_percent / 100.0) * delta_x
+                            # Apply percentage change: new_angle = current_angle * (1 + amount)
+                            new_angle = max(0.0, min(math.pi, current_angle * (1.0 + amount)))
+                            data.spot_size = new_angle
                         elif data.type == 'AREA' and hasattr(data, 'spread'):
                             # CRITICAL: Spread is only available in Cycles render engine
                             if scene.render.engine != 'CYCLES':
@@ -492,24 +466,46 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
                                     self._spread_warning_shown = True
                                 continue
                             
-                            # Spread is stored in radians (0-π), convert angle_delta to radians
-                            spread_delta = angle_delta * math.pi / 180.0
-                            data.spread = max(0.0, min(math.pi, data.spread + spread_delta))
+                            current_spread = data.spread
+                            # Convert to degrees for sensitivity calculation (1-180 range)
+                            current_spread_deg = math.degrees(current_spread)
+                            clamped_spread = max(1.0, min(180.0, current_spread_deg))
+                            # Inverse sensitivity: 0.5% at 1° to 0.1% at 180°
+                            sensitivity_percent = 0.5 - (0.4 / 179.0) * (clamped_spread - 1.0)
+                            # Calculate amount based on delta_x and sensitivity
+                            amount = (sensitivity_percent / 100.0) * delta_x
+                            # Apply percentage change: new_spread = current_spread * (1 + amount)
+                            new_spread = max(0.0, min(math.pi, current_spread * (1.0 + amount)))
+                            data.spread = new_spread
                             
                 elif scroll_mode == 'TEMPERATURE':
                     scene.lumi_status_temperature_active = True  
-                    color_step = amount * 100.0  
                     current_temp = getattr(scene, 'lumi_color_temperature', 5500)
-                    new_temp = max(1000, min(20000, current_temp + color_step))
+                    # Clamp temperature to range 1000-20000 for sensitivity calculation
+                    clamped_temp = max(1000.0, min(20000.0, current_temp))
+                    # Inverse sensitivity: 0.5% at 1000K to 0.1% at 20000K
+                    sensitivity_percent = 0.5 - (0.4 / 19000.0) * (clamped_temp - 1000.0)
+                    # Calculate amount based on delta_x and sensitivity
+                    amount = (sensitivity_percent / 100.0) * delta_x
+                    # Apply percentage change: new_temp = current_temp * (1 + amount)
+                    new_temp = max(1000, min(20000, current_temp * (1.0 + amount)))
                     new_temp_int = int(new_temp)
                     scene.lumi_color_temperature = new_temp_int
                     lumi_apply_kelvin_to_lights(context, new_temp_int)
                 elif scroll_mode == 'BLEND':
-                    blend_delta = amount * 0.05
                     for light in selected_lights:
                         data = light.data
                         if data.type == 'SPOT':
-                            data.spot_blend = max(0.0, min(1.0, data.spot_blend + blend_delta))
+                            current_blend = data.spot_blend
+                            # Clamp blend to range 0.01-1 for sensitivity calculation
+                            clamped_blend = max(0.01, min(1.0, current_blend))
+                            # Inverse sensitivity: 0.5% at 0.01 to 0.1% at 1.0
+                            sensitivity_percent = 0.5 - (0.4 / 0.99) * (clamped_blend - 0.01)
+                            # Calculate amount based on delta_x and sensitivity
+                            amount = (sensitivity_percent / 100.0) * delta_x
+                            # Apply percentage change: new_blend = current_blend * (1 + amount)
+                            new_blend = max(0.0, min(1.0, current_blend * (1.0 + amount)))
+                            data.spot_blend = new_blend
                 self._start_mouse_x = event.mouse_x
                 return {'RUNNING_MODAL'}
 

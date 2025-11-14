@@ -754,6 +754,12 @@ def register_keymaps() -> None:
         kmi.properties.mode = 'BLEND'
         addon_keymaps.append((km, kmi))
 
+        # Add Area Light Rectangle: Ctrl+Shift+RIGHTMOUSE
+        kmi = km.keymap_items.new('lumi.add_smart_light', 'RIGHTMOUSE', 'PRESS', ctrl=True, shift=True)
+        kmi.properties.area_shape = 'RECTANGLE'
+        kmi.properties.light_type = 'AREA'
+        addon_keymaps.append((km, kmi))
+
     except (AttributeError, RuntimeError):
         pass
 

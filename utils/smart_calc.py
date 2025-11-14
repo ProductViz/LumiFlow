@@ -218,9 +218,9 @@ def calculate_optimal_light_position(
         # Calculate base distance based on light type and photometric principles
         base_distances = {
             'SUN': 20.0,    # Sun lights are distant sources
-            'POINT': 5.0,   # Point lights follow inverse square law closely
-            'SPOT': 8.0,    # Spot lights need distance for proper beam spread
-            'AREA': 6.0     # Area lights need distance for soft shadows
+            'POINT': 2.0,   # Point lights - closer for better control
+            'SPOT': 3.5,    # Spot lights - moderate distance for beam spread
+            'AREA': 2.5     # Area lights - closer for soft shadows and efficiency
         }
         base_distance = base_distances.get(light_type, 5.0)
 
@@ -295,11 +295,11 @@ def calculate_optimal_power(
     try:
         # Base power based on light type and their photometric characteristics
         base_power = {
-            'POINT': 1000.0,  # Isotropic radiator, high intensity needed
-            'SPOT': 1500.0,   # Directional beam, concentrated power
-            'AREA': 2000.0,   # Diffuse source, needs higher power for even illumination
-            'SUN': 15.0       # Directional source, uses absolute intensity (10x boost for brighter outdoor lighting)
-        }.get(light_type, 1000.0)
+            'POINT': 400.0,  # Isotropic radiator, high intensity needed
+            'SPOT': 600.0,   # Directional beam, concentrated power
+            'AREA': 800.0,   # Diffuse source, needs higher power for even illumination
+            'SUN': 15.0      # Directional source, uses absolute intensity (10x boost for brighter outdoor lighting)
+        }.get(light_type, 400.0)
 
         # SUN light uses absolute intensity, not inverse square law
         if light_type == 'SUN':

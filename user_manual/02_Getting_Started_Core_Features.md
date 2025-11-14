@@ -2,6 +2,13 @@
 
 **LumiFlow User Manual - Part 2 of 5**
 
+This part is focused on **practical usage** of LumiFlow after installation. Here you will learn:
+- How to build your first lighting setup in a few minutes
+- How to understand the main LumiFlow panel sections
+- How core features like Smart Light, Templates, Smart Controls, and Assignment Modes fit into real workflows
+
+Use this chapter when you want to **start lighting real scenes**, especially for product visualization.
+
 ---
 
 ## Table of Contents
@@ -98,16 +105,15 @@ Let's create your first professional lighting setup in just **5 minutes**!
    - Click on `G_KeyLight` in viewport or Outliner
    - Light becomes active (highlighted)
 
-2. **Change Light Power**
-   - Hold `Middle Mouse Button (MMB)`
+2. **Adjust Light Power (Smart Controls)**
+   - Hold `Shift + Middle Mouse Button (Shift + MMB)`
    - Drag mouse **left** (dimmer) or **right** (brighter)
    - Watch the HUD display showing current power value
-   - Release MMB when satisfied
+   - Release when satisfied
 
-3. **Change Light Distance**
-   - Press `D` key (or select Distance mode)
-   - Hold `MMB` and drag
-   - Light moves closer or farther from subject
+3. **Adjust Light Distance (Smart Controls)**
+   - Hold `Ctrl + Middle Mouse Button (Ctrl + MMB)`
+   - Drag to move the light **closer** or **farther** from the subject
    - Release when positioned well
 
 4. **Render Preview**
@@ -267,14 +273,6 @@ The LumiFlow panel is organized into logical sections from top to bottom:
   - Links to GitHub Sponsors, Patreon, Ko-fi
   - Support information
 
-### Removed Sections
-
-**Note:** The following sections have been removed or reorganized in the new panel layout:
-
-- **All Templates Browser** - Now accessed via template menu (`Ctrl+Shift+A`)
-- **Light Linking** - Now accessed via quick link (`Ctrl+Shift+X`)
-- **Support & Info** - Integrated into overlay settings section
-
 ---
 
 ## Core Features Overview
@@ -284,15 +282,15 @@ The LumiFlow panel is organized into logical sections from top to bottom:
 **What it does:** Creates lights with intelligent positioning based on scene analysis
 
 **How it works:**
-- Analyzes selected objects
+- Analyzes the target object (hovered or selected)
 - Calculates optimal light positions
 - Sets appropriate default properties
 - Names lights based on assignment mode
 - Organizes in "LumiFlow Lights" collection
 
 **Access:**
-- Template Menu: `Ctrl+Shift+A`
-- Options: Area, Point, Spot, Sun
+- Smart Light & Template Menu: `Ctrl+Shift+A`
+- Quick Smart Light (Rectangle Area): `Ctrl+Shift+Right Mouse` on hovered mesh
 
 **Smart Features:**
 - Auto-distance based on object size
@@ -310,30 +308,14 @@ The LumiFlow panel is organized into logical sections from top to bottom:
 - Consistent quality results
 - Customizable after application
 
-**Template Categories:**
+**Template Categories (15 templates total):**
 
-**Studio & Commercial (12 templates)**
-- Product photography
-- Portrait lighting
-- Commercial shots
-- E-commerce setups
+- **Studio & Commercial** – Product photography, packshots, portraits, e-commerce
+- **Dramatic & Cinematic** – Story-driven moods (film noir, horror, action, romance)
+- **Environment & Realistic** – Daylight, golden hour, night, and atmospheric setups
+- **Utilities & Single Lights** – Individual lights and utility setups for custom builds
 
-**Dramatic & Cinematic (10 templates)**
-- Film noir
-- Horror atmosphere
-- Action dynamic
-- Romance soft
-- Thriller tension
-
-**Environment & Realistic (12 templates)**
-- Daylight simulation
-- Golden hour
-- Night scenes
-- Weather-based lighting
-
-**Utilities & Single Lights (6 templates)**
-- Individual light types
-- Building blocks for custom setups
+For a full list of templates and examples, see **Part 3: Template Library**.
 
 ### 3. Positioning System
 
@@ -373,47 +355,24 @@ The LumiFlow panel is organized into logical sections from top to bottom:
 
 ### 4. Smart Controls
 
-**What it does:** Adjust light properties with intuitive mouse gestures
+**What it does:** Adjusts light properties with intuitive mouse gestures directly in the viewport.
 
-**6 Control Types:**
+**Control Types (via Smart Controls):**
 
-**Distance Control**
-- Range: 0.1m - 100m
-- Adjusts light distance from pivot
-- Visual distance feedback
+- **Distance** – Move the light closer or farther from the subject.
+- **Power** – Make the light brighter or dimmer.
+- **Scale** – Change light size or radius.
+- **Angle** – Control cone/spread for spot, sun, and area lights.
+- **Blend** – Soften or sharpen shadows.
+- **Temperature** – Make the light warmer or cooler.
 
-**Power Control**
-- Range: 1W - 10,000W
-- Adjusts light intensity
-- Logarithmic scaling for precision
+**How to Use (concept):**
+- Select a light.
+- Use the appropriate **modifier + Middle Mouse Button (MMB)** combination.
+- Drag left/right and watch the on-screen HUD feedback.
+- Release to confirm the new value.
 
-**Scale Control**
-- Range: 0.01m - 50m
-- Area lights: Physical size
-- Point/Spot: Radius
-
-**Angle Control**
-- Range: 0° - 180°
-- Spot lights: Cone width adjustment
-- Sun lights: Angular diameter
-- Area lights: Spread (Cycles render engine only)
-
-**Blend Control**
-- Range: 0.0 - 1.0
-- Shadow softness
-- Hard vs soft shadows
-
-**Temperature Control**
-- Range: 1000K - 12,000K
-- Color temperature
-- Warm to cool spectrum
-
-**How to Use:**
-- Select a light
-- Hold `MMB` (Middle Mouse Button)
-- Drag left/right
-- HUD shows current value
-- Release to confirm
+For detailed shortcut combinations and ranges, see **Part 4: Advanced Features** and **Part 5: Reference & Support**.
 
 ### 5. Light Linking System
 
@@ -825,7 +784,7 @@ Let's walk through common scenarios step-by-step.
 ### Continue to Part 3
 
 In **Part 3: Template Library**, you'll discover:
-- Complete guide to all 40+ templates
+- Complete guide to all 15 templates
 - When to use each template
 - Template customization techniques
 - Category-specific workflows
