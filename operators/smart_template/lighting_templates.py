@@ -20,8 +20,101 @@ from ...utils.material_adaptation import (
     generate_lighting_recommendations, apply_material_adjustments_to_light
 )
 from ...utils.obstruction_detector import get_enhanced_detector
+from ...utils.color import lumi_kelvin_to_rgb
 from ...core.template_system import TemplateSystem, ValidationResult
+from ...utils.template_intelligence import (
+    get_research_template_entry,
+    get_research_lookup_tables,
+)
 from .template_library import get_template
+
+
+def _template_enum_items(self, context):
+    """Dynamic enum items for template selection in the apply dialog."""
+    items = []
+    current_id = getattr(self, "template_id", "") or ""
+    try:
+        from .template_library import list_templates
+        templates = list_templates()
+        has_current = False
+
+        # Read Studio & Commercial visibility preferences so the list of
+        # templates here is consistent with the Studio menu categories.
+        prefs = None
+        try:
+            addon = bpy.context.preferences.addons.get("LumiFlow")
+            if addon:
+                prefs = addon.preferences
+        except Exception:
+            prefs = None
+
+        show_apparel = getattr(prefs, "studio_commercial_show_apparel", True) if prefs else True
+        show_automotive = getattr(prefs, "studio_commercial_show_automotive", True) if prefs else True
+        show_cosmetics = getattr(prefs, "studio_commercial_show_cosmetics", True) if prefs else True
+        show_electronics = getattr(prefs, "studio_commercial_show_electronics", True) if prefs else True
+        show_food = getattr(prefs, "studio_commercial_show_food", True) if prefs else True
+        show_furniture = getattr(prefs, "studio_commercial_show_furniture", True) if prefs else True
+        show_jewelry = getattr(prefs, "studio_commercial_show_jewelry", True) if prefs else True
+        # Generic flag is optional in preferences; default to True
+        show_generic = getattr(prefs, "studio_commercial_show_generic", True) if prefs else True
+
+        for tmpl in templates:
+            tid = tmpl.get("id") or tmpl.get("template_id")
+            if not tid:
+                continue
+
+            # Apply Studio & Commercial visibility filters based on template ID
+            category = tmpl.get("category", "") or ""
+            include = True
+            if category == "Studio & Commercial":
+                tid_lower = tid.lower()
+                if tid_lower.startswith("apparel_") and not show_apparel:
+                    include = False
+                elif tid_lower.startswith("automotive_") and not show_automotive:
+                    include = False
+                elif tid_lower.startswith("cosmetics_") and not show_cosmetics:
+                    include = False
+                elif tid_lower.startswith("electronics_") and not show_electronics:
+                    include = False
+                elif tid_lower.startswith("food_") and not show_food:
+                    include = False
+                elif tid_lower.startswith("furniture_") and not show_furniture:
+                    include = False
+                elif tid_lower.startswith("jewelry_") and not show_jewelry:
+                    include = False
+                else:
+                    # Generic Studio & Commercial template (no product prefix)
+                    if not show_generic:
+                        include = False
+
+            if not include:
+                continue
+
+            name = tmpl.get("name", tid)
+            desc = tmpl.get("description", "")
+            items.append((tid, name, desc))
+            if tid == current_id:
+                has_current = True
+        if current_id and not has_current:
+            items.append((current_id, current_id, "Current template"))
+        if not items:
+            items.append(("default", "Default", "Default template"))
+    except Exception:
+        # Fallback: only expose current template id
+        if current_id:
+            items = [(current_id, current_id, "Current template")]
+        else:
+            items = [("default", "Default", "Default template")]
+    return items
+
+
+def _on_template_choice_update(self, context):
+    """Keep template_id in sync when user changes template in the dialog."""
+    try:
+        if getattr(self, "template_choice", ""):
+            self.template_id = self.template_choice
+    except Exception:
+        pass
 
 
 class LUMI_OT_apply_lighting_template(bpy.types.Operator):
@@ -30,8 +123,13 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
     bl_label = "Apply Lighting Template"
     bl_options = {'REGISTER', 'UNDO'}
 
-    # === PROPERTIES (unchanged) ===
+    # === PROPERTIES ===
     template_id: StringProperty(name="Template ID", default="")
+    template_choice: EnumProperty(
+        name="Template",
+        items=_template_enum_items,
+        update=_on_template_choice_update,
+    )
     auto_scale: BoolProperty(name="Auto Scale", default=True)
     manual_distance: FloatProperty(name="Manual Distance", default=0.0, min=0.0)
     use_camera_relative: BoolProperty(name="Camera Relative", default=False)
@@ -50,6 +148,49 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
     intensity_multiplier: FloatProperty(name="Intensity Multiplier", default=1.0, min=0.1)
     size_multiplier: FloatProperty(name="Size Multiplier", default=1.0, min=0.1)
     preserve_existing: BoolProperty(name="Preserve Existing", default=False)
+    apply_mode: EnumProperty(
+        name="Apply Mode",
+        items=[
+            ('GUIDED_STRICT', "Guided (Strict)", "Match recommended lighting ratios and color as strictly as possible"),
+            ('BALANCED', "Guided (Balanced)", "Blend smart defaults with template values"),
+            ('CREATIVE', "Creative", "Allow more deviation from the guided defaults"),
+        ],
+        default='BALANCED',
+    )
+    contrast_preset: EnumProperty(
+        name="Contrast Preset",
+        items=[
+            ('NEUTRAL', "Neutral", "Use base ratios as-is"),
+            ('SOFTER', "Softer", "Slightly reduce contrast (more fill)"),
+            ('MORE_CONTRAST', "More Contrast", "Slightly increase contrast (stronger key/rim)"),
+        ],
+        default='NEUTRAL',
+    )
+    material_profile_override: EnumProperty(
+        name="Material Profile",
+        items=[
+            ('AUTO', "Auto", "Use detected material profile from scene"),
+            ('REFLECTIVE', "Highly Reflective", "Treat as metallic/high gloss"),
+            ('MATTE', "Dark Matte", "Treat as dark matte surfaces"),
+            ('MIXED', "Mixed", "Mixed materials; use neutral adjustment"),
+        ],
+        default='AUTO',
+    )
+    scene_product_type_override: EnumProperty(
+        name="Scene Category",
+        items=[
+            ('AUTO', "Auto (Detected)", "Use detected scene product type"),
+            ('jewelry', "Jewelry", "Jewelry products"),
+            ('watches', "Watches", "Watch products"),
+            ('food', "Food", "Food / beverage products"),
+            ('cosmetics', "Cosmetics", "Cosmetics and beauty"),
+            ('apparel', "Apparel", "Clothing / fashion"),
+            ('electronics', "Electronics", "Electronic devices"),
+            ('furniture', "Furniture", "Furniture and interior objects"),
+            ('automotive', "Automotive", "Cars and vehicles"),
+        ],
+        default='AUTO',
+    )
 
     @classmethod
     def poll(cls, context):
@@ -58,45 +199,122 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                 len(context.selected_objects) > 0)
 
     def invoke(self, context, event):
-        """Invoke operator with dialog when called from UI"""
+        """Invoke operator with dialog when called from UI.
+
+        Basic research-aware defaults are applied here so the dialog starts
+        with sensible values without forcing behavior during execute().
+        """
+
+        # Sync dropdown template_choice with current template_id so the
+        # dialog starts with the template that initiated the operator.
+        if getattr(self, "template_id", ""):
+            try:
+                self.template_choice = self.template_id
+            except Exception:
+                pass
+
+        # Initialize intensity multiplier lightly from research mood profile
+        try:
+            effective_template_id = self.template_choice or self.template_id
+            research_entry = get_research_template_entry(effective_template_id)
+        except Exception:
+            research_entry = {}
+
+        if research_entry and abs(self.intensity_multiplier - 1.0) < 1e-3:
+            moods = research_entry.get("mood", []) or []
+            moods_lower = [m.lower() for m in moods]
+            # Very simple heuristic: high_key/clean a bit brighter, dramatic/low_key a bit darker
+            if any(m in moods_lower for m in ("high_key", "clean")):
+                self.intensity_multiplier = 1.1
+            elif any(m in moods_lower for m in ("low_key", "dramatic")):
+                self.intensity_multiplier = 0.9
+
         return context.window_manager.invoke_props_dialog(self, width=300)
 
     def draw(self, context):
         """Draw operator properties in dialog"""
-        layout = self.layout       
-        
-        if self.template_id:
-            # Get template info to display name
-            try:
-                template = get_template(self.template_id)
-                if template:
-                    template_name = template.get('name', self.template_id)
-                    layout.label(text=f"{template_name}")
-            except:
-                layout.label(text=f"{self.template_id}")
-        
+        layout = self.layout
+
+        # Header: template selection (dropdown)
+        layout.prop(self, "template_choice")
+
+        # Scene category override + compatibility summary
+        detected_product_type = getattr(context.scene, "lumi_product_type", "unknown") or "unknown"
+        product_types_text = "n/a"
+        product_types = []
+        try:
+            research_entry = get_research_template_entry(self.template_id)
+            product_types = research_entry.get("product_types", []) if research_entry else []
+            if product_types:
+                product_types_text = ", ".join(product_types)
+        except Exception:
+            product_types_text = "n/a"
+
+        layout.prop(self, "scene_product_type_override", text="Scene")
+
+        # Determine effective scene type (override if set, otherwise detected)
+        override = self.scene_product_type_override
+        if override and override != 'AUTO':
+            effective_scene_type = override
+        else:
+            effective_scene_type = detected_product_type
+
+        # Live compatibility indicator (Match / Mismatch)
+        row = layout.row()
+        if effective_scene_type in {"", "unknown"} or not product_types:
+            row.label(text="Not enough data")
+        else:
+            if effective_scene_type in product_types:
+                row.label(text="Match")
+            else:
+                row.alert = True
+                row.label(text="Mismatch")
+
         layout.separator()
-        
-        # Only show camera relative option if cameras exist in scene
+
+        # Apply mode (research-strict / balanced / creative)
+        layout.prop(self, "apply_mode")
+
+        layout.separator()
+
+        # Placement & preservation
         cameras_in_scene = any(obj.type == 'CAMERA' for obj in context.scene.objects)
         if cameras_in_scene:
             layout.prop(self, "use_camera_relative")
         else:
-            # Show disabled label if no cameras
             row = layout.row()
             row.label(text="Camera Relative: No cameras in scene")
             row.enabled = False
-               
+
         layout.prop(self, "preserve_existing")
-        layout.prop(self, "use_material_adaptation")
-        
+        layout.prop(self, "enable_obstruction_detection")
+
         layout.separator()
-        
-        # Info: Show that auto-scaling is enabled
+
+        # Global controls
+        col = layout.column()
+        col.prop(self, "intensity_multiplier")
+        col.prop(self, "size_multiplier")
+        col.prop(self, "use_material_adaptation")
+
+        layout.separator()
+
+        # Advanced: Geometry & Distance
         box = layout.box()
-        box.label(text="Auto-scaling enabled")
-        box.label(text="Light distances scale with object size")
-        
+        box.label(text="Geometry & Distance")
+        box.prop(self, "auto_scale")
+        box.prop(self, "manual_distance")
+
+        # Advanced: Ratios & Mood
+        box = layout.box()
+        box.label(text="Ratios & Mood")
+        box.prop(self, "contrast_preset")
+
+        # Advanced: Material & Adaptation
+        box = layout.box()
+        box.label(text="Material & Adaptation")
+        box.prop(self, "use_material_adaptation")
+        box.prop(self, "material_profile_override")
 
     def execute(self, context):
         """Main execution - orchestration only."""
@@ -132,6 +350,22 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                 include_materials=self.use_material_adaptation
             )
 
+            # Apply scene category override (if user chooses a specific type)
+            override = getattr(self, "scene_product_type_override", "AUTO")
+            if override and override != 'AUTO':
+                scene_ctx.product_type = override
+                try:
+                    context.scene.lumi_product_type = override
+                except Exception:
+                    pass
+
+            # Precompute a lightweight research-based intensity factor that
+            # combines material and mood profiles. Stored on the operator
+            # instance and used by _create_single_light().
+            self._runtime_intensity_factor = self._compute_profile_intensity_factor(scene_ctx)
+
+            # === 2b. CONTEXT-AWARE WARNING (non-blocking, research-based) ===
+
             # === 3. CLEAR EXISTING LIGHTS (if requested) ===
             if not self.preserve_existing:
                 self._clear_existing_lights(context)
@@ -150,16 +384,19 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                 self.report({'WARNING'}, "No lights created")
                 return {'CANCELLED'}
 
-            # === 6. MATERIAL ADAPTATIONS ===
+            # === 6. BASIC RESEARCH RATIOS (intensity) ===
+            self._apply_basic_intensity_ratios(lights)
+
+            # === 7. MATERIAL ADAPTATIONS ===
             if self.use_material_adaptation and scene_ctx.materials:
                 recommendations = generate_lighting_recommendations(scene_ctx.materials)
                 for light in lights:
                     apply_material_adjustments_to_light(light, recommendations)
 
-            # === 7. ORGANIZE ===
+            # === 8. ORGANIZE ===
             self._organize_lights(lights, context)
 
-            # === 8. SELECT ===
+            # === 9. SELECT ===
             self._select_lights(lights, context)
 
             self.report({'INFO'}, f"Applied '{self.template_id}': {len(lights)} lights created")
@@ -171,6 +408,61 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
             traceback.print_exc()
             return {'CANCELLED'}
 
+    def _compute_profile_intensity_factor(self, scene_ctx: SceneContext) -> float:
+        """Compute a small global intensity factor from material & mood profiles.
+
+        Phase 2 integration: we only nudge intensity slightly based on
+        high-level profiles, and clamp the result to a safe range.
+        """
+
+        factor = 1.0
+
+        # 1) Material profile influence
+        try:
+            lookup = get_research_lookup_tables()
+        except Exception:
+            lookup = {}
+
+        mat_profiles = lookup.get("material_profiles", []) or []
+        material_data = getattr(scene_ctx, "materials", None)
+
+        if material_data:
+            dominant_type = getattr(material_data, "dominant_type", "") or ""
+            avg_roughness = getattr(material_data, "average_roughness", 0.5)
+
+            target_profile_name = None
+            if dominant_type == "metallic":
+                target_profile_name = "metallic_high_gloss"
+            elif dominant_type == "dielectric" and avg_roughness > 0.7:
+                target_profile_name = "dark_matte"
+
+            if target_profile_name:
+                for mp in mat_profiles:
+                    if mp.get("name") == target_profile_name:
+                        try:
+                            mp_factor = float(mp.get("recommended_intensity_multiplier", 1.0))
+                            if mp_factor > 0:
+                                factor *= mp_factor
+                        except Exception:
+                            pass
+                        break
+
+        # 2) Mood profile influence (simple high_key vs low_key adjustment)
+        try:
+            research_entry = get_research_template_entry(self.template_id)
+        except Exception:
+            research_entry = {}
+
+        moods = [m.lower() for m in (research_entry.get("mood", []) or [])]
+        if any(m in moods for m in ("high_key", "clean")):
+            factor *= 1.05
+        if any(m in moods for m in ("low_key", "dramatic")):
+            factor *= 0.95
+
+        # Clamp to a conservative range to avoid extreme jumps
+        factor = max(0.6, min(1.6, factor))
+        return factor
+
     def _calculate_light_positions(self, scene_ctx: SceneContext,
                                    template: Dict, context) -> List[Dict]:
         """Calculate initial light positions (no obstruction)."""
@@ -181,8 +473,12 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
             base_distance = self.manual_distance
         else:
             template_distance = template.get('settings', {}).get('base_distance', 2.0)
+            distance_profile = self._build_distance_profile(scene_ctx)
             base_distance = calculate_optimal_distance(
-                scene_ctx.bounds, template_distance, self.auto_scale
+                scene_ctx.bounds,
+                template_distance,
+                self.auto_scale,
+                distance_profile=distance_profile,
             )
 
         # Get camera matrix if needed
@@ -211,6 +507,73 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                 continue
 
         return positions
+
+    def _build_distance_profile(self, scene_ctx: SceneContext) -> Dict[str, Any]:
+        """Build a simple distance_profile dict from research metadata.
+
+        This Phase 2 implementation is intentionally conservative:
+        - Uses product_type (scene or template) to pick a base distance_factor.
+        - Applies small adjustments based on mood tags (high_key/low_key).
+        - Provides optional min/max distance clamps for extreme cases.
+        """
+
+        profile: Dict[str, Any] = {}
+
+        # Try to read research entry; fall back to defaults if unavailable
+        try:
+            research_entry = get_research_template_entry(self.template_id)
+        except Exception:
+            research_entry = {}
+
+        # Determine effective product_type
+        scene_product_type = getattr(scene_ctx, "product_type", "unknown") or "unknown"
+        template_product_types = research_entry.get("product_types", []) or []
+
+        if scene_product_type and scene_product_type not in {"", "unknown"}:
+            effective_product_type = scene_product_type
+        elif template_product_types:
+            effective_product_type = str(template_product_types[0])
+        else:
+            effective_product_type = "generic"
+
+        effective_product_type = effective_product_type.lower()
+
+        # Base factor by product_type (small objects vs large subjects)
+        distance_factor = 1.0
+        min_distance = None
+        max_distance = None
+
+        if effective_product_type in {"jewelry", "watches"}:
+            distance_factor = 0.7
+            min_distance = 0.4
+            max_distance = 3.0
+        elif effective_product_type in {"food", "cosmetics"}:
+            distance_factor = 0.9
+            min_distance = 0.5
+            max_distance = 4.0
+        elif effective_product_type in {"apparel", "electronics", "furniture"}:
+            distance_factor = 1.0
+            min_distance = 0.8
+            max_distance = 8.0
+        elif effective_product_type in {"automotive"}:
+            distance_factor = 1.3
+            min_distance = 3.0
+            max_distance = 20.0
+
+        # Mood-based refinement (high_key vs low_key)
+        moods = [m.lower() for m in research_entry.get("mood", []) or []]
+        if any(m in moods for m in ("high_key", "clean")):
+            distance_factor *= 0.95  # slightly closer for high-key/clean
+        if any(m in moods for m in ("low_key", "dramatic")):
+            distance_factor *= 1.05  # slightly farther for low-key/dramatic
+
+        profile["distance_factor"] = float(distance_factor)
+        if min_distance is not None:
+            profile["min_distance"] = float(min_distance)
+        if max_distance is not None:
+            profile["max_distance"] = float(max_distance)
+
+        return profile
 
     def _adjust_for_obstructions(self, positions: List[Dict],
                                  scene_ctx: SceneContext, context) -> List[Dict]:
@@ -309,6 +672,130 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
 
         return lights
 
+    def _apply_basic_intensity_ratios(self, lights: List[bpy.types.Object]) -> None:
+        """Apply simple research-based intensity ratios for key/fill/back/rim.
+
+        This is a light-touch Phase 1 implementation:
+        - Uses research_lookup_templates.json (key_*_ratio fields) when available.
+        - Derives light roles heuristically from object names (Key/Fill/Back/Rim).
+        - If metadata or roles are missing, it safely falls back without changes.
+        - Operates on already-created lights (energies already include user multipliers).
+        """
+
+        # Only operate when we have lights and a valid template id
+        if not lights or not self.template_id:
+            return
+
+        # Skip in creative mode for now (Phase 3 will refine behavior)
+        apply_mode = getattr(self, "apply_mode", "BALANCED")
+        if apply_mode == 'CREATIVE':
+            return
+
+        try:
+            research_entry = get_research_template_entry(self.template_id)
+        except Exception:
+            research_entry = {}
+
+        if not research_entry:
+            return
+
+        key_fill_ratio = research_entry.get("key_fill_ratio")
+        key_back_ratio = research_entry.get("key_back_ratio")
+        key_rim_ratio = research_entry.get("key_rim_ratio")
+
+        # If no ratios defined, do nothing
+        if not any([key_fill_ratio, key_back_ratio, key_rim_ratio]):
+            return
+
+        # Helper to strip G_/C_XX_ prefixes from light names
+        def _base_name(obj_name: str) -> str:
+            name = obj_name
+            if name.startswith("G_"):
+                return name[2:]
+            if name.startswith("C_") and "_" in name[2:5]:
+                # C_XX_Name pattern
+                parts = name.split("_", 2)
+                if len(parts) == 3:
+                    return parts[2]
+            return name
+
+        # Classify lights by heuristic roles
+        key_lights = []
+        fill_lights = []
+        back_lights = []
+        rim_lights = []
+
+        for light in lights:
+            data = getattr(light, "data", None)
+            if not data or not hasattr(data, "energy"):
+                continue
+            base = _base_name(light.name).lower()
+            if "key" in base:
+                key_lights.append(light)
+            elif "fill" in base:
+                fill_lights.append(light)
+            elif "rim" in base or "edge" in base:
+                rim_lights.append(light)
+            elif "back" in base or "background" in base or "bg" in base:
+                back_lights.append(light)
+
+        # If we couldn't detect any key light, pick the brightest as key
+        if not key_lights:
+            brightest = None
+            max_energy = -1.0
+            for light in lights:
+                data = getattr(light, "data", None)
+                if not data or not hasattr(data, "energy"):
+                    continue
+                if data.energy > max_energy:
+                    max_energy = data.energy
+                    brightest = light
+            if brightest is not None:
+                key_lights.append(brightest)
+
+        if not key_lights:
+            # Still nothing usable
+            return
+
+        # Compute baseline KEY energy (average of current key lights)
+        key_energies = [light.data.energy for light in key_lights if hasattr(light.data, "energy")]
+        if not key_energies:
+            return
+        base_key_energy = sum(key_energies) / len(key_energies)
+
+        # Helper to adjust a group of lights to target ratio
+        def _apply_ratio(group: List[bpy.types.Object], ratio: float) -> None:
+            if not group or not ratio or ratio <= 0:
+                return
+            ratio_adj = float(ratio)
+            preset = getattr(self, "contrast_preset", "NEUTRAL")
+            if apply_mode == 'BALANCED':
+                if preset == 'SOFTER':
+                    ratio_adj *= 0.8
+                elif preset == 'MORE_CONTRAST':
+                    ratio_adj *= 1.2
+            if ratio_adj <= 0:
+                ratio_adj = float(ratio)
+            target = base_key_energy / ratio_adj
+            for obj in group:
+                data = getattr(obj, "data", None)
+                if not data or not hasattr(data, "energy"):
+                    continue
+                current = data.energy
+                if apply_mode == 'GUIDED_STRICT':
+                    data.energy = target
+                else:
+                    # Simple blend: 50% current, 50% target for balanced behavior
+                    data.energy = (current * 0.5) + (target * 0.5)
+
+        # Adjust fill / back / rim according to available ratios
+        if key_fill_ratio:
+            _apply_ratio(fill_lights, float(key_fill_ratio))
+        if key_back_ratio:
+            _apply_ratio(back_lights, float(key_back_ratio))
+        if key_rim_ratio:
+            _apply_ratio(rim_lights, float(key_rim_ratio))
+
     def _create_single_light(self, pos_data: Dict, context) -> bpy.types.Object:
         """Create single light object."""
         light_template = pos_data['light_template']
@@ -359,11 +846,45 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
 
         # Get properties dict
         properties = light_template.get('properties', {})
-        
-        # Set properties
-        intensity = properties.get('intensity', 100.0) * self.intensity_multiplier
+
+        # Set base intensity (including runtime factor from material/mood profiles)
+        runtime_factor = getattr(self, "_runtime_intensity_factor", 1.0)
+        intensity = properties.get('intensity', 100.0) * self.intensity_multiplier * runtime_factor
         light_data.energy = intensity
-        light_data.color = properties.get('color', (1.0, 1.0, 1.0))
+
+        # Determine base color from template
+        base_color = properties.get('color', (1.0, 1.0, 1.0))
+        color = base_color
+
+        # If template color is effectively neutral, we may override with
+        # research-based color temperature (unless in CREATIVE mode).
+        apply_mode_color = getattr(self, "apply_mode", "BALANCED")
+        if apply_mode_color != 'CREATIVE':
+            try:
+                research_entry = get_research_template_entry(self.template_id)
+            except Exception:
+                research_entry = {}
+
+            if research_entry:
+                kelvin = research_entry.get("recommended_color_temp")
+                if isinstance(kelvin, (int, float)) and kelvin > 0:
+                    if apply_mode_color == 'GUIDED_STRICT':
+                        color = lumi_kelvin_to_rgb(float(kelvin))
+                    else:
+                        # Check if base color is near white; only then override
+                        try:
+                            r, g, b = base_color
+                            if (
+                                abs(r - 1.0) < 1e-3 and
+                                abs(g - 1.0) < 1e-3 and
+                                abs(b - 1.0) < 1e-3
+                            ):
+                                color = lumi_kelvin_to_rgb(float(kelvin))
+                        except Exception:
+                            # If base_color is malformed, fall back to kelvin color
+                            color = lumi_kelvin_to_rgb(float(kelvin))
+
+        light_data.color = color
 
         if light_type == 'AREA':
             size = properties.get('size', 1.0) * self.size_multiplier

@@ -7,6 +7,18 @@ Studio Commercial Templates
 Professional lighting templates for studio photography, commercial work, and product photography.
 """
 
+try:
+    from .studio_jewelry import STUDIO_JEWELRY_TEMPLATES
+    from .studio_food import STUDIO_FOOD_TEMPLATES
+    from .studio_cosmetics import STUDIO_COSMETICS_TEMPLATES
+    from .studio_electronics import STUDIO_ELECTRONICS_TEMPLATES
+    from .studio_apparel import STUDIO_APPAREL_TEMPLATES
+    from .studio_furniture import STUDIO_FURNITURE_TEMPLATES
+    from .studio_automotive import STUDIO_AUTOMOTIVE_TEMPLATES
+    _PRODUCT_TEMPLATES_IMPORTED = True
+except ImportError:
+    _PRODUCT_TEMPLATES_IMPORTED = False
+
 # Studio & Commercial Templates Collection
 STUDIO_COMMERCIAL_TEMPLATES = {
     "three_point_setup": {
@@ -605,129 +617,32 @@ STUDIO_COMMERCIAL_TEMPLATES = {
             "clarity": 0.1,
             "color_balance": "neutral"
         }
-    },
-
-    "jewelry_macro": {
-        "id": "jewelry_macro",
-        "name": "Jewelry Macro",
-        "category": "Studio & Commercial",
-        "description": "Specialized macro lighting for jewelry photography with maximum detail and sparkle",
-        "author": "LumiFlow",
-        "version": "1.1",
-        "lights": [
-            {
-                "name": "Top Macro Light",
-                "type": "AREA",
-                "position": {
-                    "method": "spherical",
-                    "params": {
-                        "azimuth": 0,
-                        "elevation": 80,
-                        "distance": 1.0
-                    }
-                },
-                "rotation": {
-                    "target": "subject",
-                    "offset": (0, 0, 0)
-                },
-                "properties": {
-                    "size": 0.8,
-                    "intensity": 180,
-                    "color": (1.0, 1.0, 1.0),
-                    "shape": "DISK"
-                }
-            },
-            {
-                "name": "Left Side Light",
-                "type": "SPOT",
-                "position": {
-                    "method": "spherical",
-                    "params": {
-                        "azimuth": -90,
-                        "elevation": 30,
-                        "distance": 1.0
-                    }
-                },
-                "rotation": {
-                    "target": "subject",
-                    "offset": (0, 0, 0)
-                },
-                "properties": {
-                    "intensity": 135,
-                    "color": (1.0, 1.0, 1.0),
-                    "spot_size": 0.174533,
-                    "spot_blend": 0.05
-                }
-            },
-            {
-                "name": "Right Side Light",
-                "type": "SPOT",
-                "position": {
-                    "method": "spherical",
-                    "params": {
-                        "azimuth": 90,
-                        "elevation": 30,
-                        "distance": 1.0
-                    }
-                },
-                "rotation": {
-                    "target": "subject",
-                    "offset": (0, 0, 0)
-                },
-                "properties": {
-                    "intensity": 90,
-                    "color": (1.0, 1.0, 1.0),
-                    "spot_size": 0.174533,
-                    "spot_blend": 0.05
-                }
-            },
-            {
-                "name": "Backlight Sparkle",
-                "type": "SPOT",
-                "position": {
-                    "method": "spherical",
-                    "params": {
-                        "azimuth": 180,
-                        "elevation": 45,
-                        "distance": 0.9
-                    }
-                },
-                "rotation": {
-                    "target": "subject",
-                    "offset": (0, 0, 0)
-                },
-                "properties": {
-                    "intensity": 80,
-                    "color": (1.0, 1.0, 0.9),
-                    "spot_size": 0.087266,
-                    "spot_blend": 0.02
-                }
-            }
-        ],
-        "settings": {
-            "base_distance": 1.0,
-            "auto_scale": True,
-            "preserve_existing": False
-        },
-        "material_adaptations": {
-            "default": {"macro_detail": True, "sparkle_enhancement": 1.5},
-            "diamond": {"brilliance_boost": True, "fire_enhancement": 1.3},
-            "gold": {"warm_luster": True, "texture_definition": 1.2},
-            "silver": {"cool_reflection": True, "scratch_reveal": 1.1}
-        },
-        "camera_preferences": {
-            "angle": "macro_top",
-            "height": "macro_overhead",
-            "focal_length": 100,
-            "distance": "macro_close"
-        },
-        "post_processing": {
-            "contrast": 1.3,
-            "shadows": 0.1,
-            "highlights": -0.05,
-            "clarity": 0.5,
-            "color_balance": "neutral"
-        }
     }
 }
 
+# Rebuild STUDIO_COMMERCIAL_TEMPLATES as generic + product-specific aggregator
+_GENERIC_TEMPLATE_KEYS = (
+    "three_point_setup",
+    "high_key_ecommerce",
+    "clamshell_beauty",
+    "product_hero_shot",
+    "catalog_product",
+)
+
+_GENERIC_STUDIO_COMMERCIAL_TEMPLATES = {
+    key: STUDIO_COMMERCIAL_TEMPLATES[key]
+    for key in _GENERIC_TEMPLATE_KEYS
+    if key in STUDIO_COMMERCIAL_TEMPLATES
+}
+
+STUDIO_COMMERCIAL_TEMPLATES = {}
+STUDIO_COMMERCIAL_TEMPLATES.update(_GENERIC_STUDIO_COMMERCIAL_TEMPLATES)
+
+if _PRODUCT_TEMPLATES_IMPORTED:
+    STUDIO_COMMERCIAL_TEMPLATES.update(STUDIO_JEWELRY_TEMPLATES)
+    STUDIO_COMMERCIAL_TEMPLATES.update(STUDIO_FOOD_TEMPLATES)
+    STUDIO_COMMERCIAL_TEMPLATES.update(STUDIO_COSMETICS_TEMPLATES)
+    STUDIO_COMMERCIAL_TEMPLATES.update(STUDIO_ELECTRONICS_TEMPLATES)
+    STUDIO_COMMERCIAL_TEMPLATES.update(STUDIO_APPAREL_TEMPLATES)
+    STUDIO_COMMERCIAL_TEMPLATES.update(STUDIO_FURNITURE_TEMPLATES)
+    STUDIO_COMMERCIAL_TEMPLATES.update(STUDIO_AUTOMOTIVE_TEMPLATES)

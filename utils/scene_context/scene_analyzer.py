@@ -20,6 +20,12 @@ class SceneContext:
     """
     Unified scene context data.
     Immutable snapshot of scene state untuk light calculations.
+
+    Field ``product_type`` disiapkan sebagai placeholder untuk menyimpan
+    kategori produk scene (mis. jewelry, food, dsb.) ketika sistem
+    klasifikasi produk terintegrasi penuh. Untuk saat ini nilainya
+    default "unknown" dan boleh diabaikan oleh pemanggil yang belum
+    membutuhkannya.
     """
     bounds: BoundsData
     camera: Optional[CameraData] = None
@@ -28,6 +34,7 @@ class SceneContext:
     spatial: SpatialGraph = None
     timestamp: float = 0.0
     frame: int = 0
+    product_type: str = "unknown"
 
     def get_background_objects(self) -> List[bpy.types.Object]:
         """Get all background classified objects."""
@@ -117,7 +124,8 @@ class SceneAnalyzer:
             materials=materials,
             spatial=spatial,
             timestamp=time.time(),
-            frame=self.context.scene.frame_current
+            frame=self.context.scene.frame_current,
+            product_type=getattr(self.context.scene, "lumi_product_type", "unknown"),
         )
 
     def quick_bounds(self, objects: List[bpy.types.Object]) -> BoundsData:

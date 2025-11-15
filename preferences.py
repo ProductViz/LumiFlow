@@ -56,6 +56,49 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         update=lambda self, context: self.force_viewport_redraw()
     )
 
+    # Studio & Commercial template category visibility
+    studio_commercial_show_apparel: bpy.props.BoolProperty(
+        name="Apparel",
+        description="Show apparel-specific Studio & Commercial templates",
+        default=True,
+    )
+
+    studio_commercial_show_automotive: bpy.props.BoolProperty(
+        name="Automotive",
+        description="Show automotive-specific Studio & Commercial templates",
+        default=True,
+    )
+
+    studio_commercial_show_cosmetics: bpy.props.BoolProperty(
+        name="Cosmetics",
+        description="Show cosmetics-specific Studio & Commercial templates",
+        default=True,
+    )
+
+    studio_commercial_show_electronics: bpy.props.BoolProperty(
+        name="Electronics",
+        description="Show electronics-specific Studio & Commercial templates",
+        default=True,
+    )
+
+    studio_commercial_show_food: bpy.props.BoolProperty(
+        name="Food",
+        description="Show food-specific Studio & Commercial templates",
+        default=True,
+    )
+
+    studio_commercial_show_furniture: bpy.props.BoolProperty(
+        name="Furniture",
+        description="Show furniture-specific Studio & Commercial templates",
+        default=True,
+    )
+
+    studio_commercial_show_jewelry: bpy.props.BoolProperty(
+        name="Jewelry",
+        description="Show jewelry-specific Studio & Commercial templates",
+        default=True,
+    )
+
     @property
     def overlay_font_scale(self):
         """Get font scale (same as display scale)."""
@@ -114,6 +157,29 @@ class LumiFlowAddonPreferences(bpy.types.AddonPreferences):
         
         
         
+        # =====================================================================
+        # STUDIO & COMMERCIAL TEMPLATE CATEGORIES
+        # =====================================================================
+        
+        box_sc = layout.box()
+        col_sc = box_sc.column(align=True)
+        col_sc.label(text="Studio & Commercial Categories")
+
+        split_sc = col_sc.split(factor=0.5, align=True)
+        col_left = split_sc.column(align=True)
+        col_right = split_sc.column(align=True)
+
+        # Left column (4 items)
+        col_left.prop(self, "studio_commercial_show_apparel")
+        col_left.prop(self, "studio_commercial_show_automotive")
+        col_left.prop(self, "studio_commercial_show_cosmetics")
+        col_left.prop(self, "studio_commercial_show_electronics")
+
+        # Right column (3 items)
+        col_right.prop(self, "studio_commercial_show_food")
+        col_right.prop(self, "studio_commercial_show_furniture")
+        col_right.prop(self, "studio_commercial_show_jewelry")
+
         # =====================================================================
         # PREVIEW & HELP
         # =====================================================================

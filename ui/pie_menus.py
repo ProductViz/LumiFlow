@@ -143,24 +143,417 @@ class LUMI_MT_template_studio_commercial(bpy.types.Menu):
             # No selected object data - show instruction
             layout.label(text="Select mesh object to apply template", icon='INFO')
         else:
-            # Has selected object data - show the menu
+            # Has selected object data - show generic templates directly and product submenus based on preferences
+            prefs = None
             try:
-                from ..operators.smart_template.template_library import get_studio_commercial_templates
-                studio_templates = get_studio_commercial_templates()
+                addon = bpy.context.preferences.addons.get("LumiFlow")
+                if addon:
+                    prefs = addon.preferences
+            except Exception:
+                prefs = None
 
-                if studio_templates:
-                    # Display available studio & commercial templates
-                    for template_id, template in studio_templates.items():
-                        template_name = template.get('name', template_id.replace('_', ' ').title())
-                        op = layout.operator("lumi.apply_lighting_template", text=template_name, icon='LIGHT_DATA')
-                        op.template_id = template_id
-                        op.auto_scale = True
-                        op.use_camera_relative = True
-                else:
-                    layout.label(text="No Studio & Commercial templates available", icon='INFO')
+            show_generic = getattr(prefs, "studio_commercial_show_generic", True) if prefs else True
+            show_apparel = getattr(prefs, "studio_commercial_show_apparel", True) if prefs else True
+            show_automotive = getattr(prefs, "studio_commercial_show_automotive", True) if prefs else True
+            show_cosmetics = getattr(prefs, "studio_commercial_show_cosmetics", True) if prefs else True
+            show_electronics = getattr(prefs, "studio_commercial_show_electronics", True) if prefs else True
+            show_food = getattr(prefs, "studio_commercial_show_food", True) if prefs else True
+            show_furniture = getattr(prefs, "studio_commercial_show_furniture", True) if prefs else True
+            show_jewelry = getattr(prefs, "studio_commercial_show_jewelry", True) if prefs else True
 
-            except Exception as e:
-                layout.label(text=f"Error loading templates: {str(e)[:30]}...", icon='ERROR')
+            has_any_toggle = (
+                show_generic or show_apparel or show_automotive or show_cosmetics or
+                show_electronics or show_food or show_furniture or show_jewelry
+            )
+
+            if not has_any_toggle:
+                layout.label(text="No Studio & Commercial categories enabled in Preferences", icon='INFO')
+                return
+
+            # 1) Generic templates: show directly in this menu (no submenu)
+            if show_generic:
+                try:
+                    from ..operators.smart_template.template_library import get_studio_commercial_templates
+                    studio_templates = get_studio_commercial_templates()
+
+                    if studio_templates:
+                        product_prefixes = (
+                            "apparel_", "automotive_", "cosmetics_", "electronics_",
+                            "food_", "furniture_", "jewelry_",
+                        )
+
+                        items = []
+                        for template_id, template in studio_templates.items():
+                            if any(template_id.startswith(prefix) for prefix in product_prefixes):
+                                continue
+                            template_name = template.get('name', template_id.replace('_', ' ').title())
+                            items.append((template_name, template_id, template))
+
+                        if items:
+                            items.sort(key=lambda x: x[0])
+
+                            for template_name, template_id, template in items:
+                                op = layout.operator("lumi.apply_lighting_template", text=template_name, icon='LIGHT_DATA')
+                                op.template_id = template_id
+                                op.auto_scale = True
+                                op.use_camera_relative = True
+
+                            # Separator between generic templates and product submenus (if any product category is enabled)
+                            if show_apparel or show_automotive or show_cosmetics or show_electronics or show_food or show_furniture or show_jewelry:
+                                layout.separator()
+                except Exception as e:
+                    layout.label(text=f"Error loading templates: {str(e)[:30]}...", icon='ERROR')
+
+            # 2) Product-specific categories as submenus
+            if show_apparel:
+                row = layout.row()
+                row.menu("LUMI_MT_template_studio_commercial_apparel", text="Apparel", icon='OUTLINER_OB_ARMATURE')
+
+            if show_automotive:
+                row = layout.row()
+                row.menu("LUMI_MT_template_studio_commercial_automotive", text="Automotive", icon='AUTO')
+
+            if show_cosmetics:
+                row = layout.row()
+                row.menu("LUMI_MT_template_studio_commercial_cosmetics", text="Cosmetics", icon='MOD_TINT')
+
+            if show_electronics:
+                row = layout.row()
+                row.menu("LUMI_MT_template_studio_commercial_electronics", text="Electronics", icon='DRIVER')
+
+            if show_food:
+                row = layout.row()
+                row.menu("LUMI_MT_template_studio_commercial_food", text="Food", icon='SEQ_PREVIEW')
+
+            if show_furniture:
+                row = layout.row()
+                row.menu("LUMI_MT_template_studio_commercial_furniture", text="Furniture", icon='MOD_BUILD')
+
+            if show_jewelry:
+                row = layout.row()
+                row.menu("LUMI_MT_template_studio_commercial_jewelry", text="Jewelry", icon='META_BALL')
+
+
+class LUMI_MT_template_studio_commercial_apparel(bpy.types.Menu):
+    bl_label = "Apparel"
+    bl_idname = "LUMI_MT_template_studio_commercial_apparel"
+
+    def draw(self, context):
+        layout = self.layout
+
+        scene = context.scene
+        selected_obj = getattr(scene, 'lumi_temp_selected_obj', None)
+        has_selected_data = (selected_obj is not None and selected_obj.type == 'MESH' and lumi_is_addon_enabled())
+
+        if not has_selected_data:
+            layout.label(text="Select mesh object to apply template", icon='INFO')
+            return
+
+        try:
+            from ..operators.smart_template.template_library import get_studio_commercial_templates
+            studio_templates = get_studio_commercial_templates()
+
+            if not studio_templates:
+                layout.label(text="No Studio & Commercial templates available", icon='INFO')
+                return
+
+            items = []
+            for template_id, template in studio_templates.items():
+                if not template_id.startswith("apparel_"):
+                    continue
+                template_name = template.get('name', template_id.replace('_', ' ').title())
+                items.append((template_name, template_id, template))
+
+            if not items:
+                layout.label(text="No apparel templates available", icon='INFO')
+                return
+
+            items.sort(key=lambda x: x[0])
+
+            for template_name, template_id, template in items:
+                op = layout.operator("lumi.apply_lighting_template", text=template_name, icon='LIGHT_DATA')
+                op.template_id = template_id
+                op.auto_scale = True
+                op.use_camera_relative = True
+
+        except Exception as e:
+            layout.label(text=f"Error loading templates: {str(e)[:30]}...", icon='ERROR')
+
+
+class LUMI_MT_template_studio_commercial_automotive(bpy.types.Menu):
+    bl_label = "Automotive"
+    bl_idname = "LUMI_MT_template_studio_commercial_automotive"
+
+    def draw(self, context):
+        layout = self.layout
+
+        scene = context.scene
+        selected_obj = getattr(scene, 'lumi_temp_selected_obj', None)
+        has_selected_data = (selected_obj is not None and selected_obj.type == 'MESH' and lumi_is_addon_enabled())
+
+        if not has_selected_data:
+            layout.label(text="Select mesh object to apply template", icon='INFO')
+            return
+
+        try:
+            from ..operators.smart_template.template_library import get_studio_commercial_templates
+            studio_templates = get_studio_commercial_templates()
+
+            if not studio_templates:
+                layout.label(text="No Studio & Commercial templates available", icon='INFO')
+                return
+
+            items = []
+            for template_id, template in studio_templates.items():
+                if not template_id.startswith("automotive_"):
+                    continue
+                template_name = template.get('name', template_id.replace('_', ' ').title())
+                items.append((template_name, template_id, template))
+
+            if not items:
+                layout.label(text="No automotive templates available", icon='INFO')
+                return
+
+            items.sort(key=lambda x: x[0])
+
+            for template_name, template_id, template in items:
+                op = layout.operator("lumi.apply_lighting_template", text=template_name, icon='LIGHT_DATA')
+                op.template_id = template_id
+                op.auto_scale = True
+                op.use_camera_relative = True
+
+        except Exception as e:
+            layout.label(text=f"Error loading templates: {str(e)[:30]}...", icon='ERROR')
+
+
+class LUMI_MT_template_studio_commercial_cosmetics(bpy.types.Menu):
+    bl_label = "Cosmetics"
+    bl_idname = "LUMI_MT_template_studio_commercial_cosmetics"
+
+    def draw(self, context):
+        layout = self.layout
+
+        scene = context.scene
+        selected_obj = getattr(scene, 'lumi_temp_selected_obj', None)
+        has_selected_data = (selected_obj is not None and selected_obj.type == 'MESH' and lumi_is_addon_enabled())
+
+        if not has_selected_data:
+            layout.label(text="Select mesh object to apply template", icon='INFO')
+            return
+
+        try:
+            from ..operators.smart_template.template_library import get_studio_commercial_templates
+            studio_templates = get_studio_commercial_templates()
+
+            if not studio_templates:
+                layout.label(text="No Studio & Commercial templates available", icon='INFO')
+                return
+
+            items = []
+            for template_id, template in studio_templates.items():
+                if not template_id.startswith("cosmetics_"):
+                    continue
+                template_name = template.get('name', template_id.replace('_', ' ').title())
+                items.append((template_name, template_id, template))
+
+            if not items:
+                layout.label(text="No cosmetics templates available", icon='INFO')
+                return
+
+            items.sort(key=lambda x: x[0])
+
+            for template_name, template_id, template in items:
+                op = layout.operator("lumi.apply_lighting_template", text=template_name, icon='LIGHT_DATA')
+                op.template_id = template_id
+                op.auto_scale = True
+                op.use_camera_relative = True
+
+        except Exception as e:
+            layout.label(text=f"Error loading templates: {str(e)[:30]}...", icon='ERROR')
+
+
+class LUMI_MT_template_studio_commercial_electronics(bpy.types.Menu):
+    bl_label = "Electronics"
+    bl_idname = "LUMI_MT_template_studio_commercial_electronics"
+
+    def draw(self, context):
+        layout = self.layout
+
+        scene = context.scene
+        selected_obj = getattr(scene, 'lumi_temp_selected_obj', None)
+        has_selected_data = (selected_obj is not None and selected_obj.type == 'MESH' and lumi_is_addon_enabled())
+
+        if not has_selected_data:
+            layout.label(text="Select mesh object to apply template", icon='INFO')
+            return
+
+        try:
+            from ..operators.smart_template.template_library import get_studio_commercial_templates
+            studio_templates = get_studio_commercial_templates()
+
+            if not studio_templates:
+                layout.label(text="No Studio & Commercial templates available", icon='INFO')
+                return
+
+            items = []
+            for template_id, template in studio_templates.items():
+                if not template_id.startswith("electronics_"):
+                    continue
+                template_name = template.get('name', template_id.replace('_', ' ').title())
+                items.append((template_name, template_id, template))
+
+            if not items:
+                layout.label(text="No electronics templates available", icon='INFO')
+                return
+
+            items.sort(key=lambda x: x[0])
+
+            for template_name, template_id, template in items:
+                op = layout.operator("lumi.apply_lighting_template", text=template_name, icon='LIGHT_DATA')
+                op.template_id = template_id
+                op.auto_scale = True
+                op.use_camera_relative = True
+
+        except Exception as e:
+            layout.label(text=f"Error loading templates: {str(e)[:30]}...", icon='ERROR')
+
+
+class LUMI_MT_template_studio_commercial_food(bpy.types.Menu):
+    bl_label = "Food"
+    bl_idname = "LUMI_MT_template_studio_commercial_food"
+
+    def draw(self, context):
+        layout = self.layout
+
+        scene = context.scene
+        selected_obj = getattr(scene, 'lumi_temp_selected_obj', None)
+        has_selected_data = (selected_obj is not None and selected_obj.type == 'MESH' and lumi_is_addon_enabled())
+
+        if not has_selected_data:
+            layout.label(text="Select mesh object to apply template", icon='INFO')
+            return
+
+        try:
+            from ..operators.smart_template.template_library import get_studio_commercial_templates
+            studio_templates = get_studio_commercial_templates()
+
+            if not studio_templates:
+                layout.label(text="No Studio & Commercial templates available", icon='INFO')
+                return
+
+            items = []
+            for template_id, template in studio_templates.items():
+                if not template_id.startswith("food_"):
+                    continue
+                template_name = template.get('name', template_id.replace('_', ' ').title())
+                items.append((template_name, template_id, template))
+
+            if not items:
+                layout.label(text="No food templates available", icon='INFO')
+                return
+
+            items.sort(key=lambda x: x[0])
+
+            for template_name, template_id, template in items:
+                op = layout.operator("lumi.apply_lighting_template", text=template_name, icon='LIGHT_DATA')
+                op.template_id = template_id
+                op.auto_scale = True
+                op.use_camera_relative = True
+
+        except Exception as e:
+            layout.label(text=f"Error loading templates: {str(e)[:30]}...", icon='ERROR')
+
+
+class LUMI_MT_template_studio_commercial_furniture(bpy.types.Menu):
+    bl_label = "Furniture"
+    bl_idname = "LUMI_MT_template_studio_commercial_furniture"
+
+    def draw(self, context):
+        layout = self.layout
+
+        scene = context.scene
+        selected_obj = getattr(scene, 'lumi_temp_selected_obj', None)
+        has_selected_data = (selected_obj is not None and selected_obj.type == 'MESH' and lumi_is_addon_enabled())
+
+        if not has_selected_data:
+            layout.label(text="Select mesh object to apply template", icon='INFO')
+            return
+
+        try:
+            from ..operators.smart_template.template_library import get_studio_commercial_templates
+            studio_templates = get_studio_commercial_templates()
+
+            if not studio_templates:
+                layout.label(text="No Studio & Commercial templates available", icon='INFO')
+                return
+
+            items = []
+            for template_id, template in studio_templates.items():
+                if not template_id.startswith("furniture_"):
+                    continue
+                template_name = template.get('name', template_id.replace('_', ' ').title())
+                items.append((template_name, template_id, template))
+
+            if not items:
+                layout.label(text="No furniture templates available", icon='INFO')
+                return
+
+            items.sort(key=lambda x: x[0])
+
+            for template_name, template_id, template in items:
+                op = layout.operator("lumi.apply_lighting_template", text=template_name, icon='LIGHT_DATA')
+                op.template_id = template_id
+                op.auto_scale = True
+                op.use_camera_relative = True
+
+        except Exception as e:
+            layout.label(text=f"Error loading templates: {str(e)[:30]}...", icon='ERROR')
+
+
+class LUMI_MT_template_studio_commercial_jewelry(bpy.types.Menu):
+    bl_label = "Jewelry"
+    bl_idname = "LUMI_MT_template_studio_commercial_jewelry"
+
+    def draw(self, context):
+        layout = self.layout
+
+        scene = context.scene
+        selected_obj = getattr(scene, 'lumi_temp_selected_obj', None)
+        has_selected_data = (selected_obj is not None and selected_obj.type == 'MESH' and lumi_is_addon_enabled())
+
+        if not has_selected_data:
+            layout.label(text="Select mesh object to apply template", icon='INFO')
+            return
+
+        try:
+            from ..operators.smart_template.template_library import get_studio_commercial_templates
+            studio_templates = get_studio_commercial_templates()
+
+            if not studio_templates:
+                layout.label(text="No Studio & Commercial templates available", icon='INFO')
+                return
+
+            items = []
+            for template_id, template in studio_templates.items():
+                if not template_id.startswith("jewelry_"):
+                    continue
+                template_name = template.get('name', template_id.replace('_', ' ').title())
+                items.append((template_name, template_id, template))
+
+            if not items:
+                layout.label(text="No jewelry templates available", icon='INFO')
+                return
+
+            items.sort(key=lambda x: x[0])
+
+            for template_name, template_id, template in items:
+                op = layout.operator("lumi.apply_lighting_template", text=template_name, icon='LIGHT_DATA')
+                op.template_id = template_id
+                op.auto_scale = True
+                op.use_camera_relative = True
+
+        except Exception as e:
+            layout.label(text=f"Error loading templates: {str(e)[:30]}...", icon='ERROR')
 
 
 class LUMI_MT_template_dramatic_cinematic(bpy.types.Menu):
