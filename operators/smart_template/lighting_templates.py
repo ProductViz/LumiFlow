@@ -58,13 +58,21 @@ def _template_enum_items(self, context):
         # Generic flag is optional in preferences; default to True
         show_generic = getattr(prefs, "studio_commercial_show_generic", True) if prefs else True
 
+        # Temporary collection so we can sort by category then name
+        filtered = []
+
         for tmpl in templates:
             tid = tmpl.get("id") or tmpl.get("template_id")
             if not tid:
                 continue
 
-            # Apply Studio & Commercial visibility filters based on template ID
             category = tmpl.get("category", "") or ""
+
+            # Hide Utilities & Single Lights templates from this dropdown
+            if category == "Utilities & Single Lights":
+                continue
+
+            # Apply Studio & Commercial visibility filters based on template ID
             include = True
             if category == "Studio & Commercial":
                 tid_lower = tid.lower()
@@ -90,12 +98,32 @@ def _template_enum_items(self, context):
             if not include:
                 continue
 
+            filtered.append(tmpl)
+
+        # Sort by high-level category and then name for a tidier list
+        category_order = {
+            "Studio & Commercial": 0,
+            "Dramatic & Cinematic": 1,
+            "Environment & Realistic": 2,
+        }
+
+        filtered.sort(key=lambda t: (
+            category_order.get(t.get("category", ""), 99),
+            str(t.get("name") or t.get("id") or t.get("template_id") or "").lower(),
+        ))
+
+        for tmpl in filtered:
+            tid = tmpl.get("id") or tmpl.get("template_id")
+            if not tid:
+                continue
             name = tmpl.get("name", tid)
             desc = tmpl.get("description", "")
             items.append((tid, name, desc))
             if tid == current_id:
                 has_current = True
+
         if current_id and not has_current:
+            # Ensure current template is still selectable even if filtered out
             items.append((current_id, current_id, "Current template"))
         if not items:
             items.append(("default", "Default", "Default template"))
@@ -130,10 +158,22 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
         items=_template_enum_items,
         update=_on_template_choice_update,
     )
-    auto_scale: BoolProperty(name="Auto Scale", default=True)
+    auto_scale: BoolProperty(
+        name="Auto Scale",
+        description="Automatically scale light placement based on subject size",
+        default=True,
+    )
     manual_distance: FloatProperty(name="Manual Distance", default=0.0, min=0.0)
-    use_camera_relative: BoolProperty(name="Camera Relative", default=False)
-    enable_obstruction_detection: BoolProperty(name="Obstruction Detection", default=False)
+    use_camera_relative: BoolProperty(
+        name="Camera Relative",
+        description="Place lights relative to the active camera when available",
+        default=False,
+    )
+    enable_obstruction_detection: BoolProperty(
+        name="Obstruction Detection",
+        description="Detect geometry that blocks lights and use the chosen fallback strategy",
+        default=False,
+    )
     obstruction_fallback_strategy: EnumProperty(
         name="Fallback Strategy",
         items=[
@@ -143,11 +183,31 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
         ],
         default='ADJUST_POSITION'
     )
-    show_obstruction_warnings: BoolProperty(name="Show Warnings", default=True)
-    use_material_adaptation: BoolProperty(name="Material Adaptation", default=True)
+    show_obstruction_warnings: BoolProperty(
+        name="Show Warnings",
+        description="Show messages when obstructions are detected or lights are skipped",
+        default=True,
+    )
+    use_material_adaptation: BoolProperty(
+        name="Material Adaptation",
+        description="Use detected materials to lightly adjust light intensity and size",
+        default=True,
+    )
     intensity_multiplier: FloatProperty(name="Intensity Multiplier", default=1.0, min=0.1)
     size_multiplier: FloatProperty(name="Size Multiplier", default=1.0, min=0.1)
-    preserve_existing: BoolProperty(name="Preserve Existing", default=False)
+    preserve_existing: BoolProperty(
+        name="Preserve Existing",
+        description="Keep existing LumiFlow lights instead of clearing them first",
+        default=False,
+    )
+    quick_mode: EnumProperty(
+        name="Mode",
+        items=[
+            ('AUTO', "Auto", "Auto: use smart defaults and hide advanced controls"),
+            ('CUSTOM', "Custom", "Custom: show advanced controls and allow changing the template"),
+        ],
+        default='AUTO',
+    )
     apply_mode: EnumProperty(
         name="Apply Mode",
         items=[
@@ -236,7 +296,28 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
         layout = self.layout
 
         # Header: template selection (dropdown)
-        layout.prop(self, "template_choice")
+        row = layout.row()
+        # Template can only be changed in Custom mode; in Auto it is read-only
+        row.enabled = (self.quick_mode == 'CUSTOM')
+        row.prop(self, "template_choice")
+
+        # Quick options: simple, practical popup
+        box = layout.box()
+        box.label(text="Quick Options")
+        row = box.row()
+        # Auto / Custom mode with distinct descriptions
+        row.prop(self, "quick_mode", expand=True)
+        box.label(text="Auto: use smart defaults. Custom: show advanced controls.")
+
+        # Preserve existing lights is always visible, placed below quick mode box
+        layout.prop(self, "preserve_existing")
+
+        # Small visual gap before advanced options when Custom is enabled
+        layout.separator()
+
+        # In non-custom mode, stop here (auto defaults handle the rest)
+        if self.quick_mode != 'CUSTOM':
+            return
 
         # Scene category override + compatibility summary
         detected_product_type = getattr(context.scene, "lumi_product_type", "unknown") or "unknown"
@@ -272,12 +353,12 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
 
         layout.separator()
 
-        # Apply mode (research-strict / balanced / creative)
+        # Apply mode (Guided Strict / Balanced / Creative)
         layout.prop(self, "apply_mode")
 
         layout.separator()
 
-        # Placement & preservation
+        # Placement options
         cameras_in_scene = any(obj.type == 'CAMERA' for obj in context.scene.objects)
         if cameras_in_scene:
             layout.prop(self, "use_camera_relative")
@@ -286,7 +367,6 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
             row.label(text="Camera Relative: No cameras in scene")
             row.enabled = False
 
-        layout.prop(self, "preserve_existing")
         layout.prop(self, "enable_obstruction_detection")
 
         layout.separator()
@@ -295,7 +375,6 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
         col = layout.column()
         col.prop(self, "intensity_multiplier")
         col.prop(self, "size_multiplier")
-        col.prop(self, "use_material_adaptation")
 
         layout.separator()
 
