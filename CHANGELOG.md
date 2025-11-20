@@ -9,9 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Smart Control Exposure Mode (Blender 4.5+)**: Added a new smart control mode for `light.data.exposure`, controlled via **Shift + Right Mouse Drag**. Uses EV-based exposure with adaptive sensitivity, integrated into the Smart Control HUD and overlay tips.
+
 ### Changed
 
+- **Quick Link (Ctrl+Shift+X) on Meshes**: When used on selected mesh objects, Quick Link now toggles the "Quick Smart Add Exclude" flag instead of opening the object group menu, with clear INCLUDE/EXCLUDE feedback messages.
+
 ### Fixed
+
 
 ## [1.0.2] - 2025-11-14
 

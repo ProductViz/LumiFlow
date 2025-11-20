@@ -186,7 +186,73 @@ class LUMI_OT_add_smart_light(bpy.types.Operator):
             light_obj.data.name = f"{shape_name} Area Data"
         
         assign_light_to_active_camera(light_obj)
-        
+
+        # Apply light linking EXCLUDE to all objects marked as exclude quick add
+        try:
+            scene_ll = scene
+
+            # Kumpulkan semua mesh dengan flag exclude
+            exclude_targets = [obj for obj in scene_ll.objects
+                              if obj.type == 'MESH' and bool(getattr(obj, 'lumi_exclude_quick_add', False))]
+
+            if light_obj and light_obj.type == 'LIGHT' and exclude_targets:
+                linked = False
+
+                # 1) Coba pakai API scene.light_linking jika tersedia (Blender 4.x)
+                if hasattr(scene_ll, 'light_linking') and scene_ll.light_linking:
+                    try:
+                        for obj in exclude_targets:
+                            try:
+                                scene_ll.light_linking.link_new(light_obj, obj, 'EXCLUDE')
+                            except Exception:
+                                # Jika satu objek gagal, lanjut ke yang lain
+                                pass
+                        linked = True
+                    except Exception:
+                        linked = False
+
+                # 2) Fallback: gunakan operator light_linking_receivers_link (Blender 3.6)
+                if not linked:
+                    try:
+                        import bpy
+
+                        original_selection = list(context.selected_objects)
+                        original_active = context.view_layer.objects.active
+
+                        bpy.ops.object.select_all(action='DESELECT')
+                        light_obj.select_set(True)
+                        context.view_layer.objects.active = light_obj
+
+                        for obj in exclude_targets:
+                            try:
+                                obj.select_set(True)
+                            except Exception:
+                                pass
+
+                        if hasattr(bpy.ops.object, 'light_linking_receivers_link'):
+                            try:
+                                bpy.ops.object.light_linking_receivers_link(link_state='EXCLUDE')
+                            except Exception:
+                                pass
+
+                        # Kembalikan seleksi awal
+                        bpy.ops.object.select_all(action='DESELECT')
+                        for obj in original_selection:
+                            try:
+                                obj.select_set(True)
+                            except Exception:
+                                pass
+                        try:
+                            context.view_layer.objects.active = original_active
+                        except Exception:
+                            pass
+                    except Exception:
+                        # Jika fallback juga gagal, lanjut tanpa mengganggu alur utama
+                        pass
+        except Exception:
+            # Jika light linking tidak tersedia atau gagal, lanjut tanpa mengganggu alur utama
+            pass
+
         scene.light_target = hit_obj
         scene.light_target_face_location = tuple(hit_location)
         

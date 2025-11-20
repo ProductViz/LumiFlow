@@ -53,6 +53,23 @@ class ModeManager:
                 'DEFAULT': True
             }
         },
+        'EXPOSURE': {
+            'display_name': 'Exposure',
+            'modifier': 'Shift+RMB',
+            'description': 'Light exposure (Blender 4.5+ only)',
+            'properties': {
+                'getter': lambda light, ctx: getattr(getattr(light, 'data', None), 'exposure', 0.0),
+                'formatter': lambda value: f"{value:.2f} EV",
+                'unit': 'EV'
+            },
+            'availability': {
+                'POINT': True,
+                'SUN': True,
+                'SPOT': True,
+                'AREA': True,
+                'DEFAULT': False
+            }
+        },
         'SCALE': {
             'display_name': 'Scale',
             'modifier': 'Alt',
@@ -351,6 +368,21 @@ class ModeManager:
             render_engine = context.scene.render.engine
             if render_engine != 'CYCLES':
                 error_msg = f"❌ Spread requires Cycles"
+                return None, error_msg, False
+        
+        # Special check: EXPOSURE mode requires Blender 4.5+ and exposure property on light data
+        if mode_name == 'EXPOSURE':
+            try:
+                if getattr(bpy.app, 'version', (0, 0, 0)) < (4, 5, 0):
+                    error_msg = "❌ Exposure requires Blender 4.5+"
+                    return None, error_msg, False
+            except Exception:
+                error_msg = "❌ Exposure requires Blender 4.5+"
+                return None, error_msg, False
+
+            data = getattr(light_obj, 'data', None)
+            if not hasattr(data, 'exposure'):
+                error_msg = "❌ Exposure property not available for this light"
                 return None, error_msg, False
         
         if mode_name not in cls.MODES:
