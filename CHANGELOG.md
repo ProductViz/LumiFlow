@@ -13,7 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-
 ## [1.1.0] - 2025-11-22
 
 ### Added
@@ -29,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Quick Link (Ctrl+Shift+X) on Meshes**: Quick Link on selected meshes now toggles Quick Smart Add Exclude with clear INCLUDE/EXCLUDE feedback and a panel overview listing excluded meshes.
 - **Viewport Overlay Toggle Tooltips**: Specific tooltips for overlay tips/info buttons: "Show overlay tips" and "Show overlay info".
 - **Scale Axis UI location**: Scale Axis controls were removed from the main LumiFlow panel and are now managed only via the Alt+Q viewport popup for a cleaner, context-sensitive panel layout.
+- **Viewport overlay tips & icons**: Refined selected-light tips sections and updated RMB/Q icons and Quick Smart Add/Scale Axis hints so the overlay matches the latest shortcuts.
 
 ### Fixed
 

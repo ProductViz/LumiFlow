@@ -55,11 +55,13 @@ class IconManager:
                 'lmb_drag': 'lmb_drag.png',
                 'mmb_drag': 'mmb_drag.png',
                 'rmb_drag': 'rmb_drag.png',
+                'rmb': 'rmb.png',
                 'a': 'key_a.png',
                 'x': 'key_x.png',
                 'c': 'key_c.png',
                 'v': 'key_v.png',
                 'd': 'key_d.png',
+                'q': 'key_q.png',
                 'space': 'key_space.png',
                 'enter': 'key_enter.png',
                 'tab': 'key_tab.png',
@@ -227,8 +229,9 @@ class IconManager:
             elif part_lower in ['mmb', 'mmb_drag']:
                 icon_name = 'mmb_drag'
             elif part_lower in ['rmb', 'rmb_drag']:
-                icon_name = 'rmb_drag'
-            elif part_lower in ['a', 'x', 'c', 'v', 'd']:
+                # Use dedicated icon for RMB click vs drag
+                icon_name = 'rmb' if part_lower == 'rmb' else 'rmb_drag'
+            elif part_lower in ['a', 'x', 'c', 'v', 'd', 'q']:
                 icon_name = part_lower
             elif 'space' in part_lower:
                 icon_name = 'space'
