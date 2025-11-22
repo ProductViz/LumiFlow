@@ -1570,12 +1570,42 @@ class LUMI_OT_quick_link_to_target(bpy.types.Operator):
             self.report({'INFO'}, f"Quick Link Mode Active: Click mesh objects to toggle linking for {len(selected_lights)} light(s). Press X to exit, ESC to cancel.")
             return {'RUNNING_MODAL'}
 
-        # 6. Jika mesh terseleksi, tampilkan menu group untuk mesh
+        # 6. Jika mesh terseleksi, toggle flag exclude quick smart add pada objek-objek tersebut
         elif selected_meshes:
-            return self.show_object_group_menu(context)
+            enabled_count = 0
+            disabled_count = 0
+            for obj in selected_meshes:
+                try:
+                    # Gunakan default False jika properti belum ada
+                    current = bool(getattr(obj, "lumi_exclude_quick_add", False))
+                    new_value = not current
+                    obj.lumi_exclude_quick_add = new_value
+                    if new_value:
+                        enabled_count += 1
+                    else:
+                        disabled_count += 1
+                except Exception as e:
+                    # Abaikan error per-objek supaya operasi lain tetap jalan
+                    logger.debug(f"Quick Link: Failed toggling exclude flag for {obj.name}: {e}")
+
+            total = enabled_count + disabled_count
+            if total:
+                # Gunakan istilah INCLUDE / EXCLUDE agar konsisten dengan light linking
+                if enabled_count and disabled_count:
+                    self.report({'INFO'},
+                                f"Quick Smart Add: set EXCLUDE for {enabled_count} and INCLUDE for {disabled_count} mesh object(s)")
+                elif enabled_count:
+                    self.report({'INFO'},
+                                f"Quick Smart Add: set EXCLUDE for {enabled_count} mesh object(s)")
+                else:
+                    self.report({'INFO'},
+                                f"Quick Smart Add: set INCLUDE for {disabled_count} mesh object(s)")
+            else:
+                self.report({'WARNING'}, "No valid mesh objects to toggle exclude flag")
+            return {'FINISHED'}
 
         else:
-            self.report({'WARNING'}, "Select lights for linking mode or mesh objects for group assignment")
+            self.report({'WARNING'}, "Select lights for linking mode or mesh objects to toggle quick-add exclusion")
             return {'CANCELLED'}
 
     def show_object_group_menu(self, context):

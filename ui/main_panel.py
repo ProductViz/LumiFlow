@@ -54,6 +54,9 @@ class LUMI_PT_light_control(bpy.types.Panel):
         self._draw_positioning_controls(layout, context)
 
         self._draw_smart_setting(layout, scene)
+
+        # Quick Smart Add Exclude overview - shown below Smart Control
+        self._draw_quick_exclude_overview(layout, context)
         
         self._draw_overlay_controls(layout, scene)  
         # Conditional panel rendering - only show one at a time
@@ -136,62 +139,39 @@ class LUMI_PT_light_control(bpy.types.Panel):
             box = layout.box()
             box.label(text="Quick Templates", icon='LIGHT')
             box.label(text="Select objects to apply templates", icon='INFO')
- 
+
+    def _draw_quick_exclude_overview(self, layout: bpy.types.UILayout, context: bpy.types.Context):
+        scene = context.scene
+        exclude_targets = [obj for obj in scene.objects if obj.type == 'MESH' and getattr(obj, "lumi_exclude_quick_add", False)]
+
+        if not exclude_targets:
+            return
+
+        box = layout.box()
+        header = box.row(align=True)
+        header.label(text="Quick Smart Add Exclude", icon='RESTRICT_SELECT_OFF')
+
+        # List excluded objects with per-object remove button
+        list_col = box.column(align=True)
+        for obj in exclude_targets:
+            item_box = list_col.box()
+            row = item_box.row(align=True)
+            row.label(text=obj.name, icon='MESH_CUBE')
+            row.prop(obj, "lumi_exclude_quick_add", text="", icon='CANCEL', toggle=True)
+
     def _draw_smart_setting(self, layout: bpy.types.UILayout, scene: bpy.types.Scene):
-            """Smart control settings with toggle and scale axis in one box"""
+            """Smart control settings with toggle only (axis controlled via viewport menu)"""
             box = layout.box()
-            
+
             # Smart Control Mode toggle
             toggle_row = box.row()
             toggle_row.scale_y = 1.3
-            
+
             smart_control_enabled = getattr(scene, 'lumi_smart_control_mode_enabled', True)
             if smart_control_enabled:
                 toggle_row.prop(scene, "lumi_smart_control_mode_enabled", text="✅ SMART CONTROL ENABLED", toggle=True)
             else:
                 toggle_row.prop(scene, "lumi_smart_control_mode_enabled", text="❌ SMART CONTROL DISABLED", toggle=True)
-            
-            # Only show Scale Axis settings when Smart Control is enabled
-            if smart_control_enabled:
-                col = box.column(align=True)
-                col.separator(factor=0.3)
-                
-                # Axis settings - always show
-                axis_col = col.column(align=True)
-                axis_col.scale_y = 0.9
-                axis_hdr = axis_col.row(align=True)
-                axis_hdr.scale_y = 0.95
-                axis_hdr.label(text="Scale Axis", icon='ORIENTATION_LOCAL')
-                
-                if hasattr(scene, 'lumi_scale_axis'):
-                    # Check if selected light is Area with Rectangle or Ellipse shape
-                    context = bpy.context
-                    selected_lights = [obj for obj in context.selected_objects if obj.type == 'LIGHT']
-                    has_rect_ellipse = False
-                    
-                    if selected_lights:
-                        for light in selected_lights:
-                            if light.data.type == 'AREA':
-                                shape = getattr(light.data, 'shape', 'SQUARE')
-                                if shape in {'RECTANGLE', 'ELLIPSE'}:
-                                    has_rect_ellipse = True
-                                    break
-                    
-                    axis_row = axis_col.split(factor=0.3)
-                    axis_left = axis_row.row(align=True)
-                    axis_left.alignment = 'RIGHT'
-                    axis_left.label(text="Axis :")
-                    axis_right = axis_row.row(align=True)
-                    axis_right.use_property_decorate = False
-                    
-                    # Show full selector for Rectangle/Ellipse, otherwise show label only
-                    if has_rect_ellipse:
-                        axis_right.prop(scene, "lumi_scale_axis", text="")
-                    else:
-                        # Force XY and show as label only
-                        if scene.lumi_scale_axis != 'XY':
-                            scene.lumi_scale_axis = 'XY'
-                        axis_right.label(text="XY (Uniform)")
 
     def _get_selected_lights(self, context: bpy.types.Context) -> list[bpy.types.Object]:
         """Safe method to get selected lights with error handling"""
@@ -212,35 +192,17 @@ class LUMI_PT_light_control(bpy.types.Panel):
             positioning_row.scale_y = 1.3  # Match main toggle height
 
             if getattr(scene, 'lumi_positioning_mode_enabled', True):
-                positioning_row.prop(scene, "lumi_positioning_mode_enabled", text="✅ POSITIONING ENABLED", toggle=True)
+                positioning_row.prop(scene, "lumi_positioning_mode_enabled", text=" POSITIONING ENABLED", toggle=True)
             else:
-                positioning_row.prop(scene, "lumi_positioning_mode_enabled", text="❌ POSITIONING DISABLED", toggle=True)
+                positioning_row.prop(scene, "lumi_positioning_mode_enabled", text=" POSITIONING DISABLED", toggle=True)
 
         except (AttributeError, RuntimeError):
             error_row = layout.row()
             error_row.label(text="Error: Positioning Mode", icon='ERROR')
 
     def _draw_smart_controls(self, layout: bpy.types.UILayout, scene: bpy.types.Scene):
-        """Improved smart controls layout"""
-        col = layout.column(align=True)
-        # Tighter spacing overall
-        col.separator(factor=0.5)
-
-        # Axis settings
-        axis_box = col.box()
-        axis_col = axis_box.column(align=True)
-        axis_col.scale_y = 0.85
-        axis_hdr = axis_col.row(align=True)
-        axis_hdr.scale_y = 0.9
-        axis_hdr.label(text="Scale Axis", icon='ORIENTATION_LOCAL')
-        if hasattr(scene, 'lumi_scale_axis'):
-            axis_row = axis_col.split(factor=0.3)
-            axis_left = axis_row.row(align=True)
-            axis_left.alignment = 'RIGHT'
-            axis_left.label(text="Axis :")
-            axis_right = axis_row.row(align=True)
-            axis_right.use_property_decorate = False
-            axis_right.prop(scene, "lumi_scale_axis", text="")
+        """Deprecated smart controls layout (no UI currently drawn)"""
+        return
 
     def _draw_overlay_controls(self, layout: bpy.types.UILayout, scene: bpy.types.Scene):
         """Overlay controls at bottom with viewport-specific management"""
@@ -290,6 +252,8 @@ class LUMI_PT_light_control(bpy.types.Panel):
 
         # Donate toggle button
         row.prop(scene, "show_donate_panel", text="Donate", icon='FUND')
+
+        row.operator("lumi.open_community_discord", text="", icon='COMMUNITY')
 
     def draw_update_section(self, context, layout):
         """Draw update information section"""

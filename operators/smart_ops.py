@@ -39,6 +39,7 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
             ('ANGLE', "Angle", "Control light angle/spot size/spread"),
             ('BLEND', "Blend", "Control light blend"),
             ('TEMPERATURE', "Temperature", "Control light temperature"),
+            ('EXPOSURE', "Exposure", "Control light exposure (Blender 4.5+ only)"),
         ],
         default='DISTANCE',
     )
@@ -159,6 +160,9 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
                 self._start_value = getattr(scene, 'light_temperature', 5500.0)
             elif current_mode == 'BLEND':
                 self._start_value = getattr(scene, 'light_blend', 0.5)
+            elif current_mode == 'EXPOSURE':
+                first_light = selected_lights[0]
+                self._start_value = getattr(getattr(first_light, 'data', None), 'exposure', 0.0)
             
             lumi_enable_cursor_overlay_handler()
             
@@ -303,6 +307,13 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
 
             if event.type == 'ESC' and event.value == 'PRESS':
                 return cleanup_and_exit(undo_changes=True, message='Scroll changes undone')
+
+            # For EXPOSURE mode started via Shift+RIGHTMOUSE, also finish
+            # when the RIGHTMOUSE button is released (same gesture logic as
+            # POWER mode finishing on MIDDLEMOUSE release).
+            if getattr(scene, 'lumi_smart_mode', 'DISTANCE') == 'EXPOSURE':
+                if event.type == 'RIGHTMOUSE' and event.value == 'RELEASE':
+                    return cleanup_and_exit(message='Exposure control completed')
 
             # Exit when all modifiers are released (for keymap activation)
             if not (event.ctrl or event.shift or event.alt):
@@ -506,6 +517,36 @@ class LUMI_OT_smart_control(bpy.types.Operator, BaseModalOperator):
                             # Apply percentage change: new_blend = current_blend * (1 + amount)
                             new_blend = max(0.0, min(1.0, current_blend * (1.0 + amount)))
                             data.spot_blend = new_blend
+                elif scroll_mode == 'EXPOSURE':
+                    for light in selected_lights:
+                        data = getattr(light, 'data', None)
+                        if not hasattr(data, 'exposure'):
+                            continue
+
+                        # Use the same adaptive sensitivity pattern as POWER,
+                        # but apply it to effective intensity (energy * 2**exposure)
+                        current_exposure = data.exposure
+                        current_energy = getattr(data, 'energy', 1.0)
+                        current_intensity = max(0.001, current_energy * (2.0 ** current_exposure))
+
+                        # Reuse POWER-style sensitivity: 1.0% at low intensity, ~0.2% at high
+                        clamped_intensity = max(1.0, min(100.0, current_intensity))
+                        sensitivity_percent = 1.0 - (0.8 / 99.0) * (clamped_intensity - 1.0)
+                        amount = (sensitivity_percent / 100.0) * delta_x
+
+                        # Convert relative intensity change into EV delta:
+                        # intensity' = intensity * (1 + amount) = energy * 2**(exposure')
+                        # ⇒ exposure' = exposure + log2(1 + amount)
+                        try:
+                            factor = max(0.01, 1.0 + amount)
+                            delta_exposure = math.log2(factor)
+                        except (ValueError, OverflowError):
+                            delta_exposure = 0.0
+
+                        new_exposure = current_exposure + delta_exposure
+                        # Clamp to reasonable range to avoid extreme values
+                        new_exposure = max(-10.0, min(10.0, new_exposure))
+                        data.exposure = new_exposure
                 self._start_mouse_x = event.mouse_x
                 return {'RUNNING_MODAL'}
 
