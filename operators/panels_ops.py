@@ -543,6 +543,17 @@ class LUMI_OT_toggle_viewport_overlay(bpy.types.Operator):
     )
 
     @classmethod
+    def description(cls, context, properties):
+        overlay_type = getattr(properties, "overlay_type", "")
+
+        if overlay_type == "overlay_tips":
+            return "Show overlay tips"
+        if overlay_type == "overlay_info":
+            return "Show overlay info"
+
+        return cls.bl_description
+
+    @classmethod
     def poll(cls, context):
         from ..utils import lumi_is_addon_enabled
         return lumi_is_addon_enabled()
@@ -700,3 +711,103 @@ class LUMI_OT_open_user_guide(bpy.types.Operator):
         except Exception as e:
             self.report({'ERROR'}, f"Failed to open user guide: {str(e)}")
             return {'CANCELLED'}
+
+
+class LUMI_OT_open_community_discord(bpy.types.Operator):
+    """Open LumiFlow community Discord"""
+    bl_idname = "lumi.open_community_discord"
+    bl_label = "Community"
+    bl_description = "LumiFlow community Discord"
+    bl_options = {'REGISTER'}
+
+    @classmethod
+    def poll(cls, context):
+        from ..utils import lumi_is_addon_enabled
+        return lumi_is_addon_enabled()
+
+    def execute(self, context):
+        try:
+            # Discord invite URL for LumiFlow community
+            discord_url = "https://discord.gg/Akav3KCRut"
+
+            # Open in default browser
+            webbrowser.open(discord_url)
+
+            self.report({'INFO'}, "Community Discord opened in browser")
+            return {'FINISHED'}
+
+        except Exception as e:
+            self.report({'ERROR'}, f"Failed to open community Discord: {str(e)}")
+            return {'CANCELLED'}
+
+
+class LUMI_OT_clear_quick_exclude(bpy.types.Operator):
+    """Clear Quick Smart Add exclude flags from all mesh objects in the scene"""
+    bl_idname = "lumi.clear_quick_exclude"
+    bl_label = "Clear Quick Exclude"
+    bl_description = "Clear Quick Smart Add exclude flags from all mesh objects in the current scene"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        from ..utils import lumi_is_addon_enabled
+        return lumi_is_addon_enabled()
+
+    def execute(self, context):
+        scene = context.scene
+        cleared = 0
+
+        for obj in scene.objects:
+            try:
+                if obj.type == 'MESH' and getattr(obj, "lumi_exclude_quick_add", False):
+                    obj.lumi_exclude_quick_add = False
+                    cleared += 1
+            except Exception:
+                # Ignore per-object errors so the rest can still be processed
+                continue
+
+        if cleared:
+            self.report({'INFO'}, f"Cleared Quick Smart Add exclude on {cleared} mesh object(s)")
+        else:
+            self.report({'INFO'}, "No mesh objects had Quick Smart Add exclude enabled")
+
+        return {'FINISHED'}
+
+
+class LUMI_OT_clear_quick_exclude_single(bpy.types.Operator):
+    """Remove one object from Quick Smart Add exclude list"""
+    bl_idname = "lumi.clear_quick_exclude_single"
+    bl_label = "Remove from Quick Exclude"
+    bl_description = "Remove this object from the Quick Smart Add exclude"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    object_name: bpy.props.StringProperty(name="Object Name", default="")
+
+    @classmethod
+    def poll(cls, context):
+        from ..utils import lumi_is_addon_enabled
+        return lumi_is_addon_enabled()
+
+    def execute(self, context):
+        scene = context.scene
+
+        if not self.object_name:
+            self.report({'WARNING'}, "No object specified")
+            return {'CANCELLED'}
+
+        obj = scene.objects.get(self.object_name)
+        if obj is None:
+            self.report({'WARNING'}, "Object not found in scene")
+            return {'CANCELLED'}
+
+        try:
+            if obj.type == 'MESH' and getattr(obj, "lumi_exclude_quick_add", False):
+                obj.lumi_exclude_quick_add = False
+                self.report({'INFO'}, f"Removed Quick Smart Add exclude from {obj.name}")
+            else:
+                self.report({'INFO'}, "Object is not excluded or not a mesh")
+        except Exception as e:
+            self.report({'ERROR'}, f"Failed to clear Quick Exclude for {obj.name}: {e}")
+            return {'CANCELLED'}
+
+        return {'FINISHED'}

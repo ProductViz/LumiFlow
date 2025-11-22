@@ -7,7 +7,6 @@ Highlight Operations
 Operators for highlighting and visual feedback of lights.
 """
 import bpy
-import bgl
 import gpu
 from bpy_extras import view3d_utils
 from bpy.types import Operator

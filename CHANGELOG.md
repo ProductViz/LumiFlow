@@ -9,13 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Smart Control Exposure Mode (Blender 4.5+)**: Added a new smart control mode for `light.data.exposure`, controlled via **Shift + Right Mouse Drag**. Uses EV-based exposure with adaptive sensitivity, integrated into the Smart Control HUD and overlay tips.
+### Changed
+
+### Fixed
+
+
+## [1.1.0] - 2025-11-22
+
+### Added
+
+- **Smart Control Exposure Mode (Blender 4.5+)**: EV-based smart control for `light.data.exposure` using **Shift + Right Mouse Drag**, with adaptive sensitivity.
+- **Community Discord Button**: Opening the official LumiFlow community Discord invite link in the default web browser.
+- **Limit Light to Selected Object**: Option in the Apply Template dialog to restrict new lights to the selected object only.
+- **Quick Smart Add Exclude Overview**: Panel section that appears when there are mesh objects excluded from Quick Smart Add, listing them with per-object toggles.
+- **Viewport Scale Axis Shortcut (Alt+Q)**: Quick Scale Axis popup in the 3D View (**Alt+Q**) for Area lights with Rectangle/Ellipse shape, allowing fast switching between XY / X / Y axes used by Smart Control Scale mode.
 
 ### Changed
 
-- **Quick Link (Ctrl+Shift+X) on Meshes**: When used on selected mesh objects, Quick Link now toggles the "Quick Smart Add Exclude" flag instead of opening the object group menu, with clear INCLUDE/EXCLUDE feedback messages.
+- **Quick Link (Ctrl+Shift+X) on Meshes**: Quick Link on selected meshes now toggles Quick Smart Add Exclude with clear INCLUDE/EXCLUDE feedback and a panel overview listing excluded meshes.
+- **Viewport Overlay Toggle Tooltips**: Specific tooltips for overlay tips/info buttons: "Show overlay tips" and "Show overlay info".
+- **Scale Axis UI location**: Scale Axis controls were removed from the main LumiFlow panel and are now managed only via the Alt+Q viewport popup for a cleaner, context-sensitive panel layout.
 
 ### Fixed
+
+- **Blender 5.0 compatibility fixes**:
+  - Removed deprecated `bgl` dependency from the highlight positioning operator to avoid module import errors in Blender 5.0.
+  - Relaxed context checks in the Auto Light Picker operator so it can be started from property update callbacks and non-viewport contexts in Blender 5.0.
+  - Corrected addon enable toggle logic to use the `Scene.lumi_enabled` RNA BoolProperty, ensuring the panel reflects the true enabled state.
+  - Fixed `KeyError: 'property not found in group'` when clearing temporary hit data by resetting temporary scene properties instead of deleting them.
 
 
 ## [1.0.2] - 2025-11-14

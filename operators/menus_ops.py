@@ -265,10 +265,29 @@ class LUMI_OT_add_smart_light(bpy.types.Operator):
         return {'FINISHED'}
 
     def clear_temp_data(self, scene):
-        temp_attrs = ['lumi_temp_hit_obj', 'lumi_temp_hit_location', 'lumi_temp_hit_normal', 'lumi_temp_hit_index']
-        for attr in temp_attrs:
+        """Clear temporary hit data on the scene safely.
+
+        In Blender 5.0, Scene properties like lumi_temp_* are defined as
+        RNA properties, not plain ID properties. Using ``del scene[attr]``
+        can raise ``KeyError: 'property not found in group'`` when the
+        underlying ID property entry does not exist. To avoid this, we
+        reset each property to a safe default value instead of deleting
+        it from the ID property group.
+        """
+        temp_defaults = {
+            'lumi_temp_hit_obj': None,
+            'lumi_temp_hit_location': (0.0, 0.0, 0.0),
+            'lumi_temp_hit_normal': (0.0, 0.0, 1.0),
+            'lumi_temp_hit_index': 0,
+        }
+
+        for attr, default in temp_defaults.items():
             if hasattr(scene, attr):
-                del scene[attr]
+                try:
+                    setattr(scene, attr, default)
+                except Exception:
+                    # Failsafe: ignore reset errors to avoid interrupting the operator
+                    pass
 
 
 def get_favorite_templates(self, context):
@@ -810,18 +829,70 @@ class LUMI_OT_flip_menu_call(bpy.types.Operator):
         except Exception as e:
             self.report({'ERROR'}, f"Failed to open flip menu: {str(e)}")
             return {'CANCELLED'}
-    
-    def execute(self, context):
-        if not lumi_is_addon_enabled():
-            self.report({'WARNING'}, 'LumiFlow is not active!')
+
+
+class LUMI_OT_scale_axis_menu_call(bpy.types.Operator):
+    """Quick Scale Axis Menu"""
+    bl_idname = "lumi.scale_axis_menu_call"
+    bl_label = "Scale Axis Menu"
+    bl_description = "Quickly change scale axis for Area lights (Rectangle/Ellipse)"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        # Operator is only available when LumiFlow is enabled
+        return lumi_is_addon_enabled()
+
+    def _can_use_custom_axis(self, context):
+        """Check if selection contains an Area light with Rectangle/Ellipse shape"""
+        try:
+            selected_lights = [obj for obj in getattr(context, "selected_objects", []) if obj.type == 'LIGHT']
+        except Exception:
+            return False
+
+        for light in selected_lights:
+            data = getattr(light, "data", None)
+            if getattr(data, "type", None) == 'AREA':
+                shape = getattr(data, 'shape', 'SQUARE')
+                if shape in {'RECTANGLE', 'ELLIPSE'}:
+                    return True
+
+        return False
+
+    def invoke(self, context, event):
+        scene = getattr(context, 'scene', None)
+        if scene is None:
             return {'CANCELLED'}
 
-        try:
-            bpy.ops.wm.call_menu(name="LUMIFLOW_MT_light_flip_menu")
-            return {'FINISHED'}
-        except Exception as e:
-            self.report({'ERROR'}, f"Failed to open flip menu: {str(e)}")
+        # Require Smart Control mode and Scale Axis property for consistency
+        smart_control_mode_enabled = getattr(scene, 'lumi_smart_control_mode_enabled', True)
+        if not smart_control_mode_enabled or not hasattr(scene, 'lumi_scale_axis'):
+            self.report({'INFO'}, "Scale Axis menu is available only when Smart Control mode is enabled")
             return {'CANCELLED'}
+
+        if not self._can_use_custom_axis(context):
+            # Match existing behavior in smart_ops for axis limitations
+            self.report({'INFO'}, "Axis change only available for Area lights with Rectangle/Ellipse shape")
+            return {'CANCELLED'}
+
+        def draw_scale_axis_menu(menu, ctx):
+            layout = menu.layout
+            scn = getattr(ctx, 'scene', None)
+            if scn is None or not hasattr(scn, 'lumi_scale_axis'):
+                return
+
+            col = layout.column(align=True)
+            # Vertical layout: one button per row (XY, X, Y)
+            for axis_id in ('XY', 'X', 'Y'):
+                row = col.row(align=True)
+                row.prop_enum(scn, "lumi_scale_axis", axis_id)
+
+        try:
+            context.window_manager.popup_menu(draw_scale_axis_menu, title="Scale Axis", icon='ORIENTATION_LOCAL')
+        except Exception:
+            return {'CANCELLED'}
+
+        return {'FINISHED'}
 
 class LUMI_OT_set_light_assignment_mode(bpy.types.Operator):
     """Set Light Assignment Mode"""
