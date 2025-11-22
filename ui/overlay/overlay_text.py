@@ -221,6 +221,7 @@ def get_selected_light_tips_template(selected_light, colors=None):
         colors = OverlayConfig.get_all_colors()
     
     light_type = selected_light.data.type
+    has_exposure = hasattr(selected_light.data, 'exposure')
     
     tips_lines = [
         ("💡 LumiFlow Tips", "", colors['header'], 0.5, 70, 1.2), 
@@ -231,6 +232,10 @@ def get_selected_light_tips_template(selected_light, colors=None):
         tips_lines.extend([
             ("Distance", "Ctrl + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
             ("Power", "Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+        ])
+        if has_exposure:
+            tips_lines.append(("Exposure", "Shift + RMB_Drag", colors['secondary'], 0.5, 70, 1.0))
+        tips_lines.extend([
             ("Radius", "Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
             ("Temp.", "Ctrl+Alt + MMB_Drag", colors['secondary'], 0.8, 70, 1.0),
         ])
@@ -238,6 +243,10 @@ def get_selected_light_tips_template(selected_light, colors=None):
         tips_lines.extend([
             ("Distance", "Ctrl + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
             ("Power", "Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+        ])
+        if has_exposure:
+            tips_lines.append(("Exposure", "Shift + RMB_Drag", colors['secondary'], 0.5, 70, 1.0))
+        tips_lines.extend([
             ("Angle", "Alt + shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
             ("Temp.", "Ctrl+Alt + MMB_Drag", colors['secondary'], 0.8, 70, 1.0),
         ])
@@ -245,6 +254,10 @@ def get_selected_light_tips_template(selected_light, colors=None):
         tips_lines.extend([
             ("Distance", "Ctrl + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
             ("Power", "Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+        ])
+        if has_exposure:
+            tips_lines.append(("Exposure", "Shift + RMB_Drag", colors['secondary'], 0.5, 70, 1.0))
+        tips_lines.extend([
             ("Radius", "Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
             ("Spot Size", "Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
             ("Blend", "Shift + Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
@@ -254,6 +267,10 @@ def get_selected_light_tips_template(selected_light, colors=None):
         tips_lines.extend([
             ("Distance", "Ctrl + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
             ("Power", "Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+        ])
+        if has_exposure:
+            tips_lines.append(("Exposure", "Shift + RMB_Drag", colors['secondary'], 0.5, 70, 1.0))
+        tips_lines.extend([
             ("Scale", "Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
             ("Spread", "Ctrl+Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
             ("Temp.", "ctrl+Alt + MMB_Drag", colors['secondary'], 0.8, 70, 1.0),

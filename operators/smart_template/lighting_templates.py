@@ -50,6 +50,7 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
     intensity_multiplier: FloatProperty(name="Intensity Multiplier", default=1.0, min=0.1)
     size_multiplier: FloatProperty(name="Size Multiplier", default=1.0, min=0.1)
     preserve_existing: BoolProperty(name="Preserve Existing", default=False)
+    link_lights_to_selected: BoolProperty(name="Limit Light to Selected Objects", default=False)
 
     @classmethod
     def poll(cls, context):
@@ -90,6 +91,15 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
         layout.prop(self, "preserve_existing")
         layout.prop(self, "use_material_adaptation")
         
+        engine = context.scene.render.engine
+        row = layout.row()
+        row.enabled = (engine == 'CYCLES')
+        row.prop(self, "link_lights_to_selected")
+        if engine != 'CYCLES':
+            row = layout.row()
+            row.enabled = False
+            row.label(text="Light Linking requires Cycles")
+        
         layout.separator()
         
         # Info: Show that auto-scaling is enabled
@@ -102,6 +112,7 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
         """Main execution - orchestration only."""
         try:
             # === 1. VALIDATE ===
+            target_objects = [obj for obj in context.selected_objects if obj.type == 'MESH']
             template_system = TemplateSystem()
 
             # Validate template
@@ -150,6 +161,9 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                 self.report({'WARNING'}, "No lights created")
                 return {'CANCELLED'}
 
+            if self.link_lights_to_selected:
+                self._link_lights_to_objects(lights, target_objects, context)
+
             # === 6. MATERIAL ADAPTATIONS ===
             if self.use_material_adaptation and scene_ctx.materials:
                 recommendations = generate_lighting_recommendations(scene_ctx.materials)
@@ -170,6 +184,55 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
             import traceback
             traceback.print_exc()
             return {'CANCELLED'}
+
+    def _link_lights_to_objects(self, lights: List[bpy.types.Object], objects: List[bpy.types.Object], context) -> None:
+        scene = context.scene
+        if not objects:
+            self.report({'WARNING'}, "No mesh objects selected for light linking")
+            return
+        if scene.render.engine != 'CYCLES':
+            self.report({'WARNING'}, "Cycles render engine required for Light Linking. Skipping light linking.")
+            return
+        link_api = getattr(scene, "light_linking", None)
+        if link_api:
+            for light in lights:
+                if not light or light.type != 'LIGHT':
+                    continue
+                for obj in objects:
+                    if not obj or obj.type != 'MESH':
+                        continue
+                    try:
+                        link_api.link_new(light, obj, 'INCLUDE')
+                    except Exception:
+                        continue
+            return
+        if not hasattr(bpy.ops.object, "light_linking_receivers_link"):
+            self.report({'WARNING'}, "Light Linking operators not available. Skipping light linking.")
+            return
+        original_selected = list(context.selected_objects)
+        original_active = context.view_layer.objects.active
+        try:
+            for light in lights:
+                if not light or light.type != 'LIGHT':
+                    continue
+                bpy.ops.object.select_all(action='DESELECT')
+                light.select_set(True)
+                context.view_layer.objects.active = light
+                for obj in objects:
+                    if not obj or obj.type != 'MESH':
+                        continue
+                    obj.select_set(True)
+                try:
+                    bpy.ops.object.light_linking_receivers_link(link_state='INCLUDE')
+                except Exception:
+                    continue
+        finally:
+            bpy.ops.object.select_all(action='DESELECT')
+            for obj in original_selected:
+                if obj and obj.name in bpy.data.objects:
+                    obj.select_set(True)
+            if original_active and original_active.name in bpy.data.objects:
+                context.view_layer.objects.active = original_active
 
     def _calculate_light_positions(self, scene_ctx: SceneContext,
                                    template: Dict, context) -> List[Dict]:
