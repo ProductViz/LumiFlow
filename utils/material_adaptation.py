@@ -204,7 +204,16 @@ MATERIAL_SUBTYPE_ADJUSTMENTS = {
 
 def generate_lighting_recommendations(material_data: MaterialData) -> dict:
     """Generate lighting recommendations from material analysis."""
-    recs = MATERIAL_LIGHTING_RULES.get(material_data.dominant_type, {}).copy()
+    base = MATERIAL_LIGHTING_RULES.get(material_data.dominant_type)
+
+    # Start from rule for dominant_type if available, otherwise neutral defaults
+    if base is not None:
+        recs = base.copy()
+    else:
+        recs = {
+            'intensity_multiplier': 1.0,
+            'size_multiplier': 1.0,
+        }
 
     # Apply subtype-specific adjustments
     subtype_adjustments = MATERIAL_SUBTYPE_ADJUSTMENTS.get(material_data.material_subtype, {})
@@ -213,11 +222,11 @@ def generate_lighting_recommendations(material_data: MaterialData) -> dict:
 
     # Adjust for emission
     if material_data.has_emission:
-        recs['intensity_multiplier'] *= 0.8
+        recs['intensity_multiplier'] = recs.get('intensity_multiplier', 1.0) * 0.8
 
     # Adjust for roughness extremes
     if material_data.average_roughness < 0.1 or material_data.average_roughness > 0.9:
-        recs['size_multiplier'] *= 1.2
+        recs['size_multiplier'] = recs.get('size_multiplier', 1.0) * 1.2
 
     return recs
 
