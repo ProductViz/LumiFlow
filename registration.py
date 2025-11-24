@@ -278,7 +278,6 @@ from .operators.menus_ops import (
     LUMI_OT_template_category_browser,
     LUMI_OT_smart_template_light_pie_call,
     LUMI_OT_template_favorites,
-    LUMI_OT_background_light_setup,
     LUMI_OT_quick_assign_light,
     LUMI_OT_assign_light_to_target
 )

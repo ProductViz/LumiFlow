@@ -17,8 +17,9 @@ from .camera_analyzer import CameraData
 class ObjectClassification:
     """Classification result untuk single object."""
     type: str  # 'product', 'background', 'camera', 'other'
-    confidence: float  # 0.0 to 1.0
-    reasons: List[str]  # Why this classification
+    subtype: Optional[str] = None  # 'ground', 'wall', 'backdrop', etc.
+    confidence: float = 0.0  # 0.0 to 1.0
+    reasons: List[str] = None  # Why this classification
 
 
 class ObjectClassifier:
@@ -40,7 +41,16 @@ class ObjectClassifier:
         Returns:
             Dict mapping objects to their classifications
         """
-        classifications = {}
+        classifications: Dict[bpy.types.Object, ObjectClassification] = {}
+
+        # Hitung scene scale untuk threshold dinamis
+        scene_scale = 0.0
+        for obj in all_objects:
+            size = self._get_object_size(obj)
+            if size > scene_scale:
+                scene_scale = size
+        if scene_scale <= 0.0:
+            scene_scale = 10.0
 
         # Selected objects are always product/subject
         for obj in selected_objects:
@@ -55,14 +65,15 @@ class ObjectClassifier:
             if obj in classifications:
                 continue  # Already classified
 
-            classification = self._classify_single_object(obj, camera_data, selected_objects)
+            classification = self._classify_single_object(obj, camera_data, selected_objects, scene_scale)
             classifications[obj] = classification
 
         return classifications
 
     def _classify_single_object(self, obj: bpy.types.Object,
                                camera_data: Optional[CameraData],
-                               selected_objects: List[bpy.types.Object]) -> ObjectClassification:
+                               selected_objects: List[bpy.types.Object],
+                               scene_scale: float) -> ObjectClassification:
         """
         Classify single object berdasarkan various heuristics.
         """
@@ -79,11 +90,15 @@ class ObjectClassifier:
                 reasons.append('In camera frustum')
                 confidence -= 0.2  # Could be product
 
+        # Threshold dinamis berdasarkan scene_scale
+        distance_threshold = max(1.0, scene_scale * 0.3)
+        size_threshold = max(5.0, scene_scale * 0.8)
+
         # Check distance dari selected objects
         if selected_objects:
             avg_distance = self._average_distance_to_objects(obj, selected_objects)
-            if avg_distance > 10.0:  # Arbitrary threshold
-                reasons.append(f'Far from subjects ({avg_distance:.1f} units)')
+            if avg_distance > distance_threshold:
+                reasons.append(f'Far from subjects ({avg_distance:.1f} units, threshold {distance_threshold:.1f})')
                 confidence += 0.2
             else:
                 reasons.append(f'Near subjects ({avg_distance:.1f} units)')
@@ -104,8 +119,8 @@ class ObjectClassifier:
 
         # Size heuristic - very large objects likely background
         bounds_size = self._get_object_size(obj)
-        if bounds_size > 50.0:  # Arbitrary large threshold
-            reasons.append(f'Very large object ({bounds_size:.1f})')
+        if bounds_size > size_threshold:
+            reasons.append(f'Very large object ({bounds_size:.1f}, threshold {size_threshold:.1f})')
             confidence += 0.3
 
         # Determine final classification
@@ -116,11 +131,38 @@ class ObjectClassifier:
         else:
             obj_type = 'other'
 
+        background_subtype: Optional[str] = None
+        if obj_type == 'background':
+            background_subtype = self._classify_background_subtype(obj, camera_data, selected_objects)
+
         return ObjectClassification(
             type=obj_type,
+            subtype=background_subtype,
             confidence=min(confidence, 1.0),
             reasons=reasons
         )
+
+    def _classify_background_subtype(self, obj: bpy.types.Object,
+                                     camera_data: Optional[CameraData],
+                                     selected_objects: List[bpy.types.Object]) -> Optional[str]:
+        """Classify background sebagai ground/wall/backdrop berdasarkan nama dan posisi sederhana."""
+        name = obj.name.lower()
+
+        # Nama eksplisit
+        if name.startswith(('ground', 'floor')):
+            return 'ground'
+        if name.startswith(('wall',)):
+            return 'wall'
+        if name.startswith(('backdrop', 'background', 'bg')):
+            return 'backdrop'
+
+        # Geometri relatif ke produk: di bawah product → ground kandidat
+        if selected_objects:
+            avg_product_z = sum(o.location.z for o in selected_objects) / len(selected_objects)
+            if obj.location.z < avg_product_z - 0.05:
+                return 'ground'
+
+        return None
 
     def _is_in_camera_frustum(self, obj: bpy.types.Object, camera_data: CameraData) -> bool:
         """Check if object is in camera frustum."""

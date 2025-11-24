@@ -15,9 +15,8 @@ from typing import Dict, List, Tuple, Optional, Any
 # Import utility functions
 from .light import lumi_calculate_light_intensity, lumi_calculate_light_size
 from .common import lumi_get_light_collection, lumi_move_to_collection
-from .scene_analysis import get_object_thickness_analysis
 from .material_adaptation import generate_lighting_recommendations
-from .scene_context import MaterialData
+from .scene_context import SceneAnalyzer, AnalysisLevel
 
 
 def get_smart_light_parameters(
@@ -101,80 +100,77 @@ def analyze_scene_for_lighting(
         'ambient_light_level': 0.0,
         'object_thickness': 0.0,
         'nearby_objects': [],
-        'material_data': None
+        'material_data': None,
     }
 
     try:
-        # Calculate number of objects in scene
+        # Calculate number of objects in scene (all meshes)
         all_objects = [obj for obj in context.scene.objects if obj.type == 'MESH']
         scene_analysis['object_count'] = len(all_objects)
 
-        # Calculate scene size
+        analyzer = SceneAnalyzer(context)
+
+        # Global scene size via BoundsCalculator (through quick_bounds) jika ada objek
         if all_objects:
-            bbox_min = Vector((float('inf'), float('inf'), float('inf')))
-            bbox_max = Vector((float('-inf'), float('-inf'), float('-inf')))
+            global_bounds = analyzer.quick_bounds(all_objects)
+            scene_analysis['scene_size'] = float(getattr(global_bounds, 'diagonal', 0.0))
 
-            for obj in all_objects:
-                bbox_world = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]
-                for corner in bbox_world:
-                    bbox_min.x = min(bbox_min.x, corner.x)
-                    bbox_min.y = min(bbox_min.y, corner.y)
-                    bbox_min.z = min(bbox_min.z, corner.z)
-                    bbox_max.x = max(bbox_max.x, corner.x)
-                    bbox_max.y = max(bbox_max.y, corner.y)
-                    bbox_max.z = max(bbox_max.z, corner.z)
-
-            scene_size = (bbox_max - bbox_min).length
-            scene_analysis['scene_size'] = scene_size
-
-        # Calculate target object size specifically
+        # Subject / target specific analysis hanya jika hit_obj valid
+        selected_objects: List[bpy.types.Object] = []
         if hit_obj and hit_obj.type == 'MESH':
-            # Calculate bounding box for target object
-            bbox_world = [hit_obj.matrix_world @ Vector(corner) for corner in hit_obj.bound_box]
-            obj_bbox_min = Vector((float('inf'), float('inf'), float('inf')))
-            obj_bbox_max = Vector((float('-inf'), float('-inf'), float('-inf')))
+            selected_objects = [hit_obj]
 
-            for corner in bbox_world:
-                obj_bbox_min.x = min(obj_bbox_min.x, corner.x)
-                obj_bbox_min.y = min(obj_bbox_min.y, corner.y)
-                obj_bbox_min.z = min(obj_bbox_min.z, corner.z)
-                obj_bbox_max.x = max(obj_bbox_max.x, corner.x)
-                obj_bbox_max.y = max(obj_bbox_max.y, corner.y)
-                obj_bbox_max.z = max(obj_bbox_max.z, corner.z)
-
-            target_size = (obj_bbox_max - obj_bbox_min).length
-            scene_analysis['target_object_size'] = target_size
-            scene_analysis['target_object_bounds'] = {
-                'min': obj_bbox_min,
-                'max': obj_bbox_max,
-                'dimensions': obj_bbox_max - obj_bbox_min
-            }
-
-            # Analyze material properties
-            try:
-                from .scene_context import MaterialAnalyzer
-                material_analyzer = MaterialAnalyzer(context)
-                material_data = material_analyzer.analyze_object_materials(hit_obj)
-                scene_analysis['material_data'] = material_data
-            except Exception as mat_e:
-                # Material analysis failed, continue without it
-                pass
-
-        # Analyze target object thickness
-        if hit_obj and hit_obj.type == 'MESH':
-            thickness_result = get_object_thickness_analysis(
-                context, [hit_obj], context.scene.camera, sample_points=3
+        scene_ctx = None
+        if selected_objects:
+            # Deep analysis: bounds + camera + classification + materials + spatial + lighting + thickness
+            scene_ctx = analyzer.analyze_scene(
+                selected_objects,
+                level=AnalysisLevel.DEEP,
             )
-            if thickness_result['thickness_data']:
-                obj_thickness = thickness_result['thickness_data'][hit_obj.name]['average_thickness']
-                scene_analysis['object_thickness'] = obj_thickness
 
-        # Get nearby objects
+            # Target bounds & size dari SceneContext.bounds
+            bounds = getattr(scene_ctx, 'bounds', None)
+            if bounds is not None:
+                try:
+                    scene_analysis['target_object_bounds'] = {
+                        'min': bounds.min,
+                        'max': bounds.max,
+                        'dimensions': bounds.dimensions,
+                    }
+                    scene_analysis['target_object_size'] = float(
+                        getattr(bounds, 'diagonal', 0.0)
+                    )
+                except Exception:
+                    pass
+
+            # Material data langsung dari SceneContext
+            scene_analysis['material_data'] = getattr(scene_ctx, 'materials', None)
+
+            # Thickness (average) dari SceneContext.thickness jika ada
+            thickness_data = getattr(scene_ctx, 'thickness', None)
+            if thickness_data is not None:
+                try:
+                    scene_analysis['object_thickness'] = float(
+                        getattr(thickness_data, 'average_thickness', 0.0)
+                    )
+                except Exception:
+                    pass
+
+            # Ambient light level dari SceneContext.lighting jika tersedia
+            lighting = getattr(scene_ctx, 'lighting', None)
+            if lighting is not None:
+                try:
+                    scene_analysis['ambient_light_level'] = float(
+                        getattr(lighting, 'ambient_level', 0.0)
+                    )
+                except Exception:
+                    pass
+
+        # Get nearby objects (tetap pakai helper lama)
         nearby_objects = get_nearby_objects(context, hit_location, radius=5.0)
         scene_analysis['nearby_objects'] = nearby_objects
 
-
-    except Exception as e:
+    except Exception:
         # Error in scene analysis - using defaults
         pass
 

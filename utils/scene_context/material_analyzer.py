@@ -20,6 +20,12 @@ class MaterialData:
     material_count: int
     emission_strength: float
     dominant_color: tuple  # (r, g, b)
+    # Enrichment fields
+    has_transmission: bool = False
+    average_transmission: float = 0.0
+    has_sss: bool = False
+    average_sss: float = 0.0
+    texture_complexity: str = 'solid'  # 'solid' | 'simple' | 'complex'
 
 
 class MaterialAnalyzer:
@@ -45,6 +51,9 @@ class MaterialAnalyzer:
         roughness_values = []
         metallic_values = []
         colors = []
+        transmission_values = []
+        sss_values = []
+        texture_counts = []
 
         # Collect material data dari semua objects
         for obj in objects:
@@ -57,18 +66,30 @@ class MaterialAnalyzer:
 
                 all_materials.append(material)
 
-                # Check for emission
+                # Check for emission & texture usage
+                has_emission = False
+                tex_count = 0
                 if material.node_tree:
                     for node in material.node_tree.nodes:
                         if node.type == 'EMISSION':
-                            emission_materials.append(material)
-                            break
+                            has_emission = True
+                        elif node.type == 'TEX_IMAGE':
+                            tex_count += 1
+                if has_emission:
+                    emission_materials.append(material)
+                texture_counts.append(tex_count)
 
                 # Get Principled BSDF properties
                 principled = self._get_principled_bsdf(material)
                 if principled:
                     roughness_values.append(principled.inputs['Roughness'].default_value)
                     metallic_values.append(principled.inputs['Metallic'].default_value)
+
+                    # Transmission & SSS
+                    if 'Transmission' in principled.inputs:
+                        transmission_values.append(principled.inputs['Transmission'].default_value)
+                    if 'Subsurface' in principled.inputs:
+                        sss_values.append(principled.inputs['Subsurface'].default_value)
 
                     # Get base color
                     color_input = principled.inputs['Base Color']
@@ -92,6 +113,14 @@ class MaterialAnalyzer:
         # Calculate emission strength
         emission_strength = len(emission_materials) / len(all_materials) if all_materials else 0.0
 
+        # Transmission & SSS metrics
+        has_transmission = any(t > 0.1 for t in transmission_values)
+        avg_transmission = sum(transmission_values) / len(transmission_values) if transmission_values else 0.0
+        has_sss = any(s > 0.1 for s in sss_values)
+        avg_sss = sum(sss_values) / len(sss_values) if sss_values else 0.0
+
+        texture_complexity = self._estimate_texture_complexity(texture_counts)
+
         return MaterialData(
             dominant_type=dominant_type,
             has_emission=len(emission_materials) > 0,
@@ -99,7 +128,12 @@ class MaterialAnalyzer:
             average_metallic=avg_metallic,
             material_count=len(all_materials),
             emission_strength=emission_strength,
-            dominant_color=dominant_color
+            dominant_color=dominant_color,
+            has_transmission=has_transmission,
+            average_transmission=avg_transmission,
+            has_sss=has_sss,
+            average_sss=avg_sss,
+            texture_complexity=texture_complexity,
         )
 
     def _empty_analysis(self) -> MaterialData:
@@ -111,7 +145,12 @@ class MaterialAnalyzer:
             average_metallic=0.0,
             material_count=0,
             emission_strength=0.0,
-            dominant_color=(0.8, 0.8, 0.8)
+            dominant_color=(0.8, 0.8, 0.8),
+            has_transmission=False,
+            average_transmission=0.0,
+            has_sss=False,
+            average_sss=0.0,
+            texture_complexity='solid',
         )
 
     def _get_principled_bsdf(self, material: bpy.types.Material) -> Optional[bpy.types.Node]:
@@ -148,6 +187,18 @@ class MaterialAnalyzer:
 
         count = len(colors)
         return (r_sum/count, g_sum/count, b_sum/count)
+
+    def _estimate_texture_complexity(self, texture_counts: List[int]) -> str:
+        """Estimate texture complexity based on jumlah image texture per material."""
+        if not texture_counts:
+            return 'solid'
+
+        max_count = max(texture_counts)
+        if max_count == 0:
+            return 'solid'
+        if max_count <= 2:
+            return 'simple'
+        return 'complex'
 
 
 __all__ = ['MaterialAnalyzer', 'MaterialData']

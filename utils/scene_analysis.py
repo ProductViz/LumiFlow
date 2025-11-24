@@ -8,6 +8,7 @@ Analyzes scenes for object detection, background, and lighting characteristics.
 """
 
 import math
+import warnings
 import bpy
 from mathutils import Vector, Matrix, geometry
 from typing import Dict, List, Tuple, Optional, Set, Any
@@ -344,74 +345,65 @@ def classify_objects_by_background(
         SceneAnalysisResult with object classification
     """
     try:
-        if camera_obj is None:
-            camera_obj = context.scene.camera
-        
-        if not camera_obj:
-            return SceneAnalysisResult(
-                target_objects=[],
-                background_objects=[],
-                occluded_objects=[],
-                camera_position=Vector(),
-                camera_direction=Vector(),
-                view_frustum_objects=[],
-                analysis_metadata={'error': 'No camera found'}
-            )
-        
-        # Get camera position and direction
-        camera_position = camera_obj.matrix_world.translation
-        camera_direction = -camera_obj.matrix_world.col[2].normalized()
-        
-        # Validate Vector
-        if not isinstance(camera_position, Vector):
-            print(f"❌ Error: camera_position is not Vector: {type(camera_position)}")
-            camera_position = Vector()
-            
-        if not isinstance(camera_direction, Vector):
-            print(f"❌ Error: camera_direction is not Vector: {type(camera_direction)}")
-            camera_direction = Vector((0, 0, -1))
-        
-        # Get all objects in camera view
-        view_frustum_objects = get_objects_in_camera_view(context, camera_obj)
-        
-        # Classify objects
-        classified_targets = []
-        classified_background = []
-        occluded_objects = []
-        
-        for obj in view_frustum_objects:
-            if obj in target_objects:
-                # Check if target object is occluded
-                try:
-                    is_occluded, _ = is_object_occluded_from_camera(context, obj, camera_obj)
-                    
-                    if is_occluded:
-                        occluded_objects.append(obj)
-                    else:
-                        classified_targets.append(obj)
-                except Exception as e:
-                    print(f"❌ Error checking occlusion for {obj.name}: {e}")
-                    # Assume not occluded if there's an error
-                    classified_targets.append(obj)
-            else:
-                # Other objects are considered background
+        # Step 3 (Development Plan 3.2): Deprecate legacy background detector
+        warnings.warn(
+            "classify_objects_by_background is deprecated. "
+            "Use SceneAnalyzer.analyze_scene() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+        # Import SceneAnalyzer lazily to avoid circular imports during module init
+        from .scene_context import SceneAnalyzer, AnalysisLevel
+
+        # Use SceneAnalyzer with STANDARD level to get classifications
+        analyzer = SceneAnalyzer(context)
+        scene_ctx = analyzer.analyze_scene(
+            selected_objects=target_objects,
+            level=AnalysisLevel.STANDARD,
+        )
+
+        classifications = getattr(scene_ctx, "classifications", None) or {}
+
+        classified_targets: List[bpy.types.Object] = []
+        classified_background: List[bpy.types.Object] = []
+
+        for obj, cls in classifications.items():
+            obj_type = getattr(cls, "type", "")
+            if obj_type == "background":
                 classified_background.append(obj)
-        
-        # Add target objects not in view to occluded
-        for obj in target_objects:
-            if obj not in view_frustum_objects and obj not in occluded_objects:
-                occluded_objects.append(obj)
-        
-        # Create analysis metadata
+            elif obj_type == "product":
+                classified_targets.append(obj)
+
+        # Fallback: if no classified targets, use original target_objects
+        if not classified_targets and target_objects:
+            classified_targets = [obj for obj in target_objects if isinstance(obj, bpy.types.Object)]
+
+        # View frustum objects: approximate as all classified objects
+        view_frustum_objects = list(classifications.keys())
+
+        # Occlusion information is not available in SceneAnalyzer; keep empty for now
+        occluded_objects: List[bpy.types.Object] = []
+
+        camera_data = getattr(scene_ctx, "camera", None)
+        if camera_data is not None:
+            camera_position = getattr(camera_data, "location", Vector())
+            camera_direction = getattr(camera_data, "forward", Vector((0, 0, -1)))
+            camera_type = getattr(camera_data, "type", "UNKNOWN")
+        else:
+            camera_position = Vector()
+            camera_direction = Vector((0, 0, -1))
+            camera_type = "UNKNOWN"
+
         analysis_metadata = {
             'total_objects_in_view': len(view_frustum_objects),
             'target_objects_count': len(classified_targets),
             'background_objects_count': len(classified_background),
             'occluded_objects_count': len(occluded_objects),
-            'camera_type': camera_obj.data.type if camera_obj.data else 'UNKNOWN',
-            'analysis_timestamp': context.scene.frame_current
+            'camera_type': camera_type,
+            'analysis_timestamp': context.scene.frame_current,
         }
-        
+
         return SceneAnalysisResult(
             target_objects=classified_targets,
             background_objects=classified_background,
@@ -419,9 +411,9 @@ def classify_objects_by_background(
             camera_position=camera_position,
             camera_direction=camera_direction,
             view_frustum_objects=view_frustum_objects,
-            analysis_metadata=analysis_metadata
+            analysis_metadata=analysis_metadata,
         )
-        
+
     except Exception as e:
         print(f"❌ Error in classify_objects_by_background: {e}")
         import traceback

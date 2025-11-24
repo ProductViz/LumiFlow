@@ -18,16 +18,19 @@ Usage:
     backgrounds = scene_ctx.get_background_objects()
 """
 
-from .scene_analyzer import SceneAnalyzer, SceneContext, analyze_scene
+from .scene_analyzer import SceneAnalyzer, SceneContext, AnalysisLevel, analyze_scene
 from .camera_analyzer import CameraAnalyzer, CameraData, FrustumPlane
 from .bounds_calculator import BoundsCalculator, BoundsData
 from .material_analyzer import MaterialAnalyzer, MaterialData
 from .spatial_analyzer import SpatialAnalyzer, SpatialGraph
 from .classification_system import ObjectClassifier, ObjectClassification
+from .thickness_analyzer import ThicknessAnalyzer, ThicknessData, ObjectThicknessData
+from .lighting_analyzer import LightingAnalyzer, LightingData
 
 __all__ = [
     'SceneAnalyzer',
     'SceneContext',
+    'AnalysisLevel',
     'analyze_scene',
     'CameraAnalyzer',
     'CameraData',
@@ -38,4 +41,9 @@ __all__ = [
     'SpatialAnalyzer',
     'ObjectClassifier',
     'ObjectClassification',
+    'ThicknessAnalyzer',
+    'ThicknessData',
+    'ObjectThicknessData',
+    'LightingAnalyzer',
+    'LightingData',
 ]

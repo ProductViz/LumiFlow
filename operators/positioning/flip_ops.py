@@ -22,10 +22,10 @@ from ...utils.light import (
 from ...utils.operators import lumi_ray_cast_between_points
 from ...core.state import get_state
 from ...utils.scene_analysis import (
-    classify_objects_by_background,
     get_objects_in_camera_view,
     get_object_thickness_analysis
 )
+from ...utils.scene_context import SceneAnalyzer, AnalysisLevel
 
 
 
@@ -90,6 +90,26 @@ class LUMI_OT_flip_to_camera_front(bpy.types.Operator):
 # FUNGSI BERSAMA UNTUK FLIP OPERATIONS
 # =============================================================================
 
+def _classify_targets_with_scene_analyzer(context, objects):
+    if not objects:
+        return []
+    try:
+        analyzer = SceneAnalyzer(context)
+        scene_ctx = analyzer.analyze_scene(
+            selected_objects=objects,
+            level=AnalysisLevel.STANDARD,
+        )
+        classifications = getattr(scene_ctx, "classifications", None) or {}
+        targets = []
+        for obj in objects:
+            cls = classifications.get(obj)
+            if not cls or getattr(cls, "type", "") != "background":
+                targets.append(obj)
+        return targets or list(objects)
+    except Exception:
+        return list(objects)
+
+
 def get_target_objects_for_light(context, light):
     """Get target objects for light filtering"""
     try:
@@ -101,33 +121,17 @@ def get_target_objects_for_light(context, light):
             if not candidates:
                 return []
         
-        # SIMPLIFIED APPROACH: Use candidates directly with optional background filtering
-        # Only try background classification if we have a reasonable number of objects
-        if len(candidates) <= 20:  # Avoid expensive analysis on large scenes
+        if len(candidates) <= 20:
             try:
                 camera = context.scene.camera
                 if camera:
-                    camera_position = camera.location
-                    camera_direction = (camera.matrix_world.to_3x3() @ Vector((0, 0, -1))).normalized()
-                    
-                    classified_objects = classify_objects_by_background(
-                        context, candidates, camera
-                    )
-                    
-                    target_objects = classified_objects.target_objects
-                    background_objects = classified_objects.background_objects
-                    
-                    # FALLBACK: If classification returned no targets, use all candidates
+                    target_objects = _classify_targets_with_scene_analyzer(context, candidates)
                     if not target_objects:
                         target_objects = candidates
-
                     return target_objects
                 else:
-                    # No camera found, use all candidates
                     return candidates
-
-            except Exception as e:
-                # Fallback: treat all candidates as targets
+            except Exception:
                 return candidates
         else:
             # For large scenes, skip expensive analysis and use all candidates
@@ -597,42 +601,23 @@ class LUMI_OT_flip_across_pivot(bpy.types.Operator):
         return context.scene.cursor.location.copy()
     
     def get_target_objects_for_light(self, context, light):
-        """Get target objects for a specific light using background detection"""
         try:
-            # Dapatkan objek yang dipilih sebagai kandidat target
             selected_objects = [obj for obj in context.selected_objects if obj.type != 'LIGHT']
-            
             if not selected_objects:
-                # Jika tidak ada objek yang dipilih, gunakan semua objek dalam camera view
                 view_objects = get_objects_in_camera_view(context)
                 return view_objects
-            
-            # Klasifikasikan objek berdasarkan background
-            analysis_result = classify_objects_by_background(context, selected_objects)
-            
-            # Kembalikan target objects (objek yang bukan background)
-            return analysis_result.target_objects
-            
+            return _classify_targets_with_scene_analyzer(context, selected_objects)
         except Exception as e:
             print(f"⚠️ Error in background detection: {e}")
-            # Fallback: gunakan semua objek yang dipilih (non-light)
             return [obj for obj in context.selected_objects if obj.type != 'LIGHT']
     
     def get_target_objects_from_selection(self, context, objects):
-        """Filter objects to get only target objects (not background)"""
         try:
             if not objects:
                 return []
-            
-            # Klasifikasikan objek berdasarkan background
-            analysis_result = classify_objects_by_background(context, objects)
-            
-            # Kembalikan target objects
-            return analysis_result.target_objects
-            
+            return _classify_targets_with_scene_analyzer(context, objects)
         except Exception as e:
             print(f"⚠️ Error in background detection: {e}")
-            # Fallback: kembalikan semua objek
             return objects
 
 class LUMI_OT_flip_horizontal(bpy.types.Operator):
@@ -656,14 +641,10 @@ class LUMI_OT_flip_horizontal(bpy.types.Operator):
             
             if not selected_objects:
                 # Jika tidak ada objek yang dipilih, gunakan semua objek dalam camera view
-                view_objects = get_objects_in_camera_view(context)
-                return view_objects
+                return _get_fallback_candidates(context)
             
             # Klasifikasikan objek berdasarkan background
-            analysis_result = classify_objects_by_background(context, selected_objects)
-            
-            # Kembalikan target objects (objek yang bukan background)
-            return analysis_result.target_objects
+            return _classify_targets_with_scene_analyzer(context, selected_objects)
             
         except Exception as e:
             print(f"⚠️ Error in background detection: {e}")
@@ -677,10 +658,7 @@ class LUMI_OT_flip_horizontal(bpy.types.Operator):
                 return []
             
             # Klasifikasikan objek berdasarkan background
-            analysis_result = classify_objects_by_background(context, objects)
-            
-            # Kembalikan target objects
-            return analysis_result.target_objects
+            return _classify_targets_with_scene_analyzer(context, objects)
             
         except Exception as e:
             print(f"⚠️ Error in background detection: {e}")
@@ -811,14 +789,10 @@ class LUMI_OT_flip_vertical(bpy.types.Operator):
             
             if not selected_objects:
                 # Jika tidak ada objek yang dipilih, gunakan semua objek dalam camera view
-                view_objects = get_objects_in_camera_view(context)
-                return view_objects
+                return _get_fallback_candidates(context)
             
             # Klasifikasikan objek berdasarkan background
-            analysis_result = classify_objects_by_background(context, selected_objects)
-            
-            # Kembalikan target objects (objek yang bukan background)
-            return analysis_result.target_objects
+            return _classify_targets_with_scene_analyzer(context, selected_objects)
             
         except Exception as e:
             print(f"⚠️ Error in background detection: {e}")
@@ -832,10 +806,7 @@ class LUMI_OT_flip_vertical(bpy.types.Operator):
                 return []
             
             # Klasifikasikan objek berdasarkan background
-            analysis_result = classify_objects_by_background(context, objects)
-            
-            # Kembalikan target objects
-            return analysis_result.target_objects
+            return _classify_targets_with_scene_analyzer(context, objects)
             
         except Exception as e:
             print(f"⚠️ Error in background detection: {e}")

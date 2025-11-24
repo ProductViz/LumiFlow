@@ -140,15 +140,32 @@ class CameraAnalyzer:
             aspect = self.context.scene.render.pixel_aspect_x / \
                     self.context.scene.render.pixel_aspect_y
 
-            half_fov_h = fov / 2
+            half_fov_h = fov / 2.0
             half_fov_v = math.atan(math.tan(half_fov_h) / aspect)
 
-            # Left/Right/Top/Bottom planes (simplified)
-            # Full implementation would calculate exact normals
-            planes.append(FrustumPlane(cam_right, cam_pos, 'left'))
-            planes.append(FrustumPlane(-cam_right, cam_pos, 'right'))
-            planes.append(FrustumPlane(-cam_up, cam_pos, 'top'))
-            planes.append(FrustumPlane(cam_up, cam_pos, 'bottom'))
+            # Left plane
+            left_normal = (cam_forward.cross(cam_up)).normalized()
+            left_rotation = Matrix.Rotation(half_fov_h, 4, cam_up)
+            left_normal = (left_rotation @ left_normal).normalized()
+            planes.append(FrustumPlane(left_normal, cam_pos, 'left'))
+
+            # Right plane
+            right_normal = (cam_up.cross(cam_forward)).normalized()
+            right_rotation = Matrix.Rotation(-half_fov_h, 4, cam_up)
+            right_normal = (right_rotation @ right_normal).normalized()
+            planes.append(FrustumPlane(right_normal, cam_pos, 'right'))
+
+            # Top plane
+            top_normal = (cam_right.cross(cam_forward)).normalized()
+            top_rotation = Matrix.Rotation(-half_fov_v, 4, cam_right)
+            top_normal = (top_rotation @ top_normal).normalized()
+            planes.append(FrustumPlane(top_normal, cam_pos, 'top'))
+
+            # Bottom plane
+            bottom_normal = (cam_forward.cross(cam_right)).normalized()
+            bottom_rotation = Matrix.Rotation(half_fov_v, 4, cam_right)
+            bottom_normal = (bottom_rotation @ bottom_normal).normalized()
+            planes.append(FrustumPlane(bottom_normal, cam_pos, 'bottom'))
         else:
             # Orthographic frustum
             ortho_scale = camera.data.ortho_scale
