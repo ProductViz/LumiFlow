@@ -257,4 +257,6 @@ test_results/
 .coverage.*
 
 # Documentation (internal development docs)
-docs/
+# Note: docs/ folder selectively ignored
+docs/*
+!docs/scene_analyzer3/

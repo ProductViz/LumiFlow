@@ -1,32 +1,215 @@
 """
 Material Adaptation utilities - Lighting adjustments berdasarkan material analysis.
-Extracted dari template_analyzer.py material adjustment logic.
+
+Enhanced with detailed rules for 8+ material types and subtypes:
+- metallic: polished_metal, brushed_metal, rough_metal
+- glass: clear_glass, frosted_glass, colored_glass
+- ceramic: porcelain, pottery, matte_ceramic
+- fabric: silk, cotton, leather, velvet
+- wood: polished_wood, natural_wood, rough_wood
+- plastic: glossy_plastic, matte_plastic, rubber
+- organic: food, plant, skin
+- dielectric: generic fallback
 """
 
 import bpy
-from .scene_context import MaterialData
+from .scene_context import MaterialData, MaterialType, MaterialSubtype
+
+# ============================================================================
+# PRIMARY MATERIAL TYPE RULES
+# ============================================================================
 
 MATERIAL_LIGHTING_RULES = {
+    # Metallic - needs larger soft sources to show form, reduce harsh reflections
     'metallic': {
         'intensity_multiplier': 1.2,
-        'size_multiplier': 1.3,
+        'size_multiplier': 1.4,
         'color_temperature': 5500,
+        'key_fill_ratio': 3.5,
+        'back_light_intensity': 0.6,
     },
+    # Glass - needs backlighting and careful positioning to avoid harsh reflections
     'glass': {
-        'intensity_multiplier': 1.4,
+        'intensity_multiplier': 1.3,
         'size_multiplier': 1.0,
-        'color_temperature': 6500,
+        'color_temperature': 6000,
+        'key_fill_ratio': 2.5,
+        'back_light_intensity': 0.8,  # Strong backlight for transparency
     },
+    # Ceramic - medium soft light, shows form well
+    'ceramic': {
+        'intensity_multiplier': 1.0,
+        'size_multiplier': 1.2,
+        'color_temperature': 5200,
+        'key_fill_ratio': 3.0,
+        'back_light_intensity': 0.4,
+    },
+    # Fabric - soft diffused light, minimal specular
+    'fabric': {
+        'intensity_multiplier': 0.9,
+        'size_multiplier': 1.5,
+        'color_temperature': 5000,
+        'key_fill_ratio': 2.0,
+        'back_light_intensity': 0.3,
+    },
+    # Wood - warm light, medium contrast
+    'wood': {
+        'intensity_multiplier': 1.0,
+        'size_multiplier': 1.2,
+        'color_temperature': 4500,
+        'key_fill_ratio': 2.5,
+        'back_light_intensity': 0.35,
+    },
+    # Plastic - can handle more contrast
+    'plastic': {
+        'intensity_multiplier': 1.1,
+        'size_multiplier': 1.1,
+        'color_temperature': 5500,
+        'key_fill_ratio': 3.0,
+        'back_light_intensity': 0.5,
+    },
+    # Organic - soft, warm light for appetizing/natural look
+    'organic': {
+        'intensity_multiplier': 0.85,
+        'size_multiplier': 1.6,
+        'color_temperature': 4000,
+        'key_fill_ratio': 2.0,
+        'back_light_intensity': 0.4,
+    },
+    # Emissive - reduce external lighting
+    'emissive': {
+        'intensity_multiplier': 0.7,
+        'size_multiplier': 1.0,
+        'color_temperature': 5500,
+        'key_fill_ratio': 2.0,
+        'back_light_intensity': 0.2,
+    },
+    # Dielectric (default)
     'dielectric': {
         'intensity_multiplier': 1.0,
         'size_multiplier': 1.0,
         'color_temperature': 5500,
-    }
+        'key_fill_ratio': 3.0,
+        'back_light_intensity': 0.5,
+    },
+}
+
+# ============================================================================
+# SUBTYPE-SPECIFIC ADJUSTMENTS (applied on top of primary rules)
+# ============================================================================
+
+MATERIAL_SUBTYPE_ADJUSTMENTS = {
+    # Metallic subtypes
+    'polished_metal': {
+        'intensity_multiplier': 1.1,  # Slightly brighter for reflections
+        'size_multiplier': 1.5,       # Larger source for smoother reflections
+    },
+    'brushed_metal': {
+        'intensity_multiplier': 1.0,
+        'size_multiplier': 1.3,
+    },
+    'rough_metal': {
+        'intensity_multiplier': 0.95,
+        'size_multiplier': 1.2,
+    },
+    
+    # Glass subtypes
+    'clear_glass': {
+        'intensity_multiplier': 1.2,
+        'back_light_intensity': 0.9,  # Strong backlight
+    },
+    'frosted_glass': {
+        'intensity_multiplier': 1.0,
+        'size_multiplier': 1.3,
+    },
+    'colored_glass': {
+        'intensity_multiplier': 1.1,
+        'color_temperature': 5500,    # Neutral to show color
+    },
+    
+    # Ceramic subtypes
+    'porcelain': {
+        'intensity_multiplier': 1.1,
+        'size_multiplier': 1.3,
+    },
+    'pottery': {
+        'intensity_multiplier': 1.0,
+        'color_temperature': 4800,
+    },
+    'matte_ceramic': {
+        'intensity_multiplier': 0.95,
+        'size_multiplier': 1.1,
+    },
+    
+    # Fabric subtypes
+    'silk': {
+        'intensity_multiplier': 1.1,
+        'size_multiplier': 1.3,
+    },
+    'cotton': {
+        'intensity_multiplier': 0.95,
+        'size_multiplier': 1.4,
+    },
+    'leather': {
+        'intensity_multiplier': 1.0,
+        'color_temperature': 4800,
+    },
+    'velvet': {
+        'intensity_multiplier': 0.9,
+        'size_multiplier': 1.6,
+    },
+    
+    # Wood subtypes
+    'polished_wood': {
+        'intensity_multiplier': 1.1,
+        'size_multiplier': 1.3,
+    },
+    'natural_wood': {
+        'intensity_multiplier': 1.0,
+    },
+    'rough_wood': {
+        'intensity_multiplier': 0.95,
+        'size_multiplier': 1.1,
+    },
+    
+    # Plastic subtypes
+    'glossy_plastic': {
+        'intensity_multiplier': 1.15,
+        'size_multiplier': 1.2,
+    },
+    'matte_plastic': {
+        'intensity_multiplier': 1.0,
+    },
+    'rubber': {
+        'intensity_multiplier': 0.9,
+        'color_temperature': 5200,
+    },
+    
+    # Organic subtypes
+    'food': {
+        'intensity_multiplier': 0.9,
+        'color_temperature': 3800,    # Warm for appetizing
+        'size_multiplier': 1.5,
+    },
+    'plant': {
+        'intensity_multiplier': 1.0,
+        'color_temperature': 5500,    # Daylight for natural
+    },
+    'skin': {
+        'intensity_multiplier': 0.85,
+        'color_temperature': 4500,    # Warm, flattering
+        'size_multiplier': 1.7,
+    },
 }
 
 def generate_lighting_recommendations(material_data: MaterialData) -> dict:
     """Generate lighting recommendations from material analysis."""
     recs = MATERIAL_LIGHTING_RULES.get(material_data.dominant_type, {}).copy()
+
+    # Apply subtype-specific adjustments
+    subtype_adjustments = MATERIAL_SUBTYPE_ADJUSTMENTS.get(material_data.material_subtype, {})
+    for key, value in subtype_adjustments.items():
+        recs[key] = recs.get(key, 1.0) * value
 
     # Adjust for emission
     if material_data.has_emission:
@@ -77,5 +260,6 @@ __all__ = [
     'generate_lighting_recommendations',
     'apply_material_adjustments_to_light',
     'kelvin_to_rgb',
-    'MATERIAL_LIGHTING_RULES'
+    'MATERIAL_LIGHTING_RULES',
+    'MATERIAL_SUBTYPE_ADJUSTMENTS',
 ]
