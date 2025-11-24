@@ -26,7 +26,103 @@ from ...utils.scene_analysis import (
     get_object_thickness_analysis
 )
 from ...utils.scene_context import SceneAnalyzer, AnalysisLevel
+from ...utils.scene_context.light_role_analyzer import (
+    LightRoleAnalyzer, LightRole, LightRoleResult
+)
+from ...utils.scene_context.composition_analyzer import (
+    CompositionAnalyzer, LightingStyle
+)
 
+
+# =============================================================================
+# ROLE-AWARE FLIP HELPERS
+# =============================================================================
+
+def analyze_light_roles_before_flip(context, lights: List) -> dict:
+    """
+    Analyze light roles before flip operation.
+    
+    Returns dict mapping light objects to their roles.
+    """
+    roles = {}
+    
+    try:
+        camera = context.scene.camera
+        if not camera:
+            return roles
+        
+        # Get product center from selected non-light objects
+        target_objects = [obj for obj in context.selected_objects if obj.type != 'LIGHT']
+        if not target_objects:
+            target_objects = [obj for obj in context.scene.objects 
+                           if obj.visible_get() and obj.type == 'MESH']
+        
+        if not target_objects:
+            return roles
+        
+        # Calculate product center
+        centers = [obj.location for obj in target_objects]
+        product_center = sum(centers, Vector()) / len(centers)
+        
+        # Analyze each light's role
+        role_analyzer = LightRoleAnalyzer(context)
+        camera_data = type('CameraData', (), {
+            'location': camera.location,
+            'matrix': camera.matrix_world,
+        })()
+        
+        for light in lights:
+            try:
+                role_result = role_analyzer.analyze_single_light(
+                    light, camera_data, product_center
+                )
+                if role_result:
+                    roles[light] = role_result
+            except Exception:
+                continue
+                
+    except Exception as e:
+        print(f"⚠️ Error analyzing light roles: {e}")
+    
+    return roles
+
+
+def check_role_changes_after_flip(context, lights: List, roles_before: dict) -> List[str]:
+    """
+    Check if any significant role changes occurred after flip.
+    
+    Returns list of warning messages.
+    """
+    warnings = []
+    
+    try:
+        roles_after = analyze_light_roles_before_flip(context, lights)
+        
+        for light, role_before in roles_before.items():
+            if light not in roles_after:
+                continue
+                
+            role_after = roles_after[light]
+            
+            # Check if KEY light changed role
+            if role_before.role == LightRole.KEY and role_after.role != LightRole.KEY:
+                warnings.append(
+                    f"⚠️ {light.name}: KEY → {role_after.role.value} "
+                    f"(consider adjusting)"
+                )
+            
+            # Check if role changed significantly
+            elif role_before.role != role_after.role:
+                # Only warn for important role changes
+                important_roles = {LightRole.KEY, LightRole.FILL, LightRole.BACK}
+                if role_before.role in important_roles or role_after.role in important_roles:
+                    warnings.append(
+                        f"ℹ️ {light.name}: {role_before.role.value} → {role_after.role.value}"
+                    )
+    except Exception as e:
+        print(f"⚠️ Error checking role changes: {e}")
+    
+    return warnings
 
 
 class LUMI_OT_flip_to_camera_front(bpy.types.Operator):
@@ -685,6 +781,9 @@ class LUMI_OT_flip_horizontal(bpy.types.Operator):
                 self.report({'WARNING'}, "No lights selected")
                 return {'CANCELLED'}
 
+            # === ROLE-AWARE: Analyze roles BEFORE flip ===
+            roles_before = analyze_light_roles_before_flip(context, lights)
+
             flipped_count = 0
             for light in lights:
                 # Get pivot/target point for this light (CONSISTENT dengan operator lain)
@@ -693,6 +792,12 @@ class LUMI_OT_flip_horizontal(bpy.types.Operator):
                 # Perform horizontal flip relative to camera while maintaining pivot relationship
                 self.flip_horizontal_around_pivot(light, camera, pivot_point, context)
                 flipped_count += 1
+
+            # === ROLE-AWARE: Check role changes AFTER flip ===
+            if roles_before:
+                role_warnings = check_role_changes_after_flip(context, lights, roles_before)
+                for warning in role_warnings:
+                    self.report({'WARNING'}, warning)
 
             self.report({'INFO'}, f"Flipped {flipped_count} lights horizontally")
             return {'FINISHED'}
@@ -828,6 +933,9 @@ class LUMI_OT_flip_vertical(bpy.types.Operator):
                 self.report({'WARNING'}, "No lights selected")
                 return {'CANCELLED'}
 
+            # === ROLE-AWARE: Analyze roles BEFORE flip ===
+            roles_before = analyze_light_roles_before_flip(context, lights)
+
             flipped_count = 0
             for light in lights:
                 # Get pivot/target point for this light (CONSISTENT dengan operator lain)
@@ -836,6 +944,12 @@ class LUMI_OT_flip_vertical(bpy.types.Operator):
                 # Perform vertical flip relative to camera while maintaining pivot relationship
                 self.flip_vertical_around_pivot(light, camera, pivot_point, context)
                 flipped_count += 1
+
+            # === ROLE-AWARE: Check role changes AFTER flip ===
+            if roles_before:
+                role_warnings = check_role_changes_after_flip(context, lights, roles_before)
+                for warning in role_warnings:
+                    self.report({'WARNING'}, warning)
 
             self.report({'INFO'}, f"Flipped {flipped_count} lights vertically")
             return {'FINISHED'}

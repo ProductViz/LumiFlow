@@ -13,6 +13,9 @@ from ...utils.common import (
 )
 from ...utils.light import lumi_set_light_pivot
 from ...utils.scene_context import SceneAnalyzer, SceneContext
+from ...utils.scene_context.product_category_detector import (
+    ProductCategoryDetector, ProductCategory, ProductCategoryResult
+)
 from ...utils.positioning import (
     calculate_position_from_template, calculate_optimal_distance
 )
@@ -25,6 +28,11 @@ from ...core.template_system import TemplateSystem, ValidationResult
 from ...utils.template_intelligence import (
     get_research_template_entry,
     get_research_lookup_tables,
+)
+from ...utils.template_integration import (
+    get_template_product_type,
+    get_template_recommendations,
+    enhance_template_params,
 )
 from .template_library import get_template
 
@@ -441,14 +449,74 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
                 include_materials=self.use_material_adaptation
             )
 
-            # Apply scene category override (if user chooses a specific type)
+            # === 2a. SMART PRODUCT CATEGORY DETECTION ===
+            category_result = None
             override = getattr(self, "scene_product_type_override", "AUTO")
+            
             if override and override != 'AUTO':
+                # User manually selected a category
                 scene_ctx.product_type = override
                 try:
                     context.scene.lumi_product_type = override
                 except Exception:
                     pass
+            else:
+                # Auto-detect product category using ProductCategoryDetector
+                try:
+                    detector = ProductCategoryDetector()
+                    category_result = detector.detect(
+                        target_objects,
+                        scene_ctx.materials,
+                        scene_ctx.bounds
+                    )
+                    
+                    if category_result and category_result.confidence > 0.3:
+                        # Convert enum to template-compatible string
+                        detected_type = get_template_product_type(category_result.category)
+                        scene_ctx.product_type = detected_type
+                        
+                        # Store for future use
+                        try:
+                            context.scene.lumi_product_type = detected_type
+                        except Exception:
+                            pass
+                        
+                        # Report detection result
+                        self.report({'INFO'}, 
+                            f"Detected: {category_result.category.value} "
+                            f"({category_result.confidence:.0%} confidence)")
+                except Exception as e:
+                    # Fallback to unknown if detection fails
+                    scene_ctx.product_type = "unknown"
+            
+            # Store category result for parameter enhancement
+            self._category_result = category_result
+
+            # === 2b. ENHANCE PARAMETERS FROM DETECTION ===
+            param_overrides = {}
+            if category_result or scene_ctx.materials:
+                try:
+                    param_overrides = enhance_template_params(
+                        self.template_id,
+                        category_result,
+                        scene_ctx.materials,
+                        None  # composition not available yet
+                    )
+                    
+                    # Apply detected color temperature if not manually overridden
+                    if 'color_temp' in param_overrides:
+                        self._detected_color_temp = param_overrides['color_temp']
+                    
+                    # Apply intensity/size multipliers if AUTO
+                    if self.material_profile_override == 'AUTO':
+                        if 'intensity_multiplier' in param_overrides:
+                            self._auto_intensity_mult = param_overrides['intensity_multiplier']
+                        if 'size_multiplier' in param_overrides:
+                            self._auto_size_mult = param_overrides['size_multiplier']
+                except Exception:
+                    pass
+            
+            self._param_overrides = param_overrides
 
             # Precompute a lightweight research-based intensity factor that
             # combines material and mood profiles. Stored on the operator

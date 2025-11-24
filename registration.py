@@ -144,6 +144,13 @@ from .operators.linking_ops import (
 from .operators.smart_ops import (
     LUMI_OT_smart_control,
 )
+
+# Import smart light operators (Phase 3 integration)
+from .operators.smart_light_ops import (
+    LUMI_OT_smart_add_light,
+    LUMI_OT_analyze_composition,
+)
+
 from .preferences import LumiFlowAddonPreferences
 from .core.state import get_state
 
@@ -319,7 +326,13 @@ update_classes = [
     LUMI_OT_toggle_viewport_overlay,
 ]
 
-classes = get_classes() + tuple(update_classes) + tuple(linking_ui_classes) + tuple(panel_classes) + tuple(pie_menu_classes)
+# Smart light operators (Phase 3 integration)
+smart_light_classes = [
+    LUMI_OT_smart_add_light,
+    LUMI_OT_analyze_composition,
+]
+
+classes = get_classes() + tuple(update_classes) + tuple(linking_ui_classes) + tuple(panel_classes) + tuple(pie_menu_classes) + tuple(smart_light_classes)
 addon_keymaps = []
 
 def register_properties() -> None:
