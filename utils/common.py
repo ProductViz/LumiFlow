@@ -11,9 +11,19 @@ import bpy
 from mathutils import Vector
 
 def lumi_is_addon_enabled() -> bool:
-    """Check if LumiFlow addon is enabled - used in all modules."""
+    """Check if LumiFlow addon is enabled - used in all modules.
+
+    The "lumi_enabled" flag is defined as an RNA BoolProperty on
+    bpy.types.Scene (not an ID property), so it must be accessed via
+    attribute lookup, not Scene.get(). Using get() always returned
+    False, causing the UI to think the addon was disabled even when
+    the toggle was ON.
+    """
     try:
-        return bpy.context.scene.get("lumi_enabled", False)
+        scene = bpy.context.scene
+        if scene is None:
+            return False
+        return bool(getattr(scene, "lumi_enabled", False))
     except Exception:
         return False
 

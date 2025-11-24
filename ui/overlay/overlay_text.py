@@ -209,6 +209,8 @@ def draw_overlay_tips():
             ("Solo", "Ctrl + Shift + D", colors['secondary'], 0.7, 50, 1.0),
             ("Or Add More Light", "", colors['normal'], 0.5, 70, 1.0),
             ("Smart Add", "Ctrl + Shift + A", colors['secondary'], 0.5, 70, 1.0),
+            ("Quick Smart Add", "Ctrl + Shift + RMB", colors['secondary'], 0.5, 105, 1.0),
+
         ]
 
     font_scale, line_spacing = get_text_settings(context)
@@ -221,6 +223,7 @@ def get_selected_light_tips_template(selected_light, colors=None):
         colors = OverlayConfig.get_all_colors()
     
     light_type = selected_light.data.type
+    has_exposure = hasattr(selected_light.data, 'exposure')
     
     tips_lines = [
         ("💡 LumiFlow Tips", "", colors['header'], 0.5, 70, 1.2), 
@@ -228,51 +231,64 @@ def get_selected_light_tips_template(selected_light, colors=None):
     ]
     
     if light_type == 'POINT':
+        # POINT supports: Distance, Power, Scale (Radius), Temperature, optional Exposure
         tips_lines.extend([
             ("Distance", "Ctrl + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
             ("Power", "Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Radius", "Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Temp.", "Ctrl+Alt + MMB_Drag", colors['secondary'], 0.8, 70, 1.0),
+            ("Radius", "Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),  # SCALE
+            ("Temp.", "Ctrl + Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),  # TEMPERATURE
         ])
+        if has_exposure:
+            # EXPOSURE (always shown last in smart controls block)
+            tips_lines.append(("Exposure", "Shift + RMB_Drag", colors['secondary'], 0.8, 70, 1.0))
     elif light_type == 'SUN':
+        # SUN supports: Distance, Power, Angle, Temperature, optional Exposure (no Scale)
         tips_lines.extend([
             ("Distance", "Ctrl + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
             ("Power", "Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Angle", "Alt + shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Temp.", "Ctrl+Alt + MMB_Drag", colors['secondary'], 0.8, 70, 1.0),
+            ("Angle", "Ctrl + Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),  # ANGLE
+            ("Temp.", "Ctrl + Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),  # TEMPERATURE
         ])
+        if has_exposure:
+            tips_lines.append(("Exposure", "Shift + RMB_Drag", colors['secondary'], 0.8, 70, 1.0))
     elif light_type == 'SPOT':
+        # SPOT supports: Distance, Power, Scale (Radius), Angle (Spot Size), Blend, Temperature, optional Exposure
         tips_lines.extend([
             ("Distance", "Ctrl + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
             ("Power", "Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Radius", "Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Spot Size", "Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Blend", "Shift + Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Temp.", "ctrl+Alt + MMB_Drag", colors['secondary'], 0.8, 70, 1.0),
+            ("Radius", "Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),  # SCALE
+            ("Spot Size", "Ctrl + Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),  # ANGLE
+            ("Blend", "Shift + Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),  # BLEND
+            ("Temp.", "Ctrl + Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),  # TEMPERATURE
         ])
+        if has_exposure:
+            tips_lines.append(("Exposure", "Shift + RMB_Drag", colors['secondary'], 0.8, 70, 1.0))
     elif light_type == 'AREA':
+        # AREA supports: Distance, Power, Scale, Angle (Spread), Temperature, optional Exposure
         tips_lines.extend([
             ("Distance", "Ctrl + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
             ("Power", "Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Scale", "Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Spread", "Ctrl+Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-            ("Temp.", "ctrl+Alt + MMB_Drag", colors['secondary'], 0.8, 70, 1.0),
+            ("Scale", "Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),  # SCALE
+            ("Spread", "Ctrl + Shift + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),  # ANGLE
+            ("Temp.", "Ctrl + Alt + MMB_Drag", colors['secondary'], 0.5, 70, 1.0),  # TEMPERATURE
         ])
+        if has_exposure:
+            tips_lines.append(("Exposure", "Shift + RMB_Drag", colors['secondary'], 0.8, 70, 1.0))
     
     tips_lines.extend([
         ("Positioning Modes", "", colors['normal'], 0.55, 70, 1.0),
         ("Highlight", "Ctrl + LMB_Drag", colors['secondary'], 0.5, 70, 1.0),
         ("Normal", "Shift + LMB_Drag", colors['secondary'], 0.5, 70, 1.0),
         ("Orbit", "Alt + LMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-        ("Target", "Ctrl+Alt + LMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-        ("Free", "Ctrl+Shift + LMB_Drag", colors['secondary'], 0.5, 70, 1.0),
-        ("Move", "Shift+Alt + LMB_Drag", colors['secondary'], 0.8, 70, 1.0),
-        ("Menu", "", colors['normal'], 0.55, 70, 1.0),
+        ("Target", "Ctrl + Alt + LMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+        ("Free", "Ctrl + Shift + LMB_Drag", colors['secondary'], 0.5, 70, 1.0),
+        ("Move", "Shift + Alt + LMB_Drag", colors['secondary'], 0.8, 70, 1.0),
+        ("Light Actions", "", colors['normal'], 0.55, 70, 1.0),
         ("Smart Add", "Ctrl + Shift + A", colors['secondary'], 0.5, 70, 1.0),
         ("Flip", "Ctrl + Shift + C", colors['secondary'], 0.5, 70, 1.0),
+        ("Scale Axis (Area Rect/Ellipse)", "Alt + Q", colors['secondary'], 0.5, 70, 1.0),
         ("Linking", "Ctrl + Shift + X", colors['secondary'], 0.5, 70, 1.0),
-        ("Solo", "Ctrl + Shift + D", colors['secondary'], 0.8, 70, 1.0),
-        ("Select", "", colors['normal'], 0.55, 70, 1.0),
+        ("Solo", "Ctrl + Shift + D", colors['secondary'], 0.5, 70, 1.0),        
         ("Cycle", "D", colors['secondary'], 0.8, 70, 1.0),
         ("Deselect lights to use viewport navigation or multi-select", "", colors['secondary'], 0.5, 70, 1.0),        
     ])

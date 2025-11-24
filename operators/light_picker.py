@@ -45,13 +45,16 @@ class LUMI_OT_auto_light_picker(bpy.types.Operator):
     
     @classmethod
     def poll(cls, context):
-        """Check if the operator can be invoked"""
-        return (lumi_is_addon_enabled() and 
-                context.area and 
-                context.area.type == 'VIEW_3D' and
-                context.region and
-                context.space_data and
-                not cls._is_running)
+        """Check if the operator can be invoked.
+
+        This operator is started internally from property update
+        callbacks, which in Blender 5.0 may run in contexts without
+        a VIEW_3D area/region. To avoid spurious
+        "context is incorrect" errors, we only guard against the
+        operator already running. The modal handler itself checks
+        addon state and viewport context before doing any work.
+        """
+        return not cls._is_running
     
     def invoke(self, context, event):
         """Start automatic light picker (runs in background)"""

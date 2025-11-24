@@ -719,6 +719,7 @@ def register_keymaps() -> None:
             ('lumi.flip_menu_call', 'C', 'PRESS', True, True, False),
             ('lumi.quick_link_to_target', 'X', 'PRESS', True, True, False),
             ('lumi.quick_assign_light', 'Q', 'PRESS', True, True, False),
+            ('lumi.scale_axis_menu_call', 'Q', 'PRESS', False, False, True),
             # Note: 'lumi.toggle_addon' is registered separately in register_toggle_addon_keymap()
             ('lumi.cycle_lights_modal', 'D', 'PRESS', False, False, False),
             ('lumi.quick_solo_light', 'D', 'PRESS', True, True, False),
@@ -747,6 +748,16 @@ def register_keymaps() -> None:
         kmi = km.keymap_items.new('lumi.smart_control', 'MIDDLEMOUSE', 'PRESS', shift=True)
         kmi.properties.mode = 'POWER'
         addon_keymaps.append((km, kmi))
+
+        # Exposure mode (Blender 4.5+): Shift+RIGHTMOUSE
+        try:
+            import bpy as _bpy_mod
+            if getattr(_bpy_mod.app, 'version', (0, 0, 0)) >= (4, 5, 0):
+                kmi = km.keymap_items.new('lumi.smart_control', 'RIGHTMOUSE', 'PRESS', shift=True)
+                kmi.properties.mode = 'EXPOSURE'
+                addon_keymaps.append((km, kmi))
+        except Exception:
+            pass
 
         # Scale mode: Alt+MIDDLEMOUSE
         kmi = km.keymap_items.new('lumi.smart_control', 'MIDDLEMOUSE', 'PRESS', alt=True)
@@ -1028,6 +1039,13 @@ def register() -> None:
     bpy.types.Scene.lumi_professional_props = bpy.props.PointerProperty(type=ProfessionalLightingProperties)
     bpy.types.Scene.lumi_light_control_props = bpy.props.PointerProperty(type=LightControlProperties)
 
+    # Object-level properties
+    bpy.types.Object.lumi_exclude_quick_add = bpy.props.BoolProperty(
+        name="Exclude from Quick Smart Add",
+        description="When enabled, new lights added with Quick Smart Add will not illuminate this object",
+        default=False
+    )
+
     # Add WindowManager properties
     bpy.types.WindowManager.lumiflow_update_info = bpy.props.StringProperty(name="LumiFlow Update Info", default="")
     
@@ -1302,6 +1320,13 @@ def unregister() -> None:
     if hasattr(bpy.types.Scene, 'lumi_light_control_props'):
         try:
             del bpy.types.Scene.lumi_light_control_props
+        except Exception:
+            pass
+    
+    # Remove Object-level properties
+    if hasattr(bpy.types.Object, 'lumi_exclude_quick_add'):
+        try:
+            del bpy.types.Object.lumi_exclude_quick_add
         except Exception:
             pass
     
