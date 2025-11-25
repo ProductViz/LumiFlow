@@ -13,6 +13,13 @@ from .linking_ops import *
 from .smart_ops import *
 from .smart_template import *
 
+# Background system imports
+from .background import (
+    LUMI_OT_background_menu_call,
+    LUMI_OT_apply_background,
+    LUMI_OT_remove_background,
+)
+
 from .menus_ops import (
     LUMI_OT_smart_light_pie_call, LUMI_OT_add_smart_light,
     LUMI_OT_template_menu_call,  # Template menu caller operator
@@ -81,6 +88,11 @@ main_operators = [
     'LUMI_OT_flip_menu_call',  # Flip menu caller operator
     'LUMI_OT_scale_axis_menu_call',  # Scale Axis quick menu operator
     'LUMI_OT_set_light_assignment_mode',  # Light assignment mode operator
+    
+    # Background system operators
+    'LUMI_OT_background_menu_call',
+    'LUMI_OT_apply_background',
+    'LUMI_OT_remove_background',
     
     # Utility operators
     'LUMI_OT_select_light', 'LUMI_OT_delete_light', 'LUMI_OT_delete_collection', 'LUMI_OT_cycle_lights_modal', 'LUMI_OT_quick_solo_light',
