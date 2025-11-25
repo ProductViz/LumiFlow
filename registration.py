@@ -708,6 +708,7 @@ def register_keymaps() -> None:
             ('lumi.scale_axis_menu_call', 'Q', 'PRESS', False, False, True),
             # Note: 'lumi.toggle_addon' is registered separately in register_toggle_addon_keymap()
             ('lumi.cycle_lights_modal', 'D', 'PRESS', False, False, False),
+            ('lumi.select_all_lights', 'D', 'PRESS', True, False, False),
             ('lumi.quick_solo_light', 'D', 'PRESS', True, True, False),
             ('lumi.toggle_positioning_mode', 'P', 'PRESS', False, False, False),
             ('lumi.toggle_smart_control_mode', 'F', 'PRESS', False, False, False),
