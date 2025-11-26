@@ -139,59 +139,6 @@ class LUMI_PT_light_control(bpy.types.Panel):
             box = layout.box()
             box.label(text="Quick Templates", icon='LIGHT')
             box.label(text="Select objects to apply templates", icon='INFO')
-        
-        # Background System Quick Access
-        self._draw_background_quick_access(layout, context)
-
-    def _draw_background_quick_access(self, layout: bpy.types.UILayout, context: bpy.types.Context):
-        """Background System Quick Access"""
-        try:
-            box = layout.box()
-            header_row = box.row(align=True)
-            header_row.label(text="Background System", icon='IMAGE_BACKGROUND')
-            
-            # Check for existing backgrounds
-            existing_bg = None
-            bg_lights_count = 0
-            for obj in context.scene.objects:
-                if obj.get("lumiflow_background"):
-                    existing_bg = obj
-                if obj.type == 'LIGHT' and obj.get("lumiflow_bg_light"):
-                    bg_lights_count += 1
-            
-            col = box.column(align=True)
-            
-            if existing_bg:
-                # Show existing background info
-                info_row = col.row(align=True)
-                info_row.label(text=f"Active: {existing_bg.name}", icon='CHECKMARK')
-                
-                # Show background lights count
-                if bg_lights_count > 0:
-                    light_row = col.row(align=True)
-                    light_row.label(text=f"BG Lights: {bg_lights_count}", icon='LIGHT')
-                
-                # Quick actions
-                action_row = col.row(align=True)
-                action_row.operator("lumi.background_menu_call", text="Modify", icon='MODIFIER')
-                action_row.operator("lumi.remove_background", text="Remove", icon='X')
-                
-                # Layer isolation button (Phase 2)
-                try:
-                    from ..operators.background.light_linking import is_light_linking_available
-                    if is_light_linking_available():
-                        iso_row = col.row(align=True)
-                        iso_row.operator("lumi.apply_layer_isolation", text="Apply Isolation", icon='UNLINKED')
-                        iso_row.operator("lumi.clear_layer_isolation", text="Clear", icon='X')
-                except ImportError:
-                    pass
-            else:
-                # No background - show create button
-                col.operator("lumi.background_menu_call", text="Add Background (Ctrl+Shift+B)", icon='ADD')
-                col.label(text="Select product first for auto-sizing", icon='INFO')
-                
-        except Exception:
-            pass
 
     def _draw_quick_exclude_overview(self, layout: bpy.types.UILayout, context: bpy.types.Context):
         scene = context.scene

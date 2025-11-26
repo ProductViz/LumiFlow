@@ -523,23 +523,7 @@ class LUMI_OT_apply_lighting_template(bpy.types.Operator):
             # instance and used by _create_single_light().
             self._runtime_intensity_factor = self._compute_profile_intensity_factor(scene_ctx)
 
-            # === 2c. BACKGROUND AWARENESS (Phase 2) ===
-            self._background_analysis = None
-            try:
-                from ..background.background_awareness import (
-                    analyze_background, should_suggest_background, should_suggest_isolation
-                )
-                self._background_analysis = analyze_background(context)
-                
-                # Suggest background if none exists
-                if should_suggest_background(context):
-                    self.report({'INFO'}, "Tip: Press Ctrl+Shift+B to add a studio background")
-                
-                # Suggest isolation if background exists
-                elif should_suggest_isolation(context):
-                    self.report({'INFO'}, "Background detected - consider enabling layer isolation")
-            except ImportError:
-                pass  # Background module not available
+            # === 2b. CONTEXT-AWARE WARNING (non-blocking, research-based) ===
 
             # === 3. CLEAR EXISTING LIGHTS (if requested) ===
             if not self.preserve_existing:

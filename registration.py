@@ -332,26 +332,7 @@ smart_light_classes = [
     LUMI_OT_analyze_composition,
 ]
 
-# Background system operators
-from .operators.background import (
-    LUMI_OT_background_menu_call,
-    LUMI_OT_apply_background,
-    LUMI_OT_remove_background,
-    # Phase 2: Light linking operators
-    LUMI_OT_apply_layer_isolation,
-    LUMI_OT_clear_layer_isolation,
-)
-
-background_classes = [
-    LUMI_OT_background_menu_call,
-    LUMI_OT_apply_background,
-    LUMI_OT_remove_background,
-    # Phase 2
-    LUMI_OT_apply_layer_isolation,
-    LUMI_OT_clear_layer_isolation,
-]
-
-classes = get_classes() + tuple(update_classes) + tuple(linking_ui_classes) + tuple(panel_classes) + tuple(pie_menu_classes) + tuple(smart_light_classes) + tuple(background_classes)
+classes = get_classes() + tuple(update_classes) + tuple(linking_ui_classes) + tuple(panel_classes) + tuple(pie_menu_classes) + tuple(smart_light_classes)
 addon_keymaps = []
 
 def register_properties() -> None:
@@ -747,7 +728,6 @@ def register_keymaps() -> None:
         shortcuts = [
 
             ('lumi.template_menu_call', 'A', 'PRESS', True, True, False),
-            ('lumi.background_menu_call', 'B', 'PRESS', True, True, False),  # Background System
             ('lumi.flip_menu_call', 'C', 'PRESS', True, True, False),
             ('lumi.quick_link_to_target', 'X', 'PRESS', True, True, False),
             ('lumi.quick_assign_light', 'Q', 'PRESS', True, True, False),
