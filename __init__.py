@@ -22,8 +22,8 @@ Main entry point for the LumiFlow Blender addon with addon metadata and module i
 """
 bl_info = {
     "name": "LumiFlow",
-    "author": "ProductViz",
-    "version": (1, 1, 0),
+    "author": "Burhanuddin",
+    "version": (1, 2, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Sidebar > LumiFlow",
     "description": "Smart lighting tools for Blender",
