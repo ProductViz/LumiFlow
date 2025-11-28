@@ -13,14 +13,117 @@ from bpy_extras import view3d_utils
 
 from .config import OverlayConfig, viewport_overlay_manager
 from .utils import (
-    get_text_settings, 
-    get_config_colors, 
-    get_overlay_positions, 
-    draw_text
+    get_text_settings,
+    get_config_colors,
+    get_overlay_positions,
+    draw_text,
 )
 from ...utils import lumi_rgb_to_hsv, lumi_get_light_pivot, lumi_get_light_collection
 from ...utils.light import lumi_get_selected_lights
 from ...utils.mode_manager import ModeManager
+from ...utils.common import get_addon_preferences
+from ... import shortcuts_config
+
+
+# ============================================================================
+# INTERNAL HELPERS (shortcut formatting)
+# ============================================================================
+
+def _key_type_to_token(key_type: str) -> str:
+    """Map Blender event type to human-readable token for tips / icons."""
+    if key_type == "LEFTMOUSE":
+        return "LMB"
+    if key_type == "RIGHTMOUSE":
+        return "RMB"
+    if key_type == "MIDDLEMOUSE":
+        return "MMB"
+    return key_type or ""
+
+
+def _format_shortcut_text(key_type: str, key_value: str, ctrl: bool, shift: bool, alt: bool, fallback: str = "") -> str:
+    """Format shortcut components into a string like "Ctrl + Shift + A".
+
+    key_value is currently ignored for display (PRESS/RELEASE), to keep
+    strings simple and compatible with the icon parser.
+    """
+    token = _key_type_to_token(key_type)
+    if not token:
+        return fallback
+
+    parts = []
+    if ctrl:
+        parts.append("Ctrl")
+    if shift:
+        parts.append("Shift")
+        
+    if alt:
+        parts.append("Alt")
+    parts.append(token)
+
+    if not parts:
+        return fallback
+    return " + ".join(parts)
+
+
+def _get_action_shortcut_text(action_id: str, fallback: str) -> str:
+    """Get display shortcut text for a logical action_id.
+
+    Reads from addon preferences (prefs.shortcuts) if available, with
+    fallback to DEFAULT_SHORTCUTS. Returns fallback if anything fails.
+    """
+    try:
+        prefs = get_addon_preferences()
+    except Exception:
+        prefs = None
+
+    data = None
+
+    # Try preferences first
+    if prefs is not None:
+        try:
+            shortcuts_config.ensure_default_shortcuts(prefs)
+        except Exception:
+            pass
+
+        if hasattr(prefs, "shortcuts"):
+            for item in prefs.shortcuts:
+                if item.action_id == action_id and getattr(item, "active", True):
+                    data = {
+                        "key_type": getattr(item, "key_type", ""),
+                        "key_value": getattr(item, "key_value", "PRESS"),
+                        "ctrl": bool(getattr(item, "ctrl", False)),
+                        "shift": bool(getattr(item, "shift", False)),
+                        "alt": bool(getattr(item, "alt", False)),
+                    }
+                    break
+
+    # Fallback to static defaults
+    if data is None:
+        try:
+            for entry in shortcuts_config.DEFAULT_SHORTCUTS:
+                if entry["action_id"] == action_id:
+                    data = {
+                        "key_type": entry.get("key_type", ""),
+                        "key_value": entry.get("key_value", "PRESS"),
+                        "ctrl": bool(entry.get("ctrl", False)),
+                        "shift": bool(entry.get("shift", False)),
+                        "alt": bool(entry.get("alt", False)),
+                    }
+                    break
+        except Exception:
+            data = None
+
+    if not data:
+        return fallback
+
+    return _format_shortcut_text(
+        data["key_type"],
+        data["key_value"],
+        data["ctrl"],
+        data["shift"],
+        data["alt"],
+        fallback,
+    )
 
 
 # ============================================================================
@@ -190,27 +293,48 @@ def draw_overlay_tips():
             selected_light = selected_lights[0]
 
     if not lights:
+        smart_add_shortcut = _get_action_shortcut_text(
+            shortcuts_config.ACTION_ID_TEMPLATE_MENU,
+            "Ctrl + Shift + A",
+        )
+
         tips_lines = [
             ("💡 LumiFlow Tips", "", colors['header'], 0.5, 70, 1.2),
             ("🚀 Create Your First Light:", "", colors['normal'], 0.5, 70, 1.0),
             ("1. Select or Point mouse at mesh surface", "", colors['secondary'], 0.5, 70, 1.0),
-            ("2. Press", "Ctrl + Shift + A", colors['secondary'], 0.5, 50, 1.0),
+            ("2. Press", smart_add_shortcut, colors['secondary'], 0.5, 50, 1.0),
             ("3. Choose light type from menu", "", colors['secondary'], 0.5, 70, 1.0),
         ]
     elif selected_light:
         tips_lines = get_selected_light_tips_template(selected_light, colors)
     else:
         # When lights exist but none selected - show general tips
-        tips_lines = [
-            ("💡 LumiFlow Tips", "", colors['header'], 0.5, 70, 1.2),  
-            ("Select a light to begin", "", colors['normal'], 0.5, 70, 1.0),
-            ("Flip", "Ctrl + Shift + C", colors['secondary'], 0.5, 50, 1.0),
-            ("Linking", "Ctrl + Shift + X", colors['secondary'], 0.5, 50, 1.0),
-            ("Solo", "Ctrl + Shift + D", colors['secondary'], 0.7, 50, 1.0),
-            ("Or Add More Light", "", colors['normal'], 0.5, 70, 1.0),
-            ("Smart Add", "Ctrl + Shift + A", colors['secondary'], 0.5, 70, 1.0),
-            ("Quick Smart Add", "Ctrl + Shift + RMB", colors['secondary'], 0.5, 105, 1.0),
+        flip_shortcut = _get_action_shortcut_text(
+            shortcuts_config.ACTION_ID_FLIP_MENU,
+            "Ctrl + Shift + C",
+        )
+        link_shortcut = _get_action_shortcut_text(
+            shortcuts_config.ACTION_ID_QUICK_LINK,
+            "Ctrl + Shift + X",
+        )
+        solo_shortcut = _get_action_shortcut_text(
+            shortcuts_config.ACTION_ID_SOLO_LIGHT,
+            "Ctrl + Shift + D",
+        )
+        smart_add_shortcut = _get_action_shortcut_text(
+            shortcuts_config.ACTION_ID_TEMPLATE_MENU,
+            "Ctrl + Shift + A",
+        )
 
+        tips_lines = [
+            ("💡 LumiFlow Tips", "", colors['header'], 0.5, 70, 1.2),
+            ("Select a light to begin", "", colors['normal'], 0.5, 70, 1.0),
+            ("Flip", flip_shortcut, colors['secondary'], 0.5, 50, 1.0),
+            ("Linking", link_shortcut, colors['secondary'], 0.5, 50, 1.0),
+            ("Solo", solo_shortcut, colors['secondary'], 0.7, 50, 1.0),
+            ("Or Add More Light", "", colors['normal'], 0.5, 70, 1.0),
+            ("Smart Add", smart_add_shortcut, colors['secondary'], 0.5, 70, 1.0),
+            ("Quick Smart Add", "Ctrl + Shift + RMB", colors['secondary'], 0.5, 105, 1.0),
         ]
 
     font_scale, line_spacing = get_text_settings(context)
@@ -284,12 +408,72 @@ def get_selected_light_tips_template(selected_light, colors=None):
         ("Free", "Ctrl + Shift + LMB_Drag", colors['secondary'], 0.5, 70, 1.0),
         ("Move", "Shift + Alt + LMB_Drag", colors['secondary'], 0.8, 70, 1.0),
         ("Light Actions", "", colors['normal'], 0.55, 70, 1.0),
-        ("Smart Add", "Ctrl + Shift + A", colors['secondary'], 0.5, 70, 1.0),
-        ("Flip", "Ctrl + Shift + C", colors['secondary'], 0.5, 70, 1.0),
-        ("Scale Axis (Area Rect/Ellipse)", "Alt + Q", colors['secondary'], 0.5, 70, 1.0),
-        ("Linking", "Ctrl + Shift + X", colors['secondary'], 0.5, 70, 1.0),
-        ("Solo", "Ctrl + Shift + D", colors['secondary'], 0.5, 70, 1.0),        
-        ("Cycle", "D", colors['secondary'], 0.8, 70, 1.0),
+        (
+            "Smart Add",
+            _get_action_shortcut_text(
+                shortcuts_config.ACTION_ID_TEMPLATE_MENU,
+                "Ctrl + Shift + A",
+            ),
+            colors['secondary'],
+            0.5,
+            70,
+            1.0,
+        ),
+        (
+            "Flip",
+            _get_action_shortcut_text(
+                shortcuts_config.ACTION_ID_FLIP_MENU,
+                "Ctrl + Shift + C",
+            ),
+            colors['secondary'],
+            0.5,
+            70,
+            1.0,
+        ),        
+        (
+            "Linking",
+            _get_action_shortcut_text(
+                shortcuts_config.ACTION_ID_QUICK_LINK,
+                "Ctrl + Shift + X",
+            ),
+            colors['secondary'],
+            0.5,
+            70,
+            1.0,
+        ),
+        (
+            "Solo",
+            _get_action_shortcut_text(
+                shortcuts_config.ACTION_ID_SOLO_LIGHT,
+                "Ctrl + Shift + D",
+            ),
+            colors['secondary'],
+            0.5,
+            70,
+            1.0,
+        ),
+        (
+            "Scale Axis",
+            _get_action_shortcut_text(
+                shortcuts_config.ACTION_ID_SCALE_AXIS_MENU,
+                "Alt + Q",
+            ),
+            colors['secondary'],
+            0.5,
+            70,
+            1.0,
+        ),
+        (
+            "Cycle",
+            _get_action_shortcut_text(
+                shortcuts_config.ACTION_ID_CYCLE_LIGHTS,
+                "D",
+            ),
+            colors['secondary'],
+            0.8,
+            70,
+            1.0,
+        ),
         ("Deselect lights to use viewport navigation or multi-select", "", colors['secondary'], 0.5, 70, 1.0),        
     ])
     

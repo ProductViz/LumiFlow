@@ -523,6 +523,312 @@ class LUMI_OT_toggle_addon(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class LUMI_OT_apply_shortcuts(bpy.types.Operator):
+    """Apply LumiFlow shortcut changes from Addon Preferences"""
+    bl_idname = "lumiflow.apply_shortcuts"
+    bl_label = "Apply LumiFlow Shortcuts"
+    bl_description = "Rebuild LumiFlow keymaps using current shortcut preferences"
+    bl_options = {'REGISTER'}
+
+    # Summary text shown in confirmation dialog when there are conflicts
+    conflict_summary: bpy.props.StringProperty(
+        name="Conflict Summary",
+        description="Summary of LumiFlow shortcut conflicts with Blender defaults",
+        default="",
+        options={'SKIP_SAVE'},
+    )
+
+    # ----------------------------
+    # Conflict detection helpers
+    # ----------------------------
+    @staticmethod
+    def _collect_lumiflow_bindings(prefs):
+        """Collect active LumiFlow shortcut bindings from preferences.
+
+        Returns a dict mapping (type, value, ctrl, shift, alt) -> list of
+        (operator, label, action_id).
+        """
+        bindings = {}
+
+        try:
+            from ..shortcuts_config import iter_standard_shortcuts, get_toggle_addon_shortcut
+        except Exception:
+            return bindings
+
+        # Standard actions
+        for item in iter_standard_shortcuts(prefs):
+            op = getattr(item, "operator", "")
+            if not op:
+                continue
+            combo = (
+                getattr(item, "key_type", "A"),
+                getattr(item, "key_value", "PRESS"),
+                bool(getattr(item, "ctrl", False)),
+                bool(getattr(item, "shift", False)),
+                bool(getattr(item, "alt", False)),
+            )
+            label = getattr(item, "label", "") or getattr(item, "action_id", op)
+            action_id = getattr(item, "action_id", "")
+            bindings.setdefault(combo, []).append((op, label, action_id))
+
+        # Toggle addon shortcut (not part of STANDARD_ACTION_IDS)
+        try:
+            toggle_item = get_toggle_addon_shortcut(prefs)
+        except Exception:
+            toggle_item = None
+
+        if toggle_item is not None and getattr(toggle_item, "operator", ""):
+            combo = (
+                getattr(toggle_item, "key_type", "L"),
+                getattr(toggle_item, "key_value", "PRESS"),
+                bool(getattr(toggle_item, "ctrl", False)),
+                bool(getattr(toggle_item, "shift", False)),
+                bool(getattr(toggle_item, "alt", False)),
+            )
+            label = getattr(toggle_item, "label", "") or getattr(toggle_item, "action_id", toggle_item.operator)
+            action_id = getattr(toggle_item, "action_id", "")
+            bindings.setdefault(combo, []).append((toggle_item.operator, label, action_id))
+
+        return bindings
+
+    @staticmethod
+    def _format_combo(key_type, key_value, ctrl, shift, alt):
+        parts = []
+        if ctrl:
+            parts.append("Ctrl")
+        if shift:
+            parts.append("Shift")
+        if alt:
+            parts.append("Alt")
+        parts.append(key_type)
+        combo = "+".join(parts)
+        if key_value and key_value != "PRESS":
+            combo += f" ({key_value})"
+        return combo
+
+    @classmethod
+    def _detect_conflicts(cls, context, prefs):
+        """Detect internal LumiFlow and Blender default conflicts.
+
+        Returns (lumi_conflicts, blender_conflicts).
+        - lumi_conflicts: dict combo -> list of (op, label, action_id) with length > 1
+        - blender_conflicts: list of dicts with keys:
+            combo, combo_str, lumi_label, lumi_op, km_name, bl_op
+        """
+        bindings = cls._collect_lumiflow_bindings(prefs)
+
+        # Internal LumiFlow conflicts: same combo used by multiple actions
+        lumi_conflicts = {
+            combo: entries for combo, entries in bindings.items() if len(entries) > 1
+        }
+
+        blender_conflicts = []
+
+        wm = getattr(context, "window_manager", None)
+        if wm is None:
+            return lumi_conflicts, blender_conflicts
+
+        kc_default = getattr(wm, "keyconfigs", None)
+        if kc_default is None or not getattr(kc_default, "default", None):
+            return lumi_conflicts, blender_conflicts
+
+        kc_default = kc_default.default
+
+        target_names = {"3D View", "Object Mode"}
+
+        # Scan Blender default keymaps for 3D View / Object Mode
+        try:
+            for km in kc_default.keymaps:
+                if km.space_type != 'VIEW_3D':
+                    continue
+                if km.name not in target_names:
+                    continue
+
+                for kmi in km.keymap_items:
+                    if not getattr(kmi, "active", True):
+                        continue
+
+                    combo = (
+                        getattr(kmi, "type", ""),
+                        getattr(kmi, "value", "PRESS"),
+                        bool(getattr(kmi, "ctrl", False)),
+                        bool(getattr(kmi, "shift", False)),
+                        bool(getattr(kmi, "alt", False)),
+                    )
+
+                    if combo in bindings:
+                        key_type, key_value, ctrl, shift, alt = combo
+                        combo_str = cls._format_combo(key_type, key_value, ctrl, shift, alt)
+                        for op, label, _action_id in bindings[combo]:
+                            blender_conflicts.append({
+                                "combo": combo,
+                                "combo_str": combo_str,
+                                "lumi_label": label,
+                                "lumi_op": op,
+                                "km_name": km.name,
+                                "bl_op": getattr(kmi, "idname", ""),
+                            })
+        except Exception:
+            # If anything goes wrong here, just fail open without blocking apply
+            return lumi_conflicts, []
+
+        return lumi_conflicts, blender_conflicts
+
+    # ----------------------------
+    # Operator UI / lifecycle
+    # ----------------------------
+    def invoke(self, context, event):
+        try:
+            from ..utils.common import get_addon_preferences
+            from ..shortcuts_config import ensure_default_shortcuts
+
+            prefs = get_addon_preferences()
+            if prefs is None:
+                self.report({'WARNING'}, "LumiFlow preferences not available")
+                return {'CANCELLED'}
+
+            # Ensure preferences contain default shortcuts before conflict check
+            try:
+                ensure_default_shortcuts(prefs)
+            except Exception:
+                pass
+
+            lumi_conflicts, blender_conflicts = self._detect_conflicts(context, prefs)
+
+            # Hard block: internal LumiFlow conflicts
+            if lumi_conflicts:
+                msgs = []
+                for combo, entries in lumi_conflicts.items():
+                    key_type, key_value, ctrl, shift, alt = combo
+                    combo_str = self._format_combo(key_type, key_value, ctrl, shift, alt)
+                    labels = {label for _op, label, _aid in entries}
+                    msgs.append(f"{combo_str}: " + ", ".join(sorted(labels)))
+
+                joined = "; ".join(msgs)
+                self.report({'ERROR'}, f"LumiFlow shortcut conflict: {joined}")
+                return {'CANCELLED'}
+
+            # Soft block: conflicts with Blender defaults -> ask confirmation
+            if blender_conflicts:
+                lines = []
+                for c in blender_conflicts[:8]:  # limit lines for dialog
+                    lines.append(
+                        f"{c['combo_str']}: {c['lumi_label']} (LumiFlow) vs {c['km_name']} → {c['bl_op']}"
+                    )
+                if len(blender_conflicts) > 8:
+                    lines.append(f"(+ {len(blender_conflicts) - 8} more conflicts)")
+
+                self.conflict_summary = "\n".join(lines)
+                return context.window_manager.invoke_props_dialog(self, width=520)
+
+            # No conflicts: apply directly
+            return self.execute(context)
+
+        except Exception as e:
+            self.report({'ERROR'}, f"Failed to analyze shortcuts: {e}")
+            return {'CANCELLED'}
+
+    def draw(self, context):
+        layout = self.layout
+        if self.conflict_summary:
+            col = layout.column(align=True)
+            col.label(text="Some LumiFlow shortcuts conflict with Blender defaults:", icon='ERROR')
+            for line in self.conflict_summary.split("\n"):
+                col.label(text=line)
+            col.separator()
+            col.label(text="Apply anyway and override these Blender shortcuts?", icon='QUESTION')
+
+    def execute(self, context):
+        try:
+            from ..utils.common import get_addon_preferences
+            from .. import registration
+
+            prefs = get_addon_preferences()
+            if prefs is None:
+                self.report({'WARNING'}, "LumiFlow preferences not available")
+                return {'CANCELLED'}
+
+            # Ensure preferences contain default shortcuts before rebuild
+            try:
+                from ..shortcuts_config import ensure_default_shortcuts
+                ensure_default_shortcuts(prefs)
+            except Exception:
+                pass
+
+            # Rebuild keymaps: clear existing then register again
+            try:
+                registration.unregister_keymaps()
+            except Exception:
+                pass
+
+            try:
+                registration.register_keymaps()
+            except Exception as e:
+                self.report({'ERROR'}, f"Failed to register keymaps: {e}")
+                return {'CANCELLED'}
+
+            # Ensure toggle keymap is still present
+            try:
+                registration.ensure_toggle_addon_keymap()
+            except Exception:
+                pass
+
+            self.report({'INFO'}, "LumiFlow shortcuts applied")
+            return {'FINISHED'}
+        except Exception as e:
+            self.report({'ERROR'}, f"Failed to apply shortcuts: {e}")
+            return {'CANCELLED'}
+
+
+class LUMI_OT_reset_shortcuts(bpy.types.Operator):
+    """Reset LumiFlow shortcuts to default values"""
+    bl_idname = "lumiflow.reset_shortcuts"
+    bl_label = "Reset LumiFlow Shortcuts"
+    bl_description = "Reset LumiFlow shortcuts in Addon Preferences to defaults and rebuild keymaps"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        try:
+            from ..utils.common import get_addon_preferences
+            from ..shortcuts_config import reset_shortcuts_to_default
+            from .. import registration
+
+            prefs = get_addon_preferences()
+            if prefs is None:
+                self.report({'WARNING'}, "LumiFlow preferences not available")
+                return {'CANCELLED'}
+
+            # Reset preferences to default shortcuts
+            try:
+                reset_shortcuts_to_default(prefs)
+            except Exception as e:
+                self.report({'ERROR'}, f"Failed to reset shortcuts: {e}")
+                return {'CANCELLED'}
+
+            # Rebuild keymaps using the apply operator logic
+            try:
+                registration.unregister_keymaps()
+            except Exception:
+                pass
+
+            try:
+                registration.register_keymaps()
+            except Exception as e:
+                self.report({'ERROR'}, f"Failed to register keymaps after reset: {e}")
+                return {'CANCELLED'}
+
+            try:
+                registration.ensure_toggle_addon_keymap()
+            except Exception:
+                pass
+
+            self.report({'INFO'}, "LumiFlow shortcuts reset to defaults")
+            return {'FINISHED'}
+        except Exception as e:
+            self.report({'ERROR'}, f"Failed to reset shortcuts: {e}")
+            return {'CANCELLED'}
+
+
 class LUMI_OT_toggle_viewport_overlay(bpy.types.Operator):
     """Toggle overlay visibility for specific viewport"""
     bl_idname = "lumi.toggle_viewport_overlay"

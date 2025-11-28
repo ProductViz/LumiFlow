@@ -28,6 +28,8 @@ logger = logging.getLogger(__name__)
 
 # Import state and utility functions
 from .core.state import get_state
+from .utils.common import get_addon_preferences
+from .shortcuts_config import ensure_default_shortcuts, iter_standard_shortcuts, get_toggle_addon_shortcut
 # PropertyGroup for camera-light assignments
 class LumiCameraLightAssignment(bpy.types.PropertyGroup):
     camera_name = bpy.props.StringProperty(
@@ -137,8 +139,7 @@ from .operators.linking_ops import (
 from .operators.smart_ops import (
     LUMI_OT_smart_control,
 )
-from .preferences import LumiFlowAddonPreferences
-from .core.state import get_state
+from .preferences import LumiFlowAddonPreferences, LumiFlowShortcutItem
 
 # Template error handling system import
 from .operators.smart_template import (
@@ -688,7 +689,12 @@ def unregister_positioning_keymaps():
 
 
 def register_keymaps() -> None:
-    """Register all keymaps for LumiFlow"""
+    """Register all keymaps for LumiFlow.
+
+    Standard shortcuts are taken from addon preferences when available,
+    with a safe fallback to the legacy hardcoded defaults. Positioning
+    and smart control shortcuts remain hard-coded.
+    """
     try:
         wm = bpy.context.window_manager
         if not wm:
@@ -699,24 +705,52 @@ def register_keymaps() -> None:
             return  # Addon keyconfig not available
 
         km = kc.keymaps.new(name='3D View', space_type='VIEW_3D')
-        shortcuts = [
 
-            ('lumi.template_menu_call', 'A', 'PRESS', True, True, False),
-            ('lumi.flip_menu_call', 'C', 'PRESS', True, True, False),
-            ('lumi.quick_link_to_target', 'X', 'PRESS', True, True, False),
-            ('lumi.quick_assign_light', 'Q', 'PRESS', True, True, False),
-            ('lumi.scale_axis_menu_call', 'Q', 'PRESS', False, False, True),
-            # Note: 'lumi.toggle_addon' is registered separately in register_toggle_addon_keymap()
-            ('lumi.cycle_lights_modal', 'D', 'PRESS', False, False, False),
-            ('lumi.select_all_lights', 'D', 'PRESS', True, False, False),
-            ('lumi.quick_solo_light', 'D', 'PRESS', True, True, False),
-            ('lumi.toggle_positioning_mode', 'P', 'PRESS', False, False, False),
-            ('lumi.toggle_smart_control_mode', 'F', 'PRESS', False, False, False),
-        ]
-        for op, key, action, ctrl, shift, alt in shortcuts:
-            kmi = km.keymap_items.new(op, key, action, ctrl=ctrl, shift=shift, alt=alt)
-            addon_keymaps.append((km, kmi))
+        # Try to build standard shortcuts from preferences
+        prefs = get_addon_preferences()
+        if prefs is not None:
+            try:
+                ensure_default_shortcuts(prefs)
+            except Exception:
+                prefs = None
 
+        if prefs is not None:
+            for item in iter_standard_shortcuts(prefs):
+                op = getattr(item, "operator", "")
+                if not op:
+                    continue
+                try:
+                    kmi = km.keymap_items.new(
+                        op,
+                        item.key_type,
+                        item.key_value,
+                        ctrl=item.ctrl,
+                        shift=item.shift,
+                        alt=item.alt,
+                    )
+                    addon_keymaps.append((km, kmi))
+                except Exception:
+                    # Skip invalid or conflicting bindings
+                    continue
+        else:
+            # Legacy hardcoded defaults (including select_all_lights)
+            shortcuts = [
+                ('lumi.template_menu_call', 'A', 'PRESS', True, True, False),
+                ('lumi.flip_menu_call', 'C', 'PRESS', True, True, False),
+                ('lumi.quick_link_to_target', 'X', 'PRESS', True, True, False),
+                ('lumi.quick_assign_light', 'Q', 'PRESS', True, True, False),
+                ('lumi.scale_axis_menu_call', 'Q', 'PRESS', False, False, True),
+                ('lumi.cycle_lights_modal', 'D', 'PRESS', False, False, False),
+                ('lumi.select_all_lights', 'D', 'PRESS', True, False, False),
+                ('lumi.quick_solo_light', 'D', 'PRESS', True, True, False),
+                ('lumi.toggle_positioning_mode', 'P', 'PRESS', False, False, False),
+                ('lumi.toggle_smart_control_mode', 'F', 'PRESS', False, False, False),
+            ]
+            for op, key, action, ctrl, shift, alt in shortcuts:
+                kmi = km.keymap_items.new(op, key, action, ctrl=ctrl, shift=shift, alt=alt)
+                addon_keymaps.append((km, kmi))
+
+        # Always keep select_all_lights binding even when using preferences
         # Always register positioning keymaps - operators will check the toggle in poll()
         register_positioning_keymaps()
 
@@ -802,8 +836,33 @@ def register_toggle_addon_keymap() -> None:
             return
 
         km = kc.keymaps.new(name='3D View', space_type='VIEW_3D')
+
+        # Default toggle shortcut
+        key = 'L'
+        event = 'PRESS'
+        ctrl = False
+        shift = False
+        alt = False
+
+        # Try to fetch customized toggle shortcut from preferences
+        prefs = get_addon_preferences()
+        if prefs is not None:
+            toggle_item = None
+            try:
+                ensure_default_shortcuts(prefs)
+                toggle_item = get_toggle_addon_shortcut(prefs)
+            except Exception:
+                toggle_item = None
+
+            if toggle_item is not None and getattr(toggle_item, 'operator', '') == 'lumi.toggle_addon':
+                key = toggle_item.key_type
+                event = toggle_item.key_value
+                ctrl = toggle_item.ctrl
+                shift = toggle_item.shift
+                alt = toggle_item.alt
+
         # Always register the toggle addon keymap
-        kmi = km.keymap_items.new('lumi.toggle_addon', 'L', 'PRESS', ctrl=False, shift=False, alt=False)
+        kmi = km.keymap_items.new('lumi.toggle_addon', key, event, ctrl=ctrl, shift=shift, alt=alt)
         addon_keymaps.append((km, kmi))
 
     except (AttributeError, RuntimeError):
@@ -1009,12 +1068,17 @@ def unregister_file_detection_system():
 # Function to register classes to Blender
 def register() -> None:
     """Register all classes, properties, handlers, and keymaps for the addon"""
+    # Register preferences-related classes first
     try:
-        # Register class to Blender system
+        bpy.utils.register_class(LumiFlowShortcutItem)
+    except Exception:
+        pass
+
+    try:
         bpy.utils.register_class(LumiFlowAddonPreferences)
     except Exception:
         pass
-    
+
     for cls in classes:
         try:
             bpy.utils.register_class(cls)
@@ -1317,9 +1381,14 @@ def unregister() -> None:
         except Exception:
             pass
     
-    # Unregister AddonPreferences
+    # Unregister AddonPreferences and its PropertyGroups
     try:
         bpy.utils.unregister_class(LumiFlowAddonPreferences)
+    except Exception:
+        pass
+
+    try:
+        bpy.utils.unregister_class(LumiFlowShortcutItem)
     except Exception:
         pass
     

@@ -270,6 +270,25 @@ def get_addon_path() -> str:
     return os.path.dirname(os.path.dirname(__file__))
 
 
+def get_addon_preferences():
+    """Get LumiFlow addon preferences safely.
+
+    This helper avoids importing the preferences module directly to prevent
+    circular imports. It uses the addon name derived from the package.
+    Returns the preferences instance or None if unavailable.
+    """
+    try:
+        addon_name = __package__.split('.')[0]
+        if not hasattr(bpy.context, "preferences"):
+            return None
+        addons = bpy.context.preferences.addons
+        if addon_name not in addons:
+            return None
+        return addons[addon_name].preferences
+    except Exception:
+        return None
+
+
 # Export common utilities
 __all__ = [
     'lumi_is_addon_enabled',
@@ -280,6 +299,6 @@ __all__ = [
     'lumi_safe_context_override',
     'lumi_get_object_bounds',
     'lumi_sample_object_material',
-    'get_addon_path'
+    'get_addon_path',
+    'get_addon_preferences'
 ]
-
