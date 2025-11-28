@@ -35,6 +35,59 @@ class LUMI_OT_select_light(bpy.types.Operator):
         
         return {'FINISHED'}
 
+
+class LUMI_OT_select_all_lights(bpy.types.Operator):
+    bl_idname = "lumi.select_all_lights"
+    bl_label = "Select All LumiFlow Lights"
+    bl_description = "Select all lights in the LumiFlow light collection for current scene"
+
+    @classmethod
+    def poll(cls, context):
+        return lumi_is_addon_enabled() and context.scene is not None
+
+    def execute(self, context):
+        if not lumi_is_addon_enabled():
+            return {'CANCELLED'}
+
+        scene = context.scene
+        light_collection = lumi_get_light_collection(scene)
+
+        if not light_collection:
+            self.report({'WARNING'}, "LumiFlow light collection not found")
+            return {'CANCELLED'}
+
+        # Deselect everything first
+        try:
+            bpy.ops.object.select_all(action='DESELECT')
+        except Exception:
+            pass
+
+        lights = [obj for obj in light_collection.objects if obj.type == 'LIGHT']
+
+        if not lights:
+            self.report({'WARNING'}, "No lights found in LumiFlow collection")
+            return {'CANCELLED'}
+
+        # Select all lights and set the first as active
+        for light_obj in lights:
+            try:
+                light_obj.select_set(True)
+            except Exception:
+                continue
+
+        try:
+            context.view_layer.objects.active = lights[0]
+        except Exception:
+            pass
+
+        # Force viewport update if possible
+        area = getattr(context, 'area', None)
+        if area:
+            area.tag_redraw()
+
+        self.report({'INFO'}, f"Selected {len(lights)} LumiFlow lights")
+        return {'FINISHED'}
+
 class LUMI_OT_delete_light(bpy.types.Operator):
     bl_idname = "lumi.delete_light"
     bl_label = "Delete Light"

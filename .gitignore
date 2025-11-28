@@ -257,4 +257,5 @@ test_results/
 .coverage.*
 
 # Documentation (internal development docs)
-docs/
+assets/node_groups
+

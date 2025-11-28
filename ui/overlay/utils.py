@@ -260,7 +260,9 @@ def draw_text(
                                 
                                 remaining_text = keymap_text
                                 
-                                icon_parts = ['Ctrl', 'Shift', 'Alt', 'LMB_Drag', 'MMB_Drag', 'RMB_Drag', 'A', 'C', 'X', 'V', 'D']
+                                # Tokens that already have dedicated icons and
+                                # should be stripped from the remaining text.
+                                icon_parts = ['Ctrl', 'Shift', 'Alt', 'LMB_Drag', 'MMB_Drag', 'RMB_Drag', 'A', 'C', 'X', 'V', 'D', 'Q']
                                 
                                 for part in icon_parts:
                                     remaining_text = remaining_text.replace(part, '')

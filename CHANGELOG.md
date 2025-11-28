@@ -13,6 +13,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+## [1.2.0] - 2025-11-29
+
+### Added
+
+- **Select All LumiFlow Lights**: Added a dedicated action to select all lights managed by LumiFlow in the current scene, with its own shortcut entry in the addon preferences.
+- **Configurable LumiFlow Shortcuts**: New Shortcut Settings section in Add-on Preferences to view and customize the main LumiFlow shortcuts (Template, Flip, Quick Link/Assign, Cycle, Solo, Select All, Scale Axis, mode toggles, and toggle addon) with Apply/Reset operators and internal conflict detection between LumiFlow actions.
+
+### Changed
+
+- **Overlay tips & keymap icons follow preferences**: Overlay tips and key icons now read shortcut definitions from the new preference-based shortcut system (with fallback to defaults), so on-screen hints always match the currently active LumiFlow keymaps.
+- **Shortcut conflict handling with Blender defaults**: Applying shortcuts now detects conflicts against Blender's default 3D View/Object Mode keymaps and shows a confirmation dialog before overriding those defaults.
+
+### Fixed
+
 ## [1.1.0] - 2025-11-22
 
 ### Added
