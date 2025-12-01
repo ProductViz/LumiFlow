@@ -130,9 +130,38 @@ Before diving into workflows, run this **simple test** to confirm LumiFlow is in
 
 If you reach this point, LumiFlow is **installed and working**.
 
+## 7. Customizing LumiFlow Shortcuts (Optional)
+
+You can change the keyboard shortcuts LumiFlow uses so they fit your own workflow.
+
+### 7.1 Using LumiFlow Add-on Preferences (Recommended)
+
+1. In Blender, go to `Edit → Preferences…`.
+2. Open the **Add-ons** tab.
+3. In the search box, type `LumiFlow`.
+4. Find **LumiFlow** in the list and click the small arrow on the right to expand its settings.
+5. Scroll down to the **Shortcut Settings** section.
+6. For each action, adjust:
+   - `Key` (for example `A`, `D`, `F`),
+   - `Event` (`Press` or `Release`),
+   - and the modifier checkboxes (`Ctrl`, `Shift`, `Alt`).
+7. When you are happy with your changes, click **Apply Shortcuts** to write them to Blender's keymap.
+8. Click **Save Preferences** in the bottom-left of the Preferences window so your shortcuts are kept for the next Blender session.
+
+If you want to go back to the default LumiFlow mappings, open the same **Shortcut Settings** section and click **Reset to Default**.
+
+### 7.2 Adjusting Shortcuts in the Keymap Tab (Advanced)
+
+For advanced users, you can also edit shortcuts directly in Blender's keymap:
+
+1. Go to `Edit → Preferences… → Keymap`.
+2. In the search box, type `LumiFlow` to find LumiFlow operators.
+3. Expand an entry and change the key combination as needed.
+4. Click **Save Preferences** so Blender remembers your custom keymap.
+
 ---
 
-## 7. Next Steps
+## 8. Next Steps
 
 You are ready to start lighting real scenes.
 
